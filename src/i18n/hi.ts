@@ -153,6 +153,13 @@ export const hi: Record<TranslationKey, string> = {
   'farmer.villageSaved': 'सुझावों के लिए गाँव सहेजा गया।',
   'farmer.villageSaveError': 'हम आपका गाँव सहेज नहीं सके।',
   'farmer.resultsFor': '{village} में मशीनें',
+  'farmer.nearbyRentalMachines': 'पास की किराये की मशीनें',
+  'farmer.readyToScanTitle': 'अपने पास की हार्वेस्टर मशीनें खोजें',
+  'farmer.enterDetailsToScan':
+    'अपने क्षेत्र में उपलब्ध किराये की मशीनें देखने के लिए ऊपर अपना गाँव दर्ज करें या "मेरा स्थान उपयोग करें" पर टैप करें।',
+  'farmer.scanningNearby': '{location} में पास की मशीनों को स्कैन किया जा रहा है…',
+  'farmer.scanningSubtitle':
+    'कंबाइन हार्वेस्टर और ट्रैक्टरों की उपलब्धता जाँची जा रही है…',
   'farmer.resultsCount': 'मिली मशीनें: {count}',
   'farmer.noResultsTitle': 'कोई मशीन नहीं मिली',
   'farmer.noResultsBody': 'दूसरा गाँव, फसल या मशीन का प्रकार आज़माएँ। हर हफ़्ते नए मालिक जुड़ते हैं।',

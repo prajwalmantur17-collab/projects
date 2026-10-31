@@ -152,6 +152,13 @@ export const en = {
   'farmer.villageSaved': 'Village saved for recommendations.',
   'farmer.villageSaveError': 'We could not save your village.',
   'farmer.resultsFor': 'Machines in {village}',
+  'farmer.nearbyRentalMachines': 'Nearby Rental Machines',
+  'farmer.readyToScanTitle': 'Find Harvesters Near You',
+  'farmer.enterDetailsToScan':
+    'Enter your village name or tap "Use My Location" above to scan and see rental machines available in your area.',
+  'farmer.scanningNearby': 'Scanning for nearby harvesters in {location}…',
+  'farmer.scanningSubtitle':
+    'Checking live availability of combine harvesters, tractors & reapers…',
   'farmer.resultsCount': 'Machines found: {count}',
   'farmer.noResultsTitle': 'No machines found',
   'farmer.noResultsBody': 'Try another village, crop, or machine type. More owners join every week.',

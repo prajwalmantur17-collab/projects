@@ -153,6 +153,13 @@ export const kn: Record<TranslationKey, string> = {
   'farmer.villageSaved': 'ಶಿಫಾರಸುಗಳಿಗಾಗಿ ಹಳ್ಳಿ ಉಳಿಸಲಾಗಿದೆ.',
   'farmer.villageSaveError': 'ನಿಮ್ಮ ಹಳ್ಳಿಯನ್ನು ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.',
   'farmer.resultsFor': '{village} ನಲ್ಲಿ ಯಂತ್ರಗಳು',
+  'farmer.nearbyRentalMachines': 'ಹತ್ತಿರದ ಬಾಡಿಗೆ ಯಂತ್ರಗಳು',
+  'farmer.readyToScanTitle': 'ನಿಮ್ಮ ಹತ್ತಿರದ ಕೊಯ್ಲು ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ',
+  'farmer.enterDetailsToScan':
+    'ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲಿ ಲಭ್ಯವಿರುವ ಬಾಡಿಗೆ ಯಂತ್ರಗಳನ್ನು ನೋಡಲು ಮೇಲಿನ ಹಳ್ಳಿಯ ಹೆಸರು ನಮೂದಿಸಿ ಅಥವಾ "ನನ್ನ ಸ್ಥಳ ಬಳಸಿ" ಒತ್ತಿ.',
+  'farmer.scanningNearby': '{location} ನಲ್ಲಿ ಹತ್ತಿರದ ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…',
+  'farmer.scanningSubtitle':
+    'ಲಭ್ಯವಿರುವ ಕೊಯ್ಲು ಯಂತ್ರಗಳು ಮತ್ತು ಟ್ರ್ಯಾಕ್ಟರ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
   'farmer.resultsCount': 'ಸಿಕ್ಕ ಯಂತ್ರಗಳು: {count}',
   'farmer.noResultsTitle': 'ಯಾವುದೇ ಯಂತ್ರ ಸಿಗಲಿಲ್ಲ',
   'farmer.noResultsBody': 'ಬೇರೆ ಹಳ್ಳಿ, ಬೆಳೆ ಅಥವಾ ಯಂತ್ರದ ಪ್ರಕಾರವನ್ನು ಪ್ರಯತ್ನಿಸಿ. ಪ್ರತಿ ವಾರ ಹೊಸ ಮಾಲೀಕರು ಸೇರುತ್ತಾರೆ.',
