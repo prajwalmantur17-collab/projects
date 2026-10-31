@@ -71,46 +71,57 @@ export async function deleteMachineImage(path: string, userId: string): Promise<
 export async function searchMachines(params: {
   village?: string
   district?: string
-  state?: string
   crop?: string
   machineType?: string
   limit?: number
   offset?: number
 }): Promise<MachineCard[]> {
+  const cleanVillage = (params.village || '').trim()
+  const cleanDistrict = (params.district || '').trim()
+  const cleanCrop = (params.crop || '').trim().toLowerCase()
+  const cleanType = (params.machineType || '').trim().toLowerCase()
+
   // 1. Try Supabase if available
   if (supabase) {
     try {
-      // If a specific village or district is specified, fetch both targeted and regional machines
-      // so all 3 levels (village, district, state) are available for proximity tiering
-      const [specificRes, regionalRes] = await Promise.all([
-        params.village || params.district
-          ? supabase.rpc('search_machines', {
-              p_village: params.village?.trim() || null,
-              p_district: params.district?.trim() || null,
-              p_state: params.state?.trim() || null,
-              p_crop: params.crop || null,
-              p_machine_type: params.machineType || null,
-              p_limit: params.limit ?? 48,
-              p_offset: params.offset ?? 0,
-            })
-          : Promise.resolve({ data: null, error: null }),
-        supabase.rpc('search_machines', {
-          p_village: null,
-          p_district: null,
-          p_state: params.state?.trim() || null,
+      if (cleanVillage || cleanDistrict) {
+        // Find machines in the specified village or district
+        const { data: primaryData, error } = await supabase.rpc('search_machines', {
+          p_village: cleanVillage || null,
+          p_district: cleanDistrict || null,
+          p_state: null,
           p_crop: params.crop || null,
           p_machine_type: params.machineType || null,
           p_limit: params.limit ?? 48,
           p_offset: params.offset ?? 0,
-        }),
-      ])
+        })
 
-      const specificData = Array.isArray(specificRes.data) ? (specificRes.data as MachineCard[]) : []
-      const regionalData = Array.isArray(regionalRes.data) ? (regionalRes.data as MachineCard[]) : []
-      const combined = [...specificData, ...regionalData]
+        if (!error && Array.isArray(primaryData)) {
+          let list = deduplicateMachines(primaryData as MachineCard[])
 
-      if (combined.length > 0) {
-        return deduplicateMachines(combined)
+          // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
+          if (cleanVillage && !cleanDistrict && list.length > 0) {
+            const resolvedDistrict = list[0]?.district
+            if (resolvedDistrict) {
+              const { data: districtData, error: distErr } = await supabase.rpc('search_machines', {
+                p_village: null,
+                p_district: resolvedDistrict,
+                p_state: null,
+                p_crop: params.crop || null,
+                p_machine_type: params.machineType || null,
+                p_limit: params.limit ?? 48,
+                p_offset: 0,
+              })
+              if (!distErr && Array.isArray(districtData)) {
+                list = deduplicateMachines([...list, ...(districtData as MachineCard[])])
+              }
+            }
+          }
+
+          if (list.length > 0) {
+            return list
+          }
+        }
       }
     } catch {
       // Fall through to local fallback
@@ -119,24 +130,69 @@ export async function searchMachines(params: {
 
   // 2. Local Resilient Store Search
   const all = getLocalMachines()
-  const cleanCrop = (params.crop || '').trim().toLowerCase()
-  const cleanType = (params.machineType || '').trim().toLowerCase()
 
-  const filtered = all.filter((m) => {
+  // Filter by crop & machine type first
+  const baseCandidates = all.filter((m) => {
     if (!m || !m.is_active) return false
-
     const crops = Array.isArray(m.crops) ? m.crops : []
     const mType = (m.machine_type || '').toLowerCase()
 
     if (cleanCrop && !crops.some((c) => c && c.toLowerCase() === cleanCrop)) {
       return false
     }
-
     if (cleanType && mType !== cleanType) {
       return false
     }
-
     return true
+  })
+
+  // If no village or district filter was provided, return base candidates
+  if (!cleanVillage && !cleanDistrict) {
+    return deduplicateMachines(baseCandidates)
+  }
+
+  const vTarget = cleanVillage.toLowerCase()
+  let dTarget = cleanDistrict.toLowerCase()
+
+  // If district wasn't typed, infer it from the machine located in vTarget or if vTarget is actually a district
+  if (!dTarget && vTarget) {
+    const matched = baseCandidates.find((m) => {
+      const v = (m.village || '').toLowerCase()
+      const d = (m.district || '').toLowerCase()
+      const svs = Array.isArray(m.service_villages)
+        ? m.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+        : []
+      return v === vTarget || svs.includes(vTarget) || d === vTarget
+    })
+    if (matched?.district) {
+      dTarget = matched.district.toLowerCase()
+    }
+  }
+
+  // Filter STRICTLY to the user's village or district (NO other districts from the state!)
+  const filtered = baseCandidates.filter((m) => {
+    const mVillage = (m.village || '').toLowerCase()
+    const mDistrict = (m.district || '').toLowerCase()
+    const mVillages = Array.isArray(m.service_villages)
+      ? m.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+      : []
+
+    // Level 1: In Your Village
+    const isVillageMatch =
+      Boolean(vTarget) &&
+      (mVillage === vTarget ||
+        mVillages.includes(vTarget) ||
+        (vTarget.length >= 3 && mVillage.includes(vTarget)))
+
+    // Level 2: Available in Same District
+    const isDistrictMatch =
+      Boolean(dTarget) &&
+      Boolean(mDistrict) &&
+      (mDistrict === dTarget ||
+        mDistrict.includes(dTarget) ||
+        dTarget.includes(mDistrict))
+
+    return isVillageMatch || isDistrictMatch
   })
 
   return deduplicateMachines(filtered)

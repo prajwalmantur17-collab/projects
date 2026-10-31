@@ -122,10 +122,10 @@ export function MachineCard({
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         ) : (
-          /* Mode B - Level 3 (Other machines in the state) */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-xs font-semibold text-white shadow-soft">
-            <MapPin className="size-3 text-cream-200" aria-hidden="true" />
-            {machine.district}, {machine.state}
+          /* Available in District */
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
+            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         )}
 
@@ -178,12 +178,12 @@ export function MachineCard({
             <CheckCircle2 className="size-3.5 text-leaf-700" />
             <span>{t('farmer.inYourVillageBadge')} • {machine.village}</span>
           </div>
-        ) : isInSameDistrict ? (
+        ) : (
           <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-leaf-300 bg-leaf-50 px-2.5 py-1 text-xs font-bold text-leaf-900">
             <CheckCircle2 className="size-3.5 text-leaf-700" />
             <span>{t('farmer.sameDistrictBadge')} • {machine.district}</span>
           </div>
-        ) : null}
+        )}
 
         {/* Clean Location without repeating village if village == district */}
         <p className="flex items-start gap-1.5 text-sm text-ink-soft">
@@ -191,7 +191,7 @@ export function MachineCard({
           <span className="min-w-0">
             <span className="font-semibold">{machine.village}</span>
             <span className="text-ink-muted">
-              {villageEqualsDistrict ? `, ${machine.state}` : ` • ${machine.district}, ${machine.state}`}
+              {villageEqualsDistrict ? '' : ` • ${machine.district}`}
             </span>
           </span>
         </p>

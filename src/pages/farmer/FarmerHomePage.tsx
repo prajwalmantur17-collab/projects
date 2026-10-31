@@ -114,7 +114,6 @@ export function FarmerHomePage() {
   // Mode B (Manual Typing - No GPS):
   //   Level 1: In Your Village (0 to 5 km) - exact village or service village match
   //   Level 2: Same District (~10 to 40 km) - same revenue district match
-  //   Level 3: Other machines in the state
   const sortedResults = useMemo(() => {
     if (!results) return null
     const deduped = deduplicateMachines(results)
@@ -125,7 +124,6 @@ export function FarmerHomePage() {
       const mVillages = Array.isArray(m.service_villages)
         ? m.service_villages.map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
         : []
-      const mDistrict = (m.district || '').trim().toLowerCase()
 
       // Mode B - Level 1: In Your Village (0 to 5 km)
       if (
@@ -138,18 +136,7 @@ export function FarmerHomePage() {
       }
 
       // Mode B - Level 2: Same District (~10 to 40 km)
-      if (
-        Boolean(effectiveDistrict) &&
-        Boolean(mDistrict) &&
-        (mDistrict === effectiveDistrict ||
-          mDistrict.includes(effectiveDistrict) ||
-          effectiveDistrict.includes(mDistrict))
-      ) {
-        return 2
-      }
-
-      // Mode B - Level 3: Other machines in the state
-      return 3
+      return 2
     }
 
     return [...deduped].sort((a, b) => {
@@ -166,14 +153,14 @@ export function FarmerHomePage() {
         if (da !== db) return da - db
       }
 
-      // 2. Mode B Proximity Tier: Level 1 (Village) -> Level 2 (Same District) -> Level 3 (State)
+      // 2. Mode B Proximity Tier: Level 1 (In Village) -> Level 2 (Same District)
       const tierA = getTier(a)
       const tierB = getTier(b)
       if (tierA !== tierB) return tierA - tierB
 
       return 0
     })
-  }, [results, geo.coordinates, snapshot, village, effectiveDistrict])
+  }, [results, geo.coordinates, snapshot, village])
 
   const distanceFor = (machine: MachineCardType): number | null => {
     if (!geo.coordinates || machine.latitude === null || machine.longitude === null) return null
@@ -204,7 +191,6 @@ export function FarmerHomePage() {
       const found = await searchMachines({
         village: cleanedVillage || undefined,
         district: cleanedDistrict || undefined,
-        state: cleanedState || undefined,
         crop: activeCrop || undefined,
         machineType: machineType || undefined,
         limit: 48,
@@ -449,7 +435,7 @@ export function FarmerHomePage() {
               />
             </button>
 
-            <div className={`mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${showFilters ? '' : 'hidden'}`}>
+            <div className={`mt-4 grid gap-3 sm:grid-cols-3 ${showFilters ? '' : 'hidden'}`}>
               <Select
                 label={t('farmer.cropLabel')}
                 value={crop}
@@ -481,15 +467,7 @@ export function FarmerHomePage() {
                 value={district}
                 onChange={(event) => setDistrict(event.target.value)}
                 autoComplete="address-level2"
-                placeholder="e.g. Mandya / Ludhiana"
-              />
-
-              <Input
-                label={t('farmer.stateLabel')}
-                value={state}
-                onChange={(event) => setState(event.target.value)}
-                autoComplete="address-level1"
-                placeholder="e.g. Karnataka / Punjab"
+                placeholder="e.g. Mandya / Vijayapura"
               />
             </div>
           </div>
