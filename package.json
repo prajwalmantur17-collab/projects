@@ -1,0 +1,47 @@
+{
+  "name": "harvest-rentals",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Harvest Rentals - find and book harvesting machines near your village.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.61.0",
+    "react": "^19.2.9",
+    "react-dom": "^19.2.9",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.0",
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
+  }
+}

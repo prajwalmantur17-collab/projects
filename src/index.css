@@ -1,0 +1,183 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Plus Jakarta Sans', 'Noto Sans Kannada', 'Noto Sans Devanagari', ui-sans-serif,
+    system-ui, sans-serif;
+
+  --color-leaf-50: #f2f7ef;
+  --color-leaf-100: #e0ecd7;
+  --color-leaf-200: #c4dbb2;
+  --color-leaf-300: #a1c487;
+  --color-leaf-400: #7da95f;
+  --color-leaf-500: #5f8c43;
+  --color-leaf-600: #487031;
+  --color-leaf-700: #385827;
+  --color-leaf-800: #2b4520;
+  --color-leaf-900: #1d3016;
+
+  --color-cream-50: #fdfbf5;
+  --color-cream-100: #f8f3e7;
+  --color-cream-200: #f0e7d3;
+  --color-cream-300: #e4d7bc;
+
+  --color-harvest-50: #fdf6e6;
+  --color-harvest-100: #faeac2;
+  --color-harvest-200: #f3d68a;
+  --color-harvest-300: #ebbd52;
+  --color-harvest-400: #dfa42b;
+  --color-harvest-500: #c48516;
+  --color-harvest-600: #a26411;
+  --color-harvest-700: #824c13;
+  --color-harvest-800: #6b3f16;
+  --color-harvest-900: #593516;
+
+  --color-ink: #17241b;
+  --color-ink-soft: #3d4b40;
+  --color-ink-muted: #66736a;
+
+  --color-clay-50: #fdf1ee;
+  --color-clay-100: #fadfd8;
+  --color-clay-200: #f4beb0;
+  --color-clay-300: #ea9280;
+  --color-clay-400: #dc6753;
+  --color-clay-500: #c94a37;
+  --color-clay-600: #a9382a;
+  --color-clay-700: #8b2f24;
+  --color-clay-800: #732b23;
+  --color-clay-900: #612821;
+
+  --color-sky-soft: #e8f1f5;
+  --color-sky-ink: #2c5a6e;
+
+  --radius-card: 1.25rem;
+
+  --shadow-soft: 0 1px 2px rgb(23 36 27 / 0.04), 0 10px 30px -18px rgb(23 36 27 / 0.35);
+  --shadow-lift: 0 2px 4px rgb(23 36 27 / 0.06), 0 22px 40px -24px rgb(23 36 27 / 0.45);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-cream-50 text-ink antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-ink;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-harvest-400);
+    outline-offset: 2px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background: var(--color-leaf-200);
+    color: var(--color-leaf-900);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .card-surface {
+    @apply rounded-card border border-cream-200 bg-white shadow-soft;
+  }
+
+  .text-muted {
+    @apply text-ink-muted;
+  }
+}
+
+/* Map markers (Leaflet divIcons) */
+.hr-marker {
+  background: transparent;
+  border: 0;
+}
+
+.hr-me {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.hr-me-dot {
+  position: absolute;
+  inset: 4px;
+  border-radius: 9999px;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
+}
+
+.hr-me-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgb(37 99 235 / 0.35);
+  animation: hr-pulse 2s ease-out infinite;
+}
+
+.hr-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: var(--color-leaf-700);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.hr-pin-live {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  background: var(--color-harvest-500);
+}
+
+@keyframes hr-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hr-me-pulse {
+    animation: none;
+  }
+}

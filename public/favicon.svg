@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Harvest Rentals">
+  <rect width="64" height="64" rx="16" fill="#14532d"/>
+  <path d="M32 51V30" stroke="#fdf8ec" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 34C32 24 24 19 16 19c0 9 7 15 16 15Z" fill="#86b36a"/>
+  <path d="M32 30c0-8 6-13 15-13 0 8-6 13-15 13Z" fill="#c8dfa9"/>
+  <path d="M18 47h28" stroke="#fdf8ec" stroke-width="4" stroke-linecap="round"/>
+</svg>

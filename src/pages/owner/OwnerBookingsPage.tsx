@@ -1,0 +1,322 @@
+import { useCallback, useEffect, useState } from 'react'
+import { Inbox, Phone } from 'lucide-react'
+import { useAuth } from '../../auth/AuthProvider'
+import { useI18n } from '../../i18n'
+import type { TranslationKey } from '../../i18n'
+import { logError, mapErrorToKey } from '../../lib/errors'
+import { formatDate, formatDateTime } from '../../lib/format'
+import { machineTypeLabelKey } from '../../lib/labels'
+import { useAsync } from '../../hooks/useAsync'
+import { getOwnerBookings, respondToBooking, subscribeToBookings } from '../../services/bookings'
+import { isInShareWindow, startSharing } from '../../services/liveShare'
+import type { BookingStatus, BookingWithRelations } from '../../types'
+import { BookingDetails } from '../../components/booking/BookingDetails'
+import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
+import { StatusBadge } from '../../components/booking/StatusBadge'
+import { ContactButtons } from '../../components/contact/ContactButtons'
+import { ShareLocationPanel } from '../../components/map/ShareLocationPanel'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { EmptyState, Spinner } from '../../components/ui/Feedback'
+import { Textarea } from '../../components/ui/Input'
+import { PageHeader } from '../../components/ui/PageHeader'
+
+type Filter = 'pending' | 'confirmed' | 'closed'
+type Decision = Extract<BookingStatus, 'confirmed' | 'rejected'>
+
+export function OwnerBookingsPage() {
+  const { profile } = useAuth()
+  const { t, language } = useI18n()
+  const ownerId = profile?.id
+
+  const [filter, setFilter] = useState<Filter>('pending')
+  const [target, setTarget] = useState<{ booking: BookingWithRelations; decision: Decision } | null>(
+    null,
+  )
+  const [note, setNote] = useState('')
+  const [responding, setResponding] = useState(false)
+  const [responseError, setResponseError] = useState<TranslationKey | null>(null)
+  const [success, setSuccess] = useState<TranslationKey | null>(null)
+
+  const loader = useCallback(async () => {
+    if (!ownerId) return [] as BookingWithRelations[]
+    return getOwnerBookings(ownerId)
+  }, [ownerId])
+
+  const { data, loading, error, reload } = useAsync(loader, {
+    enabled: Boolean(ownerId),
+    fallback: 'owner.requestsError',
+  })
+
+  useEffect(() => {
+    if (!ownerId) return
+    return subscribeToBookings(ownerId, 'owner', () => reload())
+  }, [ownerId, reload])
+
+  const bookings = data ?? []
+  const counts = {
+    pending: bookings.filter((booking) => booking.status === 'pending').length,
+    confirmed: bookings.filter((booking) => booking.status === 'confirmed').length,
+    closed: bookings.filter(
+      (booking) => booking.status === 'rejected' || booking.status === 'cancelled',
+    ).length,
+  }
+
+  const filtered = bookings.filter((booking) => {
+    if (filter === 'pending') return booking.status === 'pending'
+    if (filter === 'confirmed') return booking.status === 'confirmed'
+    return booking.status === 'rejected' || booking.status === 'cancelled'
+  })
+
+  const openDialog = (booking: BookingWithRelations, decision: Decision) => {
+    setTarget({ booking, decision })
+    setNote('')
+    setResponseError(null)
+    setSuccess(null)
+  }
+
+  const closeDialog = () => {
+    if (responding) return
+    setTarget(null)
+    setNote('')
+    setResponseError(null)
+  }
+
+  const confirmResponse = async () => {
+    if (!target || responding) return
+    setResponding(true)
+    setResponseError(null)
+    try {
+      await respondToBooking(
+        target.booking.id,
+        target.decision,
+        target.decision === 'rejected' ? note : undefined,
+      )
+      if (target.decision === 'confirmed' && isInShareWindow(target.booking.service_date)) {
+        // Accepting is a tap, so the browser can show its location prompt right now.
+        startSharing(target.booking.id, true)
+      }
+      setTarget(null)
+      setNote('')
+      setSuccess(target.decision === 'confirmed' ? 'owner.acceptSuccess' : 'owner.rejectSuccess')
+      reload()
+    } catch (caught) {
+      logError('owner.respondToBooking', caught)
+      setResponseError(mapErrorToKey(caught, 'owner.respondError'))
+    } finally {
+      setResponding(false)
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader title={t('owner.requestsTitle')} description={t('owner.requestsSubtitle')} />
+
+      {success ? (
+        <Alert variant="success" className="mb-4">
+          {t(success)}
+        </Alert>
+      ) : null}
+
+      <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={t('owner.requestsTitle')}>
+        {(
+          [
+            ['pending', t('owner.filterPending'), counts.pending],
+            ['confirmed', t('owner.filterConfirmed'), counts.confirmed],
+            ['closed', t('owner.filterClosed'), counts.closed],
+          ] as Array<[Filter, string, number]>
+        ).map(([value, label, count]) => {
+          const active = filter === value
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFilter(value)}
+              aria-pressed={active}
+              className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl border-2 px-4 text-sm font-bold transition-colors ${
+                active
+                  ? 'border-leaf-700 bg-leaf-700 text-cream-50'
+                  : 'border-cream-300 bg-white text-ink-soft hover:border-leaf-300'
+              }`}
+            >
+              {label}
+              <span
+                className={`rounded-full px-1.5 text-xs ${
+                  active ? 'bg-white/20' : 'bg-cream-100 text-ink-muted'
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 rounded-card border border-cream-200 bg-white py-16">
+          <Spinner className="size-5" />
+          <span className="text-sm font-medium text-ink-muted">{t('common.loading')}</span>
+        </div>
+      ) : error ? (
+        <Alert variant="error">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>{t(error)}</span>
+            <Button size="sm" variant="outline" onClick={reload}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        </Alert>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={Inbox}
+          title={filter === 'pending' ? t('owner.noRequestsTitle') : t('owner.noClosedBookings')}
+          description={
+            filter === 'pending' ? t('owner.noRequestsBody') : t('owner.requestsSubtitle')
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((booking) => {
+            const machine = booking.machine
+            const typeLabel = machine
+              ? t(machineTypeLabelKey(machine.machine_type))
+              : t('common.unknown')
+            const paused = Boolean(machine && !machine.is_active)
+            const isPending = booking.status === 'pending'
+            return (
+              <Card key={booking.id} as="article" className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 gap-3">
+                    {machine ? (
+                      <BookingMachineThumb imagePath={machine.image_path} typeLabel={typeLabel} />
+                    ) : null}
+                    <div className="min-w-0">
+                      <h2 className="truncate text-lg font-bold">{typeLabel}</h2>
+                      <p className="truncate text-sm text-ink-muted">
+                        {machine?.model ?? t('farmer.noModel')}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-ink-soft">
+                        {t('owner.farmerName', {
+                          name: booking.farmer?.full_name ?? t('owner.farmer'),
+                        })}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        {t('farmer.requestedOn', {
+                          date: formatDateTime(booking.created_at, language),
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={booking.status} />
+                </div>
+
+                <div className="mt-3">
+                  <BookingDetails booking={booking} />
+                </div>
+
+                {booking.notes ? (
+                  <Alert variant="info" className="mt-3">
+                    <span className="font-semibold">{t('common.notes')}: </span>
+                    {booking.notes}
+                  </Alert>
+                ) : null}
+
+                {booking.owner_note ? (
+                  <Alert variant="info" className="mt-3">
+                    <span className="font-semibold">{t('owner.ownerNoteLabel')}: </span>
+                    {booking.owner_note}
+                  </Alert>
+                ) : null}
+
+                {isPending && paused ? (
+                  <Alert variant="warning" className="mt-3">
+                    {t('owner.machinePausedWarning')}
+                  </Alert>
+                ) : null}
+
+                {booking.contact_phone ? (
+                  <div className="mt-4">
+                    <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-ink-soft">
+                      <Phone className="size-4 text-leaf-600" aria-hidden="true" />
+                      {t('owner.farmerPhone')}
+                    </p>
+                    <ContactButtons
+                      phone={booking.contact_phone}
+                      audience="farmer"
+                      message={`${t('app.name')}: ${t('owner.bookedMachine', { machine: typeLabel })} (${formatDate(booking.service_date, language)})`}
+                    />
+                  </div>
+                ) : null}
+
+                {booking.status === 'confirmed' ? (
+                  <ShareLocationPanel
+                    bookingId={booking.id}
+                    serviceDate={booking.service_date}
+                    farmerName={booking.farmer?.full_name ?? t('owner.farmer')}
+                  />
+                ) : null}
+
+                {isPending ? (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-cream-200 pt-4">
+                    <Button
+                      size="sm"
+                      onClick={() => openDialog(booking, 'confirmed')}
+                      disabled={paused}
+                    >
+                      {t('owner.accept')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-clay-300 text-clay-800 hover:bg-clay-50"
+                      onClick={() => openDialog(booking, 'rejected')}
+                    >
+                      {t('owner.reject')}
+                    </Button>
+                  </div>
+                ) : null}
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={Boolean(target)}
+        onClose={closeDialog}
+        onConfirm={() => void confirmResponse()}
+        title={
+          target?.decision === 'confirmed'
+            ? t('owner.acceptConfirmTitle')
+            : t('owner.rejectConfirmTitle')
+        }
+        description={
+          target?.decision === 'confirmed'
+            ? t('owner.acceptConfirmBody')
+            : t('owner.rejectConfirmBody')
+        }
+        confirmLabel={target?.decision === 'confirmed' ? t('owner.accept') : t('owner.reject')}
+        cancelLabel={t('common.cancel')}
+        danger={target?.decision === 'rejected'}
+        loading={responding}
+      >
+        {responseError ? <Alert variant="error">{t(responseError)}</Alert> : null}
+        {target?.decision === 'rejected' ? (
+          <div className={responseError ? 'mt-3' : undefined}>
+            <Textarea
+              label={t('owner.ownerNote')}
+              hint={t('owner.ownerNoteHint')}
+              placeholder={t('owner.ownerNotePlaceholder')}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              maxLength={300}
+              rows={3}
+            />
+          </div>
+        ) : null}
+      </ConfirmDialog>
+    </div>
+  )
+}
