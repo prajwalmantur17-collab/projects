@@ -2,6 +2,7 @@ import { IMAGE_BUCKET } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { todayIsoInIndia, validateImageFile } from '../lib/validation'
 import type { MachineCard, MachineInput } from '../types'
+import { normalizePlaceName } from './geocode'
 import {
   addLocalMachine,
   deduplicateMachines,
@@ -76,8 +77,10 @@ export async function searchMachines(params: {
   limit?: number
   offset?: number
 }): Promise<MachineCard[]> {
-  const cleanVillage = (params.village || '').trim()
-  const cleanDistrict = (params.district || '').trim()
+  const rawVillage = (params.village || '').trim()
+  const rawDistrict = (params.district || '').trim()
+  const cleanVillage = normalizePlaceName(rawVillage, 'en') || rawVillage
+  const cleanDistrict = normalizePlaceName(rawDistrict, 'en') || rawDistrict
   const cleanCrop = (params.crop || '').trim().toLowerCase()
   const cleanType = (params.machineType || '').trim().toLowerCase()
 

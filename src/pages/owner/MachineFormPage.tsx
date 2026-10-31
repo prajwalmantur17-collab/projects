@@ -59,7 +59,7 @@ export function MachineFormPage() {
   const { machineId } = useParams<{ machineId: string }>()
   const { profile } = useAuth()
   const ownerId = profile?.id ?? 'demo-owner'
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const isEdit = Boolean(machineId)
 
   const loader = useCallback(async (): Promise<EditData> => {
@@ -186,7 +186,7 @@ export function MachineFormPage() {
         setGpsMessage('added')
 
         // Auto-fill Operating Village, District, and State without typing
-        const geocoded = await reverseGeocode(result)
+        const geocoded = await reverseGeocode(result, language)
         if (geocoded) {
           if (geocoded.village) {
             setField('primaryVillage', geocoded.village)

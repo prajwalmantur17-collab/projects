@@ -57,7 +57,7 @@ interface SearchSnapshot {
 
 export function FarmerHomePage() {
   const { profile, refreshProfile } = useAuth()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const geo = useGeolocation()
 
   // Always start completely blank
@@ -265,6 +265,22 @@ export function FarmerHomePage() {
     setDetectedPlace(null)
   }
 
+  // Keep detected place synchronized when the user switches interface language
+  useEffect(() => {
+    if (geo.coordinates && detectedPlace) {
+      void reverseGeocode(geo.coordinates, language).then((geocoded) => {
+        if (geocoded) {
+          if (geocoded.village) setVillage(geocoded.village)
+          if (geocoded.district) setDistrict(geocoded.district)
+          setDetectedPlace({
+            place: geocoded.village,
+            district: geocoded.district,
+          })
+        }
+      })
+    }
+  }, [language])
+
   const locate = async () => {
     setDetectedPlace(null)
     setGeocoding(true)
@@ -272,7 +288,7 @@ export function FarmerHomePage() {
       const coords = await geo.request()
       if (!coords) return
 
-      const geocoded = await reverseGeocode(coords)
+      const geocoded = await reverseGeocode(coords, language)
       if (geocoded) {
         if (geocoded.village) {
           setVillage(geocoded.village)

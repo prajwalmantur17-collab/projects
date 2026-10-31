@@ -21,7 +21,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 
 export function SettingsPage() {
   const { profile, refreshProfile, signOut } = useAuth()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const navigate = useNavigate()
 
   const [form, setForm] = useState(() => ({
@@ -47,7 +47,7 @@ export function SettingsPage() {
     try {
       const coords = await geo.request()
       if (!coords) return
-      const geocoded = await reverseGeocode(coords)
+      const geocoded = await reverseGeocode(coords, language)
       if (geocoded) {
         if (geocoded.village) setField('village', geocoded.village)
         if (geocoded.district) setField('district', geocoded.district)

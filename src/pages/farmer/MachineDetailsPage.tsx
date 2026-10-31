@@ -304,7 +304,7 @@ function BookingForm({ machine }: { machine: MachineCard }) {
     try {
       const coords = await geo.request()
       if (!coords) return
-      const geocoded = await reverseGeocode(coords)
+      const geocoded = await reverseGeocode(coords, language)
       if (geocoded) {
         const place = geocoded.village || geocoded.district
         if (place) {
