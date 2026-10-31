@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   CheckCircle2,
@@ -39,8 +39,6 @@ import { machineTypeLabelKey } from '../../lib/labels'
 import { KisanVoiceAssistant } from '../../components/voice/KisanVoiceAssistant'
 import type { VoiceQueryResult } from '../../lib/voice'
 
-const LAST_VILLAGE_KEY = 'harvest-rentals-last-village'
-
 const POPULAR_CROPS: { key: CropKey; emoji: string }[] = [
   { key: 'rice', emoji: '🌾' },
   { key: 'wheat', emoji: '🌾' },
@@ -62,11 +60,16 @@ export function FarmerHomePage() {
   const { t } = useI18n()
   const geo = useGeolocation()
 
-  const [village, setVillage] = useState(
-    () => profile?.village ?? readLastVillage() ?? '',
-  )
-  const [district, setDistrict] = useState(profile?.district ?? '')
-  const [state, setState] = useState(profile?.state ?? '')
+  // Always start completely blank
+  const [village, setVillage] = useState('')
+  const [district, setDistrict] = useState('')
+  const [state, setState] = useState('')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('harvest-rentals-last-village')
+    }
+  }, [])
   const [crop, setCrop] = useState<string>('')
   const [acreage, setAcreage] = useState<string>('')
   const [machineType, setMachineType] = useState<string>('')
@@ -201,9 +204,6 @@ export function FarmerHomePage() {
         machineType,
         acreage,
       })
-      if (cleanedVillage) {
-        writeLastVillage(cleanedVillage)
-      }
       window.setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 60)
@@ -278,7 +278,6 @@ export function FarmerHomePage() {
       if (geocoded) {
         if (geocoded.village) {
           setVillage(geocoded.village)
-          writeLastVillage(geocoded.village)
         }
         if (geocoded.district) {
           setDistrict(geocoded.district)
@@ -681,14 +680,4 @@ export function FarmerHomePage() {
       <KisanVoiceAssistant onVoiceSearch={handleVoiceResult} />
     </div>
   )
-}
-
-function readLastVillage(): string | null {
-  if (typeof window === 'undefined') return null
-  return window.localStorage.getItem(LAST_VILLAGE_KEY)
-}
-
-function writeLastVillage(village: string) {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(LAST_VILLAGE_KEY, village)
 }
