@@ -18,12 +18,16 @@ export function MachineCard({
   acreage,
   selectedCrop,
   userLocation,
+  userVillage,
+  userDistrict,
 }: {
   machine: MachineCardType
   distanceKm?: number | null
   acreage?: number | null
   selectedCrop?: string | null
   userLocation?: string | null
+  userVillage?: string | null
+  userDistrict?: string | null
 }) {
   const { t } = useI18n()
   const [imageFailed, setImageFailed] = useState(false)
@@ -51,22 +55,36 @@ export function MachineCard({
   }${cropName} in ${machine.village}. Is your machine available?`
 
   const normalizedUserLoc = (userLocation || '').trim().toLowerCase()
+  const targetVillage = (userVillage || normalizedUserLoc || '').trim().toLowerCase()
+  const targetDistrict = (userDistrict || '').trim().toLowerCase()
+
   const machineDistrict = (machine.district || '').trim().toLowerCase()
   const machineVillage = (machine.village || '').trim().toLowerCase()
+  const machineVillages = Array.isArray(machine.service_villages)
+    ? machine.service_villages.map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
+    : []
 
+  // Mode B - Level 1: In Your Village (0 to 5 km)
+  // Machine parked in exact village, or lists the village under operating villages
+  const isInYourVillage =
+    Boolean(targetVillage) &&
+    (machineVillage === targetVillage ||
+      machineVillages.includes(targetVillage) ||
+      (targetVillage.length >= 3 && machineVillage.includes(targetVillage)))
+
+  // Mode B - Level 2: Same District (~10 to 40 km)
+  // Machine registered in the same revenue district
   const isInSameDistrict =
-    Boolean(normalizedUserLoc) &&
-    (machineDistrict === normalizedUserLoc ||
-      machineDistrict.includes(normalizedUserLoc) ||
-      normalizedUserLoc.includes(machineDistrict) ||
-      machineVillage === normalizedUserLoc ||
-      normalizedUserLoc.includes(machineVillage) ||
-      machine.service_villages.some(
-        (v) =>
-          v.toLowerCase() === normalizedUserLoc ||
-          v.toLowerCase().includes(normalizedUserLoc) ||
-          normalizedUserLoc.includes(v.toLowerCase()),
-      ))
+    !isInYourVillage &&
+    Boolean(machineDistrict) &&
+    ((Boolean(targetDistrict) &&
+      (machineDistrict === targetDistrict ||
+        machineDistrict.includes(targetDistrict) ||
+        targetDistrict.includes(machineDistrict))) ||
+      (Boolean(normalizedUserLoc) &&
+        (machineDistrict === normalizedUserLoc ||
+          machineDistrict.includes(normalizedUserLoc) ||
+          normalizedUserLoc.includes(machineDistrict))))
 
   const villageEqualsDistrict = machineDistrict === machineVillage
 
@@ -86,24 +104,28 @@ export function MachineCard({
         )}
 
         {typeof distanceKm === 'number' ? (
+          /* Mode A: GPS Distance in Kilometers */
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-leaf-800 shadow-soft">
             <MapPin className="size-3 text-leaf-600" aria-hidden="true" />
             {t('farmer.kmAway', { distance: formatDistance(distanceKm) })}
           </span>
+        ) : isInYourVillage ? (
+          /* Mode B - Level 1 (In Your Village - 0 to 5 km) */
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-800 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/60">
+            <CheckCircle2 className="size-3.5 text-leaf-300" aria-hidden="true" />
+            {t('farmer.inYourVillage', { village: machine.village })}
+          </span>
         ) : isInSameDistrict ? (
+          /* Mode B - Level 2 (Same District - ~10 to 40 km) */
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
-        ) : normalizedUserLoc ? (
+        ) : (
+          /* Mode B - Level 3 (Other machines in the state) */
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2.5 py-1 text-xs font-semibold text-white shadow-soft">
             <MapPin className="size-3 text-cream-200" aria-hidden="true" />
             {machine.district}, {machine.state}
-          </span>
-        ) : (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-leaf-800 shadow-soft">
-            <CheckCircle2 className="size-3.5 text-leaf-600" aria-hidden="true" />
-            {t('farmer.availableInDistrict', { district: machine.district })}
           </span>
         )}
 
@@ -150,8 +172,13 @@ export function MachineCard({
           </div>
         ) : null}
 
-        {/* Same District Highlight Tag */}
-        {isInSameDistrict ? (
+        {/* In Village or Same District Highlight Tag */}
+        {isInYourVillage ? (
+          <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-leaf-400 bg-leaf-50 px-2.5 py-1 text-xs font-bold text-leaf-900">
+            <CheckCircle2 className="size-3.5 text-leaf-700" />
+            <span>{t('farmer.inYourVillageBadge')} • {machine.village}</span>
+          </div>
+        ) : isInSameDistrict ? (
           <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-leaf-300 bg-leaf-50 px-2.5 py-1 text-xs font-bold text-leaf-900">
             <CheckCircle2 className="size-3.5 text-leaf-700" />
             <span>{t('farmer.sameDistrictBadge')} • {machine.district}</span>

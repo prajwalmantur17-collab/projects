@@ -89,18 +89,71 @@ export function FarmerHomePage() {
   const activeUserLocation =
     snapshot?.village || village || district || profile?.district || profile?.village || ''
 
+  // Resolve effective district (explicitly entered or inferred from village)
+  const effectiveDistrict = useMemo(() => {
+    const rawDistrict = (district || detectedPlace?.district || '').trim().toLowerCase()
+    if (rawDistrict) return rawDistrict
+
+    const targetVillage = (snapshot?.village || village || '').trim().toLowerCase()
+    if (!targetVillage || !results) return ''
+
+    const matchedMachine = results.find((m) => {
+      const v = (m.village || '').trim().toLowerCase()
+      const svs = Array.isArray(m.service_villages)
+        ? m.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+        : []
+      const d = (m.district || '').trim().toLowerCase()
+      return v === targetVillage || svs.includes(targetVillage) || d === targetVillage
+    })
+
+    return matchedMachine?.district ? matchedMachine.district.trim().toLowerCase() : ''
+  }, [district, detectedPlace, snapshot, village, results])
+
   // Sort search results strictly by proximity:
-  // 1. GPS distance (closest in km first)
-  // 2. Exact Village / Service Villages match
-  // 3. Same District match
+  // Mode A (GPS Active): GPS distance (closest in km first)
+  // Mode B (Manual Typing - No GPS):
+  //   Level 1: In Your Village (0 to 5 km) - exact village or service village match
+  //   Level 2: Same District (~10 to 40 km) - same revenue district match
+  //   Level 3: Other machines in the state
   const sortedResults = useMemo(() => {
     if (!results) return null
     const deduped = deduplicateMachines(results)
     const targetVillage = (snapshot?.village || village || '').trim().toLowerCase()
-    const targetDistrict = (district || '').trim().toLowerCase()
+
+    const getTier = (m: MachineCardType): number => {
+      const mVillage = (m.village || '').trim().toLowerCase()
+      const mVillages = Array.isArray(m.service_villages)
+        ? m.service_villages.map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
+        : []
+      const mDistrict = (m.district || '').trim().toLowerCase()
+
+      // Mode B - Level 1: In Your Village (0 to 5 km)
+      if (
+        Boolean(targetVillage) &&
+        (mVillage === targetVillage ||
+          mVillages.includes(targetVillage) ||
+          (targetVillage.length >= 3 && mVillage.includes(targetVillage)))
+      ) {
+        return 1
+      }
+
+      // Mode B - Level 2: Same District (~10 to 40 km)
+      if (
+        Boolean(effectiveDistrict) &&
+        Boolean(mDistrict) &&
+        (mDistrict === effectiveDistrict ||
+          mDistrict.includes(effectiveDistrict) ||
+          effectiveDistrict.includes(mDistrict))
+      ) {
+        return 2
+      }
+
+      // Mode B - Level 3: Other machines in the state
+      return 3
+    }
 
     return [...deduped].sort((a, b) => {
-      // 1. Proximity by GPS distance (closest in km first)
+      // 1. Proximity by GPS distance (closest in km first) if GPS is active
       if (geo.coordinates) {
         const da =
           a.latitude !== null && a.longitude !== null
@@ -113,55 +166,14 @@ export function FarmerHomePage() {
         if (da !== db) return da - db
       }
 
-      // 2. Exact Village / Service Villages match
-      if (targetVillage) {
-        const aVillage = (a.village || '').toLowerCase()
-        const aVillages = Array.isArray(a.service_villages)
-          ? a.service_villages.map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
-          : []
-        const aMatchVillage =
-          aVillage === targetVillage ||
-          aVillages.includes(targetVillage) ||
-          aVillage.includes(targetVillage)
-
-        const bVillage = (b.village || '').toLowerCase()
-        const bVillages = Array.isArray(b.service_villages)
-          ? b.service_villages.map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
-          : []
-        const bMatchVillage =
-          bVillage === targetVillage ||
-          bVillages.includes(targetVillage) ||
-          bVillage.includes(targetVillage)
-
-        if (aMatchVillage && !bMatchVillage) return -1
-        if (!aMatchVillage && bMatchVillage) return 1
-      }
-
-      // 3. Same District match
-      const currentDistrict = targetDistrict || (snapshot?.village || village || '').trim().toLowerCase()
-      if (currentDistrict) {
-        const aDistrict = (a.district || '').toLowerCase()
-        const bDistrict = (b.district || '').toLowerCase()
-        const aMatchDistrict = Boolean(
-          aDistrict &&
-            (aDistrict === currentDistrict ||
-              aDistrict.includes(currentDistrict) ||
-              currentDistrict.includes(aDistrict)),
-        )
-        const bMatchDistrict = Boolean(
-          bDistrict &&
-            (bDistrict === currentDistrict ||
-              bDistrict.includes(currentDistrict) ||
-              currentDistrict.includes(bDistrict)),
-        )
-
-        if (aMatchDistrict && !bMatchDistrict) return -1
-        if (!aMatchDistrict && bMatchDistrict) return 1
-      }
+      // 2. Mode B Proximity Tier: Level 1 (Village) -> Level 2 (Same District) -> Level 3 (State)
+      const tierA = getTier(a)
+      const tierB = getTier(b)
+      if (tierA !== tierB) return tierA - tierB
 
       return 0
     })
-  }, [results, geo.coordinates, snapshot, village, district])
+  }, [results, geo.coordinates, snapshot, village, effectiveDistrict])
 
   const distanceFor = (machine: MachineCardType): number | null => {
     if (!geo.coordinates || machine.latitude === null || machine.longitude === null) return null
@@ -597,6 +609,8 @@ export function FarmerHomePage() {
                     acreage={parsedAcreage}
                     selectedCrop={crop}
                     userLocation={activeUserLocation}
+                    userVillage={snapshot?.village || village}
+                    userDistrict={effectiveDistrict || district}
                   />
                 ))}
               </div>

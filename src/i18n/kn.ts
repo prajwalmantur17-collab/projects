@@ -175,6 +175,8 @@ export const kn: Record<TranslationKey, string> = {
   'farmer.availability': 'ಲಭ್ಯತೆ',
   'farmer.available': 'ಬುಕಿಂಗ್‌ಗೆ ಲಭ್ಯವಿದೆ',
   'farmer.availableInDistrict': '{district} ನಲ್ಲಿ ಲಭ್ಯವಿದೆ',
+  'farmer.inYourVillage': 'ನಿಮ್ಮ ಹಳ್ಳಿಯಲ್ಲಿದೆ ({village})',
+  'farmer.inYourVillageBadge': 'ನಿಮ್ಮ ಹಳ್ಳಿಯಲ್ಲಿ',
   'farmer.availableInSameDistrict': 'ನಿಮ್ಮದೇ ಜಿಲ್ಲೆಯಲ್ಲಿ ಲಭ್ಯವಿದೆ ({district})',
   'farmer.sameDistrictBadge': 'ಇದೇ ಜಿಲ್ಲೆ',
   'farmer.paused': 'ಬುಕಿಂಗ್ ಸ್ವೀಕರಿಸುತ್ತಿಲ್ಲ',

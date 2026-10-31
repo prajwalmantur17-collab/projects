@@ -174,6 +174,8 @@ export const en = {
   'farmer.availability': 'Availability',
   'farmer.available': 'Available for booking',
   'farmer.availableInDistrict': 'Available in {district}',
+  'farmer.inYourVillage': 'In your village ({village})',
+  'farmer.inYourVillageBadge': 'In Your Village',
   'farmer.availableInSameDistrict': 'Available in your district ({district})',
   'farmer.sameDistrictBadge': 'Same District',
   'farmer.paused': 'Not accepting bookings',

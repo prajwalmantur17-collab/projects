@@ -80,17 +80,37 @@ export async function searchMachines(params: {
   // 1. Try Supabase if available
   if (supabase) {
     try {
-      const { data, error } = await supabase.rpc('search_machines', {
-        p_village: params.village?.trim() || null,
-        p_district: params.district?.trim() || null,
-        p_state: params.state?.trim() || null,
-        p_crop: params.crop || null,
-        p_machine_type: params.machineType || null,
-        p_limit: params.limit ?? 48,
-        p_offset: params.offset ?? 0,
-      })
-      if (!error && Array.isArray(data) && data.length > 0) {
-        return deduplicateMachines(data as MachineCard[])
+      // If a specific village or district is specified, fetch both targeted and regional machines
+      // so all 3 levels (village, district, state) are available for proximity tiering
+      const [specificRes, regionalRes] = await Promise.all([
+        params.village || params.district
+          ? supabase.rpc('search_machines', {
+              p_village: params.village?.trim() || null,
+              p_district: params.district?.trim() || null,
+              p_state: params.state?.trim() || null,
+              p_crop: params.crop || null,
+              p_machine_type: params.machineType || null,
+              p_limit: params.limit ?? 48,
+              p_offset: params.offset ?? 0,
+            })
+          : Promise.resolve({ data: null, error: null }),
+        supabase.rpc('search_machines', {
+          p_village: null,
+          p_district: null,
+          p_state: params.state?.trim() || null,
+          p_crop: params.crop || null,
+          p_machine_type: params.machineType || null,
+          p_limit: params.limit ?? 48,
+          p_offset: params.offset ?? 0,
+        }),
+      ])
+
+      const specificData = Array.isArray(specificRes.data) ? (specificRes.data as MachineCard[]) : []
+      const regionalData = Array.isArray(regionalRes.data) ? (regionalRes.data as MachineCard[]) : []
+      const combined = [...specificData, ...regionalData]
+
+      if (combined.length > 0) {
+        return deduplicateMachines(combined)
       }
     } catch {
       // Fall through to local fallback
@@ -99,8 +119,6 @@ export async function searchMachines(params: {
 
   // 2. Local Resilient Store Search
   const all = getLocalMachines()
-  const cleanVillage = (params.village || '').trim().toLowerCase()
-  const cleanDistrict = (params.district || '').trim().toLowerCase()
   const cleanCrop = (params.crop || '').trim().toLowerCase()
   const cleanType = (params.machineType || '').trim().toLowerCase()
 
@@ -109,9 +127,6 @@ export async function searchMachines(params: {
 
     const crops = Array.isArray(m.crops) ? m.crops : []
     const mType = (m.machine_type || '').toLowerCase()
-    const mVillage = (m.village || '').toLowerCase()
-    const mDistrict = (m.district || '').toLowerCase()
-    const mVillages = Array.isArray(m.service_villages) ? m.service_villages : []
 
     if (cleanCrop && !crops.some((c) => c && c.toLowerCase() === cleanCrop)) {
       return false
@@ -119,25 +134,6 @@ export async function searchMachines(params: {
 
     if (cleanType && mType !== cleanType) {
       return false
-    }
-
-    if (cleanVillage) {
-      const villageMatch =
-        mVillage.includes(cleanVillage) ||
-        cleanVillage.includes(mVillage) ||
-        mVillages.some(
-          (v) => v && (v.toLowerCase().includes(cleanVillage) || cleanVillage.includes(v.toLowerCase())),
-        ) ||
-        mDistrict.includes(cleanVillage) ||
-        cleanVillage.includes(mDistrict)
-      if (!villageMatch) return false
-    }
-
-    if (cleanDistrict) {
-      const districtMatch =
-        mDistrict.includes(cleanDistrict) ||
-        cleanDistrict.includes(mDistrict)
-      if (!districtMatch) return false
     }
 
     return true

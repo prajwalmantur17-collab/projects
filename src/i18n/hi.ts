@@ -175,6 +175,8 @@ export const hi: Record<TranslationKey, string> = {
   'farmer.availability': 'उपलब्धता',
   'farmer.available': 'बुकिंग के लिए उपलब्ध',
   'farmer.availableInDistrict': '{district} में उपलब्ध',
+  'farmer.inYourVillage': 'आपके गाँव में उपलब्ध ({village})',
+  'farmer.inYourVillageBadge': 'आपके गाँव में',
   'farmer.availableInSameDistrict': 'आपके ज़िले में उपलब्ध ({district})',
   'farmer.sameDistrictBadge': 'यही ज़िला',
   'farmer.paused': 'बुकिंग नहीं ले रहा',
