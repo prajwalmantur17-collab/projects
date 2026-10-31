@@ -272,6 +272,12 @@ export const kn: Record<TranslationKey, string> = {
   'owner.toggleError': 'ಪಟ್ಟಿಯನ್ನು ನವೀಕರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'owner.manageAvailability': 'ಲಭ್ಯತೆ',
   'owner.editMachine': 'ಯಂತ್ರ ಸಂಪಾದಿಸಿ',
+  'owner.deleteMachine': 'ಮೆಷಿನ್ ಅಳಿಸಿ',
+  'owner.deleteConfirmTitle': 'ಮೆಷಿನ್ ಅಳಿಸುವುದೇ?',
+  'owner.deleteConfirmBody':
+    'ಖಚಿತವಾಗಿ ಈ ಮೆಷಿನ್ ಅಳಿಸಲು ಬಯಸುವಿರಾ? ಇದು ನಿಮ್ಮ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತದೆ ಮತ್ತು ರೈತರಿಗೆ ಇನ್ನು ಮುಂದೆ ಹುಡುಕಲು ಅಥವಾ ಬುಕ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುವುದಿಲ್ಲ.',
+  'owner.deleteSuccess': 'ಮೆಷಿನ್ ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ.',
+  'owner.deleteError': 'ಮೆಷಿನ್ ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'owner.viewListing': 'ಪಟ್ಟಿ ನೋಡಿ',
   'owner.accept': 'ಬುಕಿಂಗ್ ಸ್ವೀಕರಿಸಿ',
   'owner.reject': 'ಬುಕಿಂಗ್ ತಿರಸ್ಕರಿಸಿ',

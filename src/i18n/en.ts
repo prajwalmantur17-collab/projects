@@ -271,6 +271,12 @@ export const en = {
   'owner.toggleError': 'We could not update the listing. Please try again.',
   'owner.manageAvailability': 'Availability',
   'owner.editMachine': 'Edit Machine',
+  'owner.deleteMachine': 'Delete Machine',
+  'owner.deleteConfirmTitle': 'Delete Machine?',
+  'owner.deleteConfirmBody':
+    'Are you sure you want to delete this machine? It will be removed from your listings and farmers will no longer be able to find or book it.',
+  'owner.deleteSuccess': 'Machine deleted successfully.',
+  'owner.deleteError': 'We could not delete the machine. Please try again.',
   'owner.viewListing': 'View Listing',
   'owner.accept': 'Accept Booking',
   'owner.reject': 'Reject Booking',

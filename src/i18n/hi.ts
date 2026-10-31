@@ -272,6 +272,12 @@ export const hi: Record<TranslationKey, string> = {
   'owner.toggleError': 'सूची अपडेट नहीं हो सकी। कृपया फिर कोशिश करें।',
   'owner.manageAvailability': 'उपलब्धता',
   'owner.editMachine': 'मशीन संपादित करें',
+  'owner.deleteMachine': 'मशीन हटाएं',
+  'owner.deleteConfirmTitle': 'मशीन हटाएं?',
+  'owner.deleteConfirmBody':
+    'क्या आप वाकई इस मशीन को हटाना चाहते हैं? यह आपकी सूची से हटा दी जाएगी और किसान इसे खोज या बुक नहीं कर पाएंगे।',
+  'owner.deleteSuccess': 'मशीन सफलतापूर्वक हटा दी गई।',
+  'owner.deleteError': 'मशीन हटाई नहीं जा सकी। कृपया पुनः प्रयास करें।',
   'owner.viewListing': 'सूची देखें',
   'owner.accept': 'बुकिंग स्वीकार करें',
   'owner.reject': 'बुकिंग अस्वीकार करें',

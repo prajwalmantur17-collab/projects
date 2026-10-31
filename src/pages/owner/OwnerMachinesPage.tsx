@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Plus, Tractor } from 'lucide-react'
+import { Plus, Tractor, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -7,12 +7,13 @@ import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatPrice } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
-import { listOwnerMachines, setMachineActive } from '../../services/machines'
+import { deleteMachine, listOwnerMachines, setMachineActive } from '../../services/machines'
 import type { MachineCard } from '../../types'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
 import { Alert } from '../../components/ui/Alert'
 import { Button, LinkButton } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState, Spinner } from '../../components/ui/Feedback'
 import { PageHeader } from '../../components/ui/PageHeader'
 
@@ -22,6 +23,8 @@ export function OwnerMachinesPage() {
   const ownerId = profile?.id
 
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<MachineCard | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [success, setSuccess] = useState<TranslationKey | null>(null)
   const [actionError, setActionError] = useState<TranslationKey | null>(null)
 
@@ -51,6 +54,24 @@ export function OwnerMachinesPage() {
       setActionError(mapErrorToKey(caught, 'owner.toggleError'))
     } finally {
       setBusyId(null)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setActionError(null)
+    setSuccess(null)
+    try {
+      await deleteMachine(deleteTarget.id, ownerId)
+      setSuccess('owner.deleteSuccess')
+      setDeleteTarget(null)
+      reload()
+    } catch (caught) {
+      logError('owner.deleteMachine', caught)
+      setActionError(mapErrorToKey(caught, 'owner.deleteError'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -189,10 +210,20 @@ export function OwnerMachinesPage() {
                     variant="ghost"
                     className={machine.is_active ? 'text-clay-800' : 'text-leaf-800'}
                     loading={busy}
-                    disabled={busyId !== null}
+                    disabled={busyId !== null || deleting}
                     onClick={() => void toggle(machine)}
                   >
                     {machine.is_active ? t('owner.pause') : t('owner.reactivate')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-clay-700 hover:bg-clay-50 hover:text-clay-900"
+                    icon={<Trash2 className="size-4" aria-hidden="true" />}
+                    disabled={busyId !== null || deleting}
+                    onClick={() => setDeleteTarget(machine)}
+                  >
+                    {t('owner.deleteMachine')}
                   </Button>
                 </div>
               </Card>
@@ -200,6 +231,18 @@ export function OwnerMachinesPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => (deleting ? undefined : setDeleteTarget(null))}
+        onConfirm={() => void handleDelete()}
+        title={t('owner.deleteConfirmTitle')}
+        description={t('owner.deleteConfirmBody')}
+        confirmLabel={t('owner.deleteMachine')}
+        cancelLabel={t('common.cancel')}
+        danger
+        loading={deleting}
+      />
     </div>
   )
 }

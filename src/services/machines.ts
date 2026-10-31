@@ -1,4 +1,5 @@
 import { IMAGE_BUCKET } from '../lib/constants'
+import { logError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { todayIsoInIndia, validateImageFile } from '../lib/validation'
 import type { MachineCard, MachineInput } from '../types'
@@ -6,6 +7,7 @@ import { normalizePlaceName } from './geocode'
 import {
   addLocalMachine,
   deduplicateMachines,
+  deleteLocalMachine,
   getLocalMachines,
   updateLocalMachine,
 } from './store'
@@ -479,6 +481,44 @@ export async function setMachineActive(machineId: string, isActive: boolean): Pr
       await supabase.from('machines').update({ is_active: isActive }).eq('id', machineId)
     } catch {
       // Fall through
+    }
+  }
+}
+
+export async function deleteMachine(machineId: string, ownerId?: string): Promise<void> {
+  const local = getLocalMachines().find((m) => m.id === machineId)
+  const effectiveOwner = ownerId || local?.owner_id
+  const imagePath = local?.image_path
+
+  // 1. Remove from local store immediately so it disappears from UI and searches
+  deleteLocalMachine(machineId)
+
+  // 2. Clean up storage image if any
+  if (imagePath && effectiveOwner) {
+    void deleteMachineImage(imagePath, effectiveOwner).catch(() => undefined)
+  }
+
+  // 3. Remove from Supabase
+  if (supabase) {
+    try {
+      // Clean up child location & blackout records
+      await supabase.from('machine_locations').delete().eq('machine_id', machineId)
+      await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
+
+      const query = supabase.from('machines').delete().eq('id', machineId)
+      if (effectiveOwner) {
+        query.eq('owner_id', effectiveOwner)
+      }
+      const { error } = await query
+      if (error) {
+        // If restricted by foreign keys (e.g. past historic bookings), mark inactive so it never appears in search
+        await supabase
+          .from('machines')
+          .update({ is_active: false, is_available: false })
+          .eq('id', machineId)
+      }
+    } catch (caught) {
+      logError('machine.delete', caught)
     }
   }
 }

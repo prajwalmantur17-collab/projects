@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, ChevronRight, Inbox, Plus, Tractor } from 'lucide-react'
+import { CalendarClock, ChevronRight, Inbox, Plus, Tractor, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -9,13 +9,14 @@ import { formatDate, formatPrice } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
 import { getOwnerBookings } from '../../services/bookings'
-import { listOwnerMachines, setMachineActive } from '../../services/machines'
+import { deleteMachine, listOwnerMachines, setMachineActive } from '../../services/machines'
 import type { MachineCard } from '../../types'
 import { FarmIllustration } from '../../components/brand/FarmIllustration'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
 import { Alert } from '../../components/ui/Alert'
 import { Button, LinkButton } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Spinner } from '../../components/ui/Feedback'
 import { PageHeader } from '../../components/ui/PageHeader'
 
@@ -25,6 +26,8 @@ export function OwnerHomePage() {
   const ownerId = profile?.id
 
   const [busyMachineId, setBusyMachineId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<MachineCard | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [success, setSuccess] = useState<TranslationKey | null>(null)
   const [actionError, setActionError] = useState<TranslationKey | null>(null)
 
@@ -64,6 +67,24 @@ export function OwnerHomePage() {
       setActionError(mapErrorToKey(caught, 'owner.toggleError'))
     } finally {
       setBusyMachineId(null)
+    }
+  }
+
+  const handleDeleteMachine = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setActionError(null)
+    setSuccess(null)
+    try {
+      await deleteMachine(deleteTarget.id, ownerId)
+      setSuccess('owner.deleteSuccess')
+      setDeleteTarget(null)
+      machines.reload()
+    } catch (caught) {
+      logError('owner.deleteMachine', caught)
+      setActionError(mapErrorToKey(caught, 'owner.deleteError'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -263,10 +284,20 @@ export function OwnerHomePage() {
                           variant="ghost"
                           className={machine.is_active ? 'text-clay-800' : 'text-leaf-800'}
                           loading={busy}
-                          disabled={busyMachineId !== null}
+                          disabled={busyMachineId !== null || deleting}
                           onClick={() => void toggleMachine(machine)}
                         >
                           {machine.is_active ? t('owner.pause') : t('owner.reactivate')}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-clay-700 hover:bg-clay-50 hover:text-clay-900"
+                          icon={<Trash2 className="size-4" aria-hidden="true" />}
+                          disabled={busyMachineId !== null || deleting}
+                          onClick={() => setDeleteTarget(machine)}
+                        >
+                          {t('owner.deleteMachine')}
                         </Button>
                       </div>
                     </div>
@@ -338,6 +369,18 @@ export function OwnerHomePage() {
           </ul>
         )}
       </section>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => (deleting ? undefined : setDeleteTarget(null))}
+        onConfirm={() => void handleDeleteMachine()}
+        title={t('owner.deleteConfirmTitle')}
+        description={t('owner.deleteConfirmBody')}
+        confirmLabel={t('owner.deleteMachine')}
+        cancelLabel={t('common.cancel')}
+        danger
+        loading={deleting}
+      />
     </div>
   )
 }

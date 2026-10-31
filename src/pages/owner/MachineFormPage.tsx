@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Check, CheckCircle2, LocateFixed, MapPin, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -15,12 +15,14 @@ import { useGeolocation } from '../../hooks/useGeolocation'
 import { reverseGeocode } from '../../services/geocode'
 import {
   createMachine,
+  deleteMachine,
   deleteMachineImage,
   getMachineCard,
   getMachineLocations,
   updateMachine,
   uploadMachineImage,
 } from '../../services/machines'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import type {
   Coordinates,
   CropKey,
@@ -57,10 +59,29 @@ interface EditData {
 
 export function MachineFormPage() {
   const { machineId } = useParams<{ machineId: string }>()
+  const navigate = useNavigate()
   const { profile } = useAuth()
   const ownerId = profile?.id ?? 'demo-owner'
   const { t, language } = useI18n()
   const isEdit = Boolean(machineId)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!machineId) return
+    setDeleting(true)
+    setFormError(null)
+    try {
+      await deleteMachine(machineId, ownerId)
+      navigate('/owner/machines')
+    } catch (caught) {
+      logError('machine.delete', caught)
+      setFormError(mapErrorToKey(caught, 'owner.deleteError'))
+      setDeleteConfirmOpen(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const loader = useCallback(async (): Promise<EditData> => {
     if (!machineId || !ownerId) return { machine: null, locations: [] }
@@ -661,6 +682,35 @@ export function MachineFormPage() {
         <Button type="submit" size="lg" fullWidth loading={saving}>
           {saving ? t('machine.saving') : t('machine.saveMachine')}
         </Button>
+
+        {isEdit ? (
+          <div className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              fullWidth
+              className="border-clay-300 text-clay-800 hover:bg-clay-50"
+              icon={<Trash2 className="size-4 text-clay-700" aria-hidden="true" />}
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={saving || deleting}
+            >
+              {t('owner.deleteMachine')}
+            </Button>
+          </div>
+        ) : null}
+
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onClose={() => (deleting ? undefined : setDeleteConfirmOpen(false))}
+          onConfirm={() => void handleDelete()}
+          title={t('owner.deleteConfirmTitle')}
+          description={t('owner.deleteConfirmBody')}
+          confirmLabel={t('owner.deleteMachine')}
+          cancelLabel={t('common.cancel')}
+          danger
+          loading={deleting}
+        />
       </form>
     </div>
   )

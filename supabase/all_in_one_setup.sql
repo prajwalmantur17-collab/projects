@@ -374,6 +374,10 @@ DROP POLICY IF EXISTS "auth_update_machines" ON public.machines;
 CREATE POLICY "auth_update_machines" ON public.machines
   FOR UPDATE TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "auth_delete_machines" ON public.machines;
+CREATE POLICY "auth_delete_machines" ON public.machines
+  FOR DELETE TO authenticated USING (true);
+
 -- 8. Supabase Storage Setup for Machine Photos
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
