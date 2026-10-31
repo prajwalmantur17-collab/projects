@@ -1,6 +1,7 @@
 import type { MachineCard } from '../types'
 
 const STORAGE_KEY = 'harvest-rentals-custom-machines'
+const DELETED_MACHINES_KEY = 'harvest-rentals-deleted-machines'
 const BROADCAST_CHANNEL = 'harvest-rentals-sync'
 
 const FAKE_IDS = new Set([
@@ -15,6 +16,43 @@ const FAKE_IDS = new Set([
 ])
 
 let memoryMachines: MachineCard[] = []
+let memoryDeletedIds = new Set<string>()
+
+export function getDeletedMachineIds(): Set<string> {
+  if (typeof window === 'undefined') return memoryDeletedIds
+  try {
+    const raw = window.localStorage.getItem(DELETED_MACHINES_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as string[]
+      if (Array.isArray(parsed)) {
+        memoryDeletedIds = new Set(parsed)
+      }
+    }
+  } catch {
+    // Ignore storage issues
+  }
+  return memoryDeletedIds
+}
+
+export function isMachineDeleted(machineId: string): boolean {
+  if (!machineId) return false
+  return getDeletedMachineIds().has(machineId)
+}
+
+export function markMachineDeleted(machineId: string) {
+  if (!machineId) return
+  const current = getDeletedMachineIds()
+  current.add(machineId)
+  memoryDeletedIds = current
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(DELETED_MACHINES_KEY, JSON.stringify([...current]))
+    } catch {
+      // Storage unavailable
+    }
+  }
+  deleteLocalMachine(machineId)
+}
 
 export function deduplicateMachines(list: MachineCard[]): MachineCard[] {
   if (!Array.isArray(list)) return []
@@ -25,8 +63,8 @@ export function deduplicateMachines(list: MachineCard[]): MachineCard[] {
   for (const raw of list) {
     if (!raw || typeof raw !== 'object' || !raw.id) continue
 
-    // Strip out any legacy fake mock machines
-    if (FAKE_IDS.has(raw.id)) continue
+    // Strip out any legacy fake mock machines or deleted machines
+    if (FAKE_IDS.has(raw.id) || isMachineDeleted(raw.id)) continue
 
     // 1. Deduplicate by unique ID
     if (seenIds.has(raw.id)) continue

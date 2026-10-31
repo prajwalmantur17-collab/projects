@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Plus, Tractor, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -7,7 +7,13 @@ import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatPrice } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
-import { deleteMachine, listOwnerMachines, setMachineActive } from '../../services/machines'
+import {
+  deleteMachine,
+  getDeletedMachineIds,
+  isMachineDeleted,
+  listOwnerMachines,
+  setMachineActive,
+} from '../../services/machines'
 import type { MachineCard } from '../../types'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
 import { Alert } from '../../components/ui/Alert'
@@ -38,7 +44,11 @@ export function OwnerMachinesPage() {
     fallback: 'owner.machinesError',
   })
 
-  const machines = data ?? []
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => getDeletedMachineIds())
+
+  const machines = useMemo(() => {
+    return (data ?? []).filter((m) => !deletedIds.has(m.id) && !isMachineDeleted(m.id))
+  }, [data, deletedIds])
 
   const toggle = async (machine: MachineCard) => {
     if (busyId) return
@@ -59,13 +69,18 @@ export function OwnerMachinesPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return
+    const idToDelete = deleteTarget.id
     setDeleting(true)
     setActionError(null)
     setSuccess(null)
     try {
-      await deleteMachine(deleteTarget.id, ownerId)
-      setSuccess('owner.deleteSuccess')
+      // 1. Instantly remove from local state so it vanishes from the UI immediately!
+      setDeletedIds((prev) => new Set([...prev, idToDelete]))
       setDeleteTarget(null)
+
+      // 2. Perform deletion in store & backend
+      await deleteMachine(idToDelete, ownerId)
+      setSuccess('owner.deleteSuccess')
       reload()
     } catch (caught) {
       logError('owner.deleteMachine', caught)

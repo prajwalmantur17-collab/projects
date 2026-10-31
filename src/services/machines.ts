@@ -7,10 +7,13 @@ import { normalizePlaceName } from './geocode'
 import {
   addLocalMachine,
   deduplicateMachines,
-  deleteLocalMachine,
   getLocalMachines,
+  isMachineDeleted,
+  markMachineDeleted,
   updateLocalMachine,
 } from './store'
+
+export { getDeletedMachineIds, isMachineDeleted, markMachineDeleted } from './store'
 
 function extensionFor(file: File): string {
   if (file.type === 'image/png') return 'png'
@@ -204,6 +207,7 @@ export async function searchMachines(params: {
 }
 
 export async function getMachineCard(machineId: string): Promise<MachineCard | null> {
+  if (isMachineDeleted(machineId)) return null
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -211,7 +215,9 @@ export async function getMachineCard(machineId: string): Promise<MachineCard | n
         .select('*')
         .eq('id', machineId)
         .maybeSingle()
-      if (!error && data) return data as MachineCard
+      if (!error && data) {
+        return isMachineDeleted((data as MachineCard).id) ? null : (data as MachineCard)
+      }
     } catch {
       // Fall through
     }
@@ -229,13 +235,15 @@ export async function listOwnerMachines(ownerId: string): Promise<MachineCard[]>
         .select('*')
         .eq('owner_id', ownerId)
         .order('created_at', { ascending: false })
-      if (!error && Array.isArray(data)) return data as MachineCard[]
+      if (!error && Array.isArray(data)) {
+        return deduplicateMachines(data as MachineCard[]).filter((m) => !isMachineDeleted(m.id))
+      }
     } catch {
       // Fall through
     }
   }
 
-  return getLocalMachines().filter((m) => m.owner_id === ownerId)
+  return getLocalMachines().filter((m) => m.owner_id === ownerId && !isMachineDeleted(m.id))
 }
 
 export async function getMachineLocations(machineId: string) {
@@ -490,8 +498,8 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
   const effectiveOwner = ownerId || local?.owner_id
   const imagePath = local?.image_path
 
-  // 1. Remove from local store immediately so it disappears from UI and searches
-  deleteLocalMachine(machineId)
+  // 1. Mark as permanently deleted in client storage immediately
+  markMachineDeleted(machineId)
 
   // 2. Clean up storage image if any
   if (imagePath && effectiveOwner) {
@@ -505,18 +513,13 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
       await supabase.from('machine_locations').delete().eq('machine_id', machineId)
       await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
 
-      const query = supabase.from('machines').delete().eq('id', machineId)
-      if (effectiveOwner) {
-        query.eq('owner_id', effectiveOwner)
-      }
-      const { error } = await query
-      if (error) {
-        // If restricted by foreign keys (e.g. past historic bookings), mark inactive so it never appears in search
-        await supabase
-          .from('machines')
-          .update({ is_active: false, is_available: false })
-          .eq('id', machineId)
-      }
+      await supabase.from('machines').delete().eq('id', machineId)
+
+      // Also mark is_active and is_available as false
+      await supabase
+        .from('machines')
+        .update({ is_active: false, is_available: false })
+        .eq('id', machineId)
     } catch (caught) {
       logError('machine.delete', caught)
     }

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarClock, ChevronRight, Inbox, Plus, Tractor, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -9,7 +9,13 @@ import { formatDate, formatPrice } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
 import { getOwnerBookings } from '../../services/bookings'
-import { deleteMachine, listOwnerMachines, setMachineActive } from '../../services/machines'
+import {
+  deleteMachine,
+  getDeletedMachineIds,
+  isMachineDeleted,
+  listOwnerMachines,
+  setMachineActive,
+} from '../../services/machines'
 import type { MachineCard } from '../../types'
 import { FarmIllustration } from '../../components/brand/FarmIllustration'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
@@ -50,7 +56,12 @@ export function OwnerHomePage() {
     fallback: 'owner.requestsError',
   })
 
-  const machineList = machines.data ?? []
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => getDeletedMachineIds())
+
+  const machineList = useMemo(() => {
+    return (machines.data ?? []).filter((m) => !deletedIds.has(m.id) && !isMachineDeleted(m.id))
+  }, [machines.data, deletedIds])
+
   const pending = (requests.data ?? []).filter((booking) => booking.status === 'pending')
 
   const toggleMachine = async (machine: MachineCard) => {
@@ -72,13 +83,18 @@ export function OwnerHomePage() {
 
   const handleDeleteMachine = async () => {
     if (!deleteTarget) return
+    const idToDelete = deleteTarget.id
     setDeleting(true)
     setActionError(null)
     setSuccess(null)
     try {
-      await deleteMachine(deleteTarget.id, ownerId)
-      setSuccess('owner.deleteSuccess')
+      // 1. Immediately remove from local state so it vanishes from the UI without any delay!
+      setDeletedIds((prev) => new Set([...prev, idToDelete]))
       setDeleteTarget(null)
+
+      // 2. Perform deletion in store & backend
+      await deleteMachine(idToDelete, ownerId)
+      setSuccess('owner.deleteSuccess')
       machines.reload()
     } catch (caught) {
       logError('owner.deleteMachine', caught)
