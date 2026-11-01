@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
-import { LocateFixed } from 'lucide-react'
+import { Loader2, LocateFixed, Navigation, TriangleAlert } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { useRoadRoute } from '../../hooks/useRoadRoute'
 import type { Coordinates } from '../../types'
@@ -154,11 +154,11 @@ export function LiveMap({
           <>
             <Polyline
               positions={route.points}
-              pathOptions={{ color: '#ffffff', weight: 10, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={{ color: '#ffffff', weight: 11, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }}
             />
             <Polyline
               positions={route.points}
-              pathOptions={{ color: '#2f6b35', weight: 6, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={{ color: '#16a34a', weight: 6, lineCap: 'round', lineJoin: 'round' }}
             />
           </>
         ) : me && tracked ? (
@@ -179,19 +179,41 @@ export function LiveMap({
       </MapContainer>
 
       {me && tracked ? (
-        <div className="absolute inset-x-3 bottom-3 z-[1000] rounded-xl bg-white/95 px-3 py-2 text-sm shadow-soft ring-1 ring-cream-300">
+        <div className="absolute inset-x-3 bottom-3 z-[1000] flex min-h-[56px] items-center rounded-2xl border border-white/12 bg-[rgba(20,28,22,0.88)] px-4 py-3 shadow-lg shadow-black/40 backdrop-blur">
           {route ? (
-            <p className="font-bold text-ink">
-              {t('route.distanceTime', {
-                distance: (route.distanceMeters / 1000).toFixed(1),
-                time: formatTravelTime(route.durationSeconds, t),
-              })}
-              <span className="ml-2 text-xs font-semibold text-ink-muted">{t('route.viaRoad')}</span>
-            </p>
+            <div className="flex w-full items-center gap-3">
+              <div
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f5b638] to-[#e09e1f] shadow-md shadow-amber-950/30"
+                aria-hidden="true"
+              >
+                <Navigation className="size-5 fill-[#141c16] text-[#141c16]" />
+              </div>
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="truncate whitespace-nowrap text-xl font-extrabold tracking-tight text-white">
+                  {formatTravelTime(route.durationSeconds, t)}
+                </div>
+                <div className="text-sm font-medium text-white/70">
+                  {(route.distanceMeters / 1000).toFixed(1)} km
+                </div>
+              </div>
+              <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-[#4ade80] min-[360px]:inline-flex">
+                <span
+                  className="size-2 rounded-full bg-[#4ade80] motion-safe:animate-pulse"
+                  aria-hidden="true"
+                />
+                <span>{t('route.viaRoad')}</span>
+              </div>
+            </div>
           ) : routeLoading ? (
-            <p className="text-ink-muted">{t('route.loading')}</p>
+            <div className="flex w-full items-center gap-3">
+              <Loader2 className="size-5 shrink-0 text-white/80 motion-safe:animate-spin" aria-hidden="true" />
+              <p className="text-sm font-medium text-white/80">{t('route.loading')}</p>
+            </div>
           ) : (
-            <p className="text-ink-muted">{t('route.straightLine')}</p>
+            <div className="flex w-full items-center gap-3">
+              <TriangleAlert className="size-5 shrink-0 text-[#f5b638]" aria-hidden="true" />
+              <p className="text-sm font-medium text-white/80">{t('route.straightLine')}</p>
+            </div>
           )}
         </div>
       ) : null}
