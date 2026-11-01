@@ -9,22 +9,35 @@ import {
   MapPin,
   Sprout,
   Tractor,
+  Trash2,
   User,
 } from 'lucide-react'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { LoadingScreen } from '../components/ui/Feedback'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
+import { logError } from '../lib/errors'
 import { formatAcreage, formatDate, formatPrice } from '../lib/format'
+import {
+  clearClosedBookingsFromHistory,
+  getHiddenBookingIds,
+  removeBookingFromHistory,
+} from '../services/bookings'
 import { getMyRecord } from '../services/record'
-import type { MyRecord } from '../types'
+import type { MyRecord, RecordItem } from '../types'
 
 export function RecordPage() {
   const { t, language } = useI18n()
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined)
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [record, setRecord] = useState<MyRecord | null>(null)
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getHiddenBookingIds())
+  const [deleteTarget, setDeleteTarget] = useState<RecordItem | null>(null)
+  const [clearAllOpen, setClearAllOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,13 +67,52 @@ export function RecordPage() {
     }
   }, [selectedYear])
 
+  const confirmDeleteSingle = async () => {
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
+    try {
+      await removeBookingFromHistory(deleteTarget.id)
+      setHiddenIds((prev) => {
+        const next = new Set(prev)
+        next.add(deleteTarget.id)
+        return next
+      })
+      setDeleteTarget(null)
+    } catch (caught) {
+      logError('record.removeJob', caught)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const confirmClearAll = async () => {
+    if (deleting) return
+    const ids = visibleItems.map((job) => job.id)
+    if (ids.length === 0) return
+    setDeleting(true)
+    try {
+      await clearClosedBookingsFromHistory(ids)
+      setHiddenIds((prev) => {
+        const next = new Set(prev)
+        ids.forEach((id) => next.add(id))
+        return next
+      })
+      setClearAllOpen(false)
+    } catch (caught) {
+      logError('record.clearAll', caught)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (loading && !record) {
     return <LoadingScreen message={t('app.loading')} />
   }
 
   const isOwner = record?.role === 'owner'
   const items = record?.items ?? []
-  const hasItems = items.length > 0
+  const visibleItems = items.filter((job) => !hiddenIds.has(job.id))
+  const hasVisibleItems = visibleItems.length > 0
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
@@ -102,7 +154,13 @@ export function RecordPage() {
       ) : null}
 
       {/* Summary Cards */}
-      <div className={`grid gap-3 sm:gap-4 ${isOwner ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3'}`}>
+      <div
+        className={`grid gap-3 sm:gap-4 ${
+          isOwner
+            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+            : 'grid-cols-2 sm:grid-cols-3'
+        }`}
+      >
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
@@ -210,11 +268,24 @@ export function RecordPage() {
 
       {/* Completed Jobs List */}
       <div className="mt-6">
-        <h2 className="mb-3 text-lg font-bold text-ink sm:text-xl">
-          {t('record.jobs')} ({items.length})
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-ink sm:text-xl">
+            {t('record.jobs')} ({visibleItems.length})
+          </h2>
+          {hasVisibleItems ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="border border-cream-300 text-clay-700 hover:border-clay-400 hover:bg-clay-50"
+              icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+              onClick={() => setClearAllOpen(true)}
+            >
+              {t('work.clearAll')}
+            </Button>
+          ) : null}
+        </div>
 
-        {!hasItems ? (
+        {!hasVisibleItems ? (
           <Card className="p-8 text-center sm:p-12">
             <Briefcase className="mx-auto size-12 text-cream-400" aria-hidden="true" />
             <p className="mt-3 text-base font-semibold text-ink-soft">
@@ -223,7 +294,7 @@ export function RecordPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {items.map((job) => {
+            {visibleItems.map((job) => {
               const machineKey = `machineType.${job.machine_type}` as TranslationKey
               const machineName = t(machineKey) !== machineKey ? t(machineKey) : job.machine_type
               const cropKey = `crop.${job.crop}` as TranslationKey
@@ -239,7 +310,7 @@ export function RecordPage() {
                       </span>
                     </div>
 
-                    <div>
+                    <div className="flex items-center gap-2">
                       {job.payment_method && job.amount_paid != null ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800">
                           {formatPrice(job.amount_paid)}
@@ -252,6 +323,16 @@ export function RecordPage() {
                           {t('record.unpaidBadge')}
                         </span>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(job)}
+                        className="inline-flex size-8 items-center justify-center rounded-lg text-cream-400 transition-colors hover:bg-clay-50 hover:text-clay-700"
+                        title={t('work.removeHistory')}
+                        aria-label={t('work.removeHistory')}
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
 
@@ -303,12 +384,57 @@ export function RecordPage() {
                       </div>
                     ) : null}
                   </div>
+
+                  {/* One-by-one remove button */}
+                  <div className="mt-3 flex items-center justify-end border-t border-cream-100 pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-cream-300 text-clay-700 hover:border-clay-400 hover:bg-clay-50"
+                      icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+                      onClick={() => setDeleteTarget(job)}
+                    >
+                      {t('work.removeHistory')}
+                    </Button>
+                  </div>
                 </Card>
               )
             })}
           </div>
         )}
       </div>
+
+      {/* Remove Single Record Dialog */}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => {
+          if (deleting) return
+          setDeleteTarget(null)
+        }}
+        onConfirm={() => void confirmDeleteSingle()}
+        title={t('work.removeConfirm')}
+        description={t('farmer.deleteBookingBody')}
+        confirmLabel={t('work.removeHistory')}
+        cancelLabel={t('common.cancel')}
+        danger
+        loading={deleting}
+      />
+
+      {/* Clear All Dialog */}
+      <ConfirmDialog
+        open={clearAllOpen}
+        onClose={() => {
+          if (deleting) return
+          setClearAllOpen(false)
+        }}
+        onConfirm={() => void confirmClearAll()}
+        title={t('work.clearConfirm')}
+        description={t('farmer.deleteBookingBody')}
+        confirmLabel={t('work.clearAll')}
+        cancelLabel={t('common.cancel')}
+        danger
+        loading={deleting}
+      />
     </div>
   )
 }
