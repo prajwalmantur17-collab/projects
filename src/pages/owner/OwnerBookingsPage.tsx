@@ -13,6 +13,7 @@ import { isInShareWindow, startSharing } from '../../services/liveShare'
 import type { BookingStatus, BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
+import { WorkControls } from '../../components/booking/WorkControls'
 import { StatusBadge } from '../../components/booking/StatusBadge'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { ShareLocationPanel } from '../../components/map/ShareLocationPanel'
@@ -333,6 +334,16 @@ export function OwnerBookingsPage() {
                     bookingId={booking.id}
                     serviceDate={booking.service_date}
                     farmerName={booking.farmer?.full_name ?? t('owner.farmer')}
+                  />
+                ) : null}
+
+                {booking.status === 'confirmed' ? (
+                  <WorkControls
+                    booking={booking}
+                    onChanged={(message) => {
+                      setSuccess(message)
+                      reload()
+                    }}
                   />
                 ) : null}
 

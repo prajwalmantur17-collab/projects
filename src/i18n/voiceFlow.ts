@@ -90,6 +90,18 @@ const vfEn = {
     'You want to accept this request. Is that correct? Say yes or no.',
   'vf.requests.confirmReject':
     'You want to reject this request. Is that correct? Say yes or no.',
+  'vf.cta.notify': 'Notify by speaking',
+  'vf.title.notify': 'Notify when free',
+  'vf.notify.intro':
+    'I will help you set an alert when this machine is free.',
+  'vf.notify.prompt':
+    'This {machine} is busy right now. Do you want an alert as soon as it is free? Say yes or no.',
+  'vf.notify.confirmYes':
+    'You want an alert when this machine is free. Is that correct? Say yes or no.',
+  'vf.notify.confirmNo':
+    'You do not want an alert. Is that correct? Say yes or no.',
+  'vf.notify.cancelled':
+    'Okay, I did not set an alert. You can tap the button yourself.',
 }
 
 const vfKn: Record<keyof typeof vfEn, string> = {
@@ -186,6 +198,18 @@ const vfKn: Record<keyof typeof vfEn, string> = {
     'ನೀವು ಈ ವಿನಂತಿಯನ್ನು ಒಪ್ಪಲು ಬಯಸುತ್ತೀರಿ. ಇದು ಸರಿಯೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
   'vf.requests.confirmReject':
     'ನೀವು ಈ ವಿನಂತಿಯನ್ನು ತಿರಸ್ಕರಿಸಲು ಬಯಸುತ್ತೀರಿ. ಇದು ಸರಿಯೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
+  'vf.cta.notify': 'ಮಾತನಾಡಿ ತಿಳಿಸಲು ಕೇಳಿ',
+  'vf.title.notify': 'ಖಾಲಿಯಾದಾಗ ತಿಳಿಸಿ',
+  'vf.notify.intro':
+    'ಈ ಯಂತ್ರ ಖಾಲಿಯಾದಾಗ ನಿಮಗೆ ಸೂಚನೆ ನೀಡಲು ನಾನು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.',
+  'vf.notify.prompt':
+    'ಈ {machine} ಈಗ ಬೇರೆ ಕೆಲಸದಲ್ಲಿದೆ. ಖಾಲಿಯಾದ ತಕ್ಷಣ ನಿಮಗೆ ತಿಳಿಸಬೇಕೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
+  'vf.notify.confirmYes':
+    'ಈ ಯಂತ್ರ ಖಾಲಿಯಾದಾಗ ನಿಮಗೆ ತಿಳಿಸಲು ನೀವು ಬಯಸುತ್ತೀರಿ. ಇದು ಸರಿಯೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
+  'vf.notify.confirmNo':
+    'ನಿಮಗೆ ಸೂಚನೆ ಬೇಡ. ಇದು ಸರಿಯೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
+  'vf.notify.cancelled':
+    'ಸರಿ, ನಾನು ಸೂಚನೆ ಹೊಂದಿಸಿಲ್ಲ. ನೀವೇ ಬಟನ್ ಒತ್ತಬಹುದು.',
 }
 
 const vfHi: Record<keyof typeof vfEn, string> = {
@@ -282,6 +306,18 @@ const vfHi: Record<keyof typeof vfEn, string> = {
     'आप इस अनुरोध को स्वीकार करना चाहते हैं। क्या यह सही है? हाँ या नहीं बोलिए।',
   'vf.requests.confirmReject':
     'आप इस अनुरोध को मना करना चाहते हैं। क्या यह सही है? हाँ या नहीं बोलिए।',
+  'vf.cta.notify': 'बोलकर सूचना पाएँ',
+  'vf.title.notify': 'खाली होने पर सूचना',
+  'vf.notify.intro':
+    'यह मशीन खाली होने पर सूचना सेट करने में मैं आपकी मदद करूँगा।',
+  'vf.notify.prompt':
+    'यह {machine} अभी काम में है। क्या इसके खाली होते ही आपको सूचना चाहिए? हाँ या नहीं बोलिए।',
+  'vf.notify.confirmYes':
+    'मशीन खाली होने पर आप सूचना चाहते हैं। क्या यह सही है? हाँ या नहीं बोलिए।',
+  'vf.notify.confirmNo':
+    'आपको सूचना नहीं चाहिए। क्या यह सही है? हाँ या नहीं बोलिए।',
+  'vf.notify.cancelled':
+    'ठीक है, मैंने सूचना सेट नहीं की। आप खुद बटन दबा सकते हैं।',
 }
 
 export { vfEn, vfKn, vfHi }

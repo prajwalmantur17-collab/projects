@@ -20,6 +20,7 @@ export function MachineCard({
   userLocation,
   userVillage,
   userDistrict,
+  isBusy,
 }: {
   machine: MachineCardType
   distanceKm?: number | null
@@ -28,6 +29,7 @@ export function MachineCard({
   userLocation?: string | null
   userVillage?: string | null
   userDistrict?: string | null
+  isBusy?: boolean
 }) {
   const { t } = useI18n()
   const [imageFailed, setImageFailed] = useState(false)
@@ -129,7 +131,12 @@ export function MachineCard({
           </span>
         )}
 
-        {!machine.is_active ? (
+        {isBusy ? (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-harvest-600 px-2.5 py-1 text-xs font-bold text-white shadow-soft">
+            <span className="size-1.5 rounded-full bg-white animate-pulse" aria-hidden="true" />
+            {t('work.busyBadge')}
+          </span>
+        ) : !machine.is_active ? (
           <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-xs font-bold text-white">
             {t('farmer.paused')}
           </span>
@@ -169,6 +176,13 @@ export function MachineCard({
             <span className="text-leaf-700">Estimated Total: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(estimatedTotal)}</span>
             <span className="text-leaf-600"> ({acreage} acres)</span>
+          </div>
+        ) : null}
+
+        {isBusy ? (
+          <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-harvest-300 bg-harvest-50 px-2.5 py-1 text-xs font-bold text-harvest-900">
+            <span className="size-2 rounded-full bg-harvest-500 animate-pulse" aria-hidden="true" />
+            <span>{t('work.busyBadge')}</span>
           </div>
         ) : null}
 

@@ -1,9 +1,11 @@
 import { authEn } from './auth'
 import { vfEn } from './voiceFlow'
+import { workEn } from './work'
 
 export const en = {
   ...authEn,
   ...vfEn,
+  ...workEn,
   'app.name': 'Harvest Rentals',
   'app.tagline': 'Find harvesting machines near your village.',
   'app.description':

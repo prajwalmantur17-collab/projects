@@ -14,7 +14,7 @@ import {
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
-import { formatDate, formatPrice } from '../../lib/format'
+import { formatDate, formatDateTime, formatPrice } from '../../lib/format'
 import { CROP_KEYS, PHONE_DISPLAY_PREFIX } from '../../lib/constants'
 import {
   addYearsIso,
@@ -40,7 +40,8 @@ import { useGeolocation } from '../../hooks/useGeolocation'
 import { reverseGeocode } from '../../services/geocode'
 import { createBooking } from '../../services/bookings'
 import { getMachineCard, getMachineImageUrl, listBlackoutDates } from '../../services/machines'
-import type { Booking, CropKey, MachineCard } from '../../types'
+import { getMachineStatus, joinWaitlist, leaveWaitlist } from '../../services/workStatus'
+import type { Booking, CropKey, MachineCard, MachineStatus } from '../../types'
 import { MachinePlaceholder } from '../../components/brand/MachinePlaceholder'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { SpeakButton } from '../../components/voice/SpeakButton'
@@ -69,6 +70,17 @@ export function MachineDetailsPage() {
   const { t, language } = useI18n()
   const [searchParams] = useSearchParams()
   const [imageFailed, setImageFailed] = useState(false)
+  const [machineStatus, setMachineStatus] = useState<MachineStatus | null>(null)
+
+  const reloadStatus = useCallback(async () => {
+    if (!machineId) return
+    const status = await getMachineStatus(machineId)
+    setMachineStatus(status)
+  }, [machineId])
+
+  useEffect(() => {
+    void reloadStatus()
+  }, [reloadStatus])
 
   const loader = useCallback(async (): Promise<MachinePageData> => {
     if (!machineId) return { machine: null, blackouts: [] }
@@ -192,7 +204,13 @@ export function MachineDetailsPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {machineStatus?.busy ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-harvest-100 px-3 py-1 text-sm font-bold text-harvest-800">
+                    <span className="size-2 rounded-full bg-harvest-500 animate-pulse" aria-hidden="true" />
+                    {t('work.busyBadge')}
+                  </span>
+                ) : null}
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${
                   machine.is_active
@@ -270,6 +288,24 @@ export function MachineDetailsPage() {
               </div>
             </div>
 
+            {machineStatus && machineStatus.booked_dates.length > 0 ? (
+              <div className="mt-6 border-t border-cream-200 pt-5">
+                <h3 className="text-base font-bold">{t('work.bookedDates')}</h3>
+                <p className="mt-1 text-xs text-ink-muted">{t('work.bookedDatesHint')}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {machineStatus.booked_dates.map((date) => (
+                    <span
+                      key={date}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-clay-50 px-3 py-1 text-sm font-semibold text-clay-800"
+                    >
+                      <CalendarCheck2 className="size-4" aria-hidden="true" />
+                      {formatDate(date, language)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {upcomingBlackouts.length > 0 ? (
               <div className="mt-6 border-t border-cream-200 pt-5">
                 <h3 className="text-base font-bold">{t('machine.unavailableDates')}</h3>
@@ -290,7 +326,7 @@ export function MachineDetailsPage() {
         </div>
 
         <div id="booking-form" className="scroll-mt-24 lg:sticky lg:top-20">
-          <BookingForm machine={machine} />
+          <BookingForm machine={machine} machineStatus={machineStatus} onReloadStatus={reloadStatus} />
         </div>
       </div>
     </div>
@@ -305,7 +341,15 @@ interface VoiceBookingValues {
   phone: string
 }
 
-function BookingForm({ machine }: { machine: MachineCard }) {
+function BookingForm({
+  machine,
+  machineStatus,
+  onReloadStatus,
+}: {
+  machine: MachineCard
+  machineStatus: MachineStatus | null
+  onReloadStatus: () => Promise<void>
+}) {
   const { t, language } = useI18n()
   const today = todayIsoInIndia()
   const maxDate = addYearsIso(today, 1)
@@ -324,6 +368,44 @@ function BookingForm({ machine }: { machine: MachineCard }) {
   const [geocoding, setGeocoding] = useState(false)
   const [detectedLoc, setDetectedLoc] = useState<string | null>(null)
   const { session, profile } = useAuth()
+  const [waitlistLoading, setWaitlistLoading] = useState(false)
+  const [waitlistError, setWaitlistError] = useState<TranslationKey | null>(null)
+  const [waitlistSuccess, setWaitlistSuccess] = useState<TranslationKey | null>(null)
+  const [notifyVoiceOpen, setNotifyVoiceOpen] = useState(false)
+
+  const handleJoinWaitlist = async () => {
+    if (waitlistLoading) return
+    setWaitlistLoading(true)
+    setWaitlistError(null)
+    setWaitlistSuccess(null)
+    try {
+      await joinWaitlist(machine.id)
+      setWaitlistSuccess('work.notifyAdded')
+      await onReloadStatus()
+    } catch (caught) {
+      logError('waitlist.join', caught)
+      setWaitlistError(mapErrorToKey(caught))
+    } finally {
+      setWaitlistLoading(false)
+    }
+  }
+
+  const handleLeaveWaitlist = async () => {
+    if (waitlistLoading) return
+    setWaitlistLoading(true)
+    setWaitlistError(null)
+    setWaitlistSuccess(null)
+    try {
+      await leaveWaitlist(machine.id)
+      setWaitlistSuccess('work.notifyRemoved')
+      await onReloadStatus()
+    } catch (caught) {
+      logError('waitlist.leave', caught)
+      setWaitlistError(mapErrorToKey(caught))
+    } finally {
+      setWaitlistLoading(false)
+    }
+  }
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voiceStart, setVoiceStart] = useState<VoiceBookingValues>({
     serviceDate: '',
@@ -362,6 +444,9 @@ function BookingForm({ machine }: { machine: MachineCard }) {
     })
   }
 
+  const isDateBooked = Boolean(
+    serviceDate && machineStatus?.booked_dates.includes(serviceDate),
+  )
   const cropOptions = machine.crops.length > 0 ? machine.crops : CROP_KEYS
   const estimateValue = parsePositiveNumber(acreage)
   const isPerAcre = !machine.pricing_unit || machine.pricing_unit === 'per_acre'
@@ -564,6 +649,50 @@ function BookingForm({ machine }: { machine: MachineCard }) {
   ]
   }
 
+  const notifyVoiceBlocked = !session
+    ? t('vf.book.signIn')
+    : profile && profile.role !== 'farmer'
+      ? t('booking.error.notFarmer')
+      : undefined
+
+  const createNotifyVoiceSteps = (): VoiceStep[] => [
+    askStep<'yes' | 'no'>({
+      id: 'notify',
+      allowSkip: false,
+      prompt: t('vf.notify.prompt', { machine: typeLabel }),
+      confirmText: (answer) =>
+        answer === 'yes' ? t('vf.notify.confirmYes') : t('vf.notify.confirmNo'),
+      parse: (heard) => {
+        const answer = parseYesNo(heard)
+        return answer ? { ok: true, value: answer } : { ok: false, message: t('vf.yesNoRetry') }
+      },
+      apply: async (answer) => {
+        if (answer === 'no') return t('vf.notify.cancelled')
+        try {
+          await joinWaitlist(machine.id)
+          await onReloadStatus()
+          setWaitlistSuccess('work.notifyAdded')
+          return t('work.notifyAdded')
+        } catch (caught) {
+          logError('waitlist.voiceJoin', caught)
+          return t(mapErrorToKey(caught))
+        }
+      },
+    }),
+  ]
+
+  const notifyVoiceAssistant = (
+    <VoiceFlowAssistant
+      open={notifyVoiceOpen}
+      onClose={() => setNotifyVoiceOpen(false)}
+      title={t('vf.title.notify')}
+      intro={t('vf.notify.intro')}
+      initialValues={{}}
+      createSteps={createNotifyVoiceSteps}
+      blockedMessage={notifyVoiceBlocked}
+    />
+  )
+
   const voiceAssistant = (
     <VoiceFlowAssistant
       open={voiceOpen}
@@ -670,6 +799,80 @@ function BookingForm({ machine }: { machine: MachineCard }) {
           {t('vf.cta.book')}
         </Button>
 
+        {notifyVoiceAssistant}
+        {machineStatus?.busy ? (
+          <Alert variant="warning" className="mt-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 font-bold text-harvest-900">
+                <Clock3 className="size-4 shrink-0" aria-hidden="true" />
+                <span>{t('work.busyBadge')}</span>
+              </div>
+              <p className="text-sm text-harvest-950">{t('work.busyBody')}</p>
+              {machineStatus.expected_free_at ? (
+                <p className="text-xs font-semibold text-harvest-900">
+                  {t('work.expectedFree', {
+                    time: formatDateTime(machineStatus.expected_free_at, language),
+                  })}
+                </p>
+              ) : null}
+
+              {session && profile?.role === 'farmer' ? (
+                <div className="pt-2">
+                  {machineStatus.on_waitlist ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-leaf-800">
+                        ✓ {t('work.notifyOn')}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        loading={waitlistLoading}
+                        onClick={() => void handleLeaveWaitlist()}
+                      >
+                        {t('work.stopNotify')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        loading={waitlistLoading}
+                        onClick={() => void handleJoinWaitlist()}
+                      >
+                        {t('work.notifyMe')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon={<Mic className="size-4" aria-hidden="true" />}
+                        onClick={() => setNotifyVoiceOpen(true)}
+                      >
+                        {t('vf.cta.notify')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </Alert>
+        ) : null}
+
+        {waitlistSuccess ? (
+          <Alert variant="success" className="mt-4">
+            {t(waitlistSuccess)}
+          </Alert>
+        ) : null}
+
+        {waitlistError ? (
+          <Alert variant="error" className="mt-4">
+            {t(waitlistError)}
+          </Alert>
+        ) : null}
+
         {!machine.is_active ? (
           <Alert variant="warning" className="mt-4">
             {t('farmer.paused')}
@@ -694,7 +897,7 @@ function BookingForm({ machine }: { machine: MachineCard }) {
               setServiceDate(event.target.value)
               clearFieldError('serviceDate')
             }}
-            error={errors.serviceDate ? t(errors.serviceDate) : null}
+            error={errors.serviceDate ? t(errors.serviceDate) : isDateBooked ? t('work.bookedDatesHint') : null}
             required
           />
 

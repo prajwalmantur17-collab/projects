@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CalendarDays, Navigation, Phone, Trash2 } from 'lucide-react'
+import { CalendarDays, CheckCircle2, Navigation, Phone, Play, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -17,6 +17,7 @@ import type { BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
 import { StatusBadge } from '../../components/booking/StatusBadge'
+import { workPhase } from '../../services/workStatus'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { TrackMachine } from '../../components/map/TrackMachine'
 import { isInShareWindow } from '../../services/liveShare'
@@ -257,7 +258,31 @@ export function FarmerBookingsPage() {
                       </p>
                     </div>
                   </div>
-                  <StatusBadge status={booking.status} />
+                  <div className="flex flex-col items-end gap-1.5">
+                    <StatusBadge status={booking.status} />
+                    {booking.status === 'confirmed' ? (
+                      (() => {
+                        const phase = workPhase(booking)
+                        if (phase === 'working') {
+                          return (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-harvest-200 bg-harvest-50 px-2.5 py-0.5 text-xs font-bold text-harvest-800">
+                              <Play className="size-3" aria-hidden="true" />
+                              {t('work.working')}
+                            </span>
+                          )
+                        }
+                        if (phase === 'completed') {
+                          return (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-leaf-200 bg-leaf-50 px-2.5 py-0.5 text-xs font-bold text-leaf-800">
+                              <CheckCircle2 className="size-3" aria-hidden="true" />
+                              {t('work.doneBadge')}
+                            </span>
+                          )
+                        }
+                        return null
+                      })()
+                    ) : null}
+                  </div>
                 </div>
 
                 <p className="mt-3 text-sm leading-snug text-ink-muted">

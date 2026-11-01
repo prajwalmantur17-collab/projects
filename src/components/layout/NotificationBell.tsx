@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { formatDate, formatDateTime } from '../../lib/format'
+import { machineTypeLabelKey } from '../../lib/labels'
 import { useAuth } from '../../auth/AuthProvider'
 import { useNotifications } from '../../hooks/useNotifications'
 import type { AppNotification } from '../../types'
@@ -49,6 +50,10 @@ export function NotificationBell() {
   const openBooking = (notification: AppNotification) => {
     void markRead(notification.id)
     setOpen(false)
+    if (notification.kind === 'machine_free' && notification.payload.machine_id) {
+      navigate(`/farmer/machines/${notification.payload.machine_id}`)
+      return
+    }
     navigate(profile.role === 'owner' ? '/owner/bookings' : '/farmer/bookings')
   }
 
@@ -189,6 +194,16 @@ function notificationText(
       return t('notif.rejected', { date })
     case 'booking_cancelled':
       return t('notif.cancelled', { date })
+    case 'work_started':
+      return t('notif.workStarted', { date })
+    case 'work_completed':
+      return t('notif.workCompleted', { date })
+    case 'machine_free':
+      return t('notif.machineFree', {
+        machine: notification.payload.machine_type
+          ? t(machineTypeLabelKey(notification.payload.machine_type))
+          : t('common.unknown'),
+      })
     default:
       return t('notif.title')
   }

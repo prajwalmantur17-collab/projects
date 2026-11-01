@@ -23,6 +23,9 @@ const MESSAGE_CODES: Array<[string, TranslationKey]> = [
   ['HR_ROLE_ALREADY_SET', 'booking.error.roleSet'],
   ['HR_LOCATION_REQUIRED', 'booking.error.locationRequired'],
   ['HR_BLACKOUT_CONFLICT', 'machine.dateAddError'],
+  ['HR_MACHINE_BUSY', 'booking.error.machineBusy'],
+  ['HR_NOT_BUSY', 'booking.error.notBusy'],
+  ['HR_NOT_FARMER', 'booking.error.notFarmer'],
   ['HR_NOT_FOUND', 'error.notFound'],
   ['HR_UNAUTHORIZED', 'error.unauthorized'],
 ]

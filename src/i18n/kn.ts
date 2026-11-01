@@ -1,10 +1,12 @@
 import { authKn } from './auth'
 import { vfKn } from './voiceFlow'
+import { workKn } from './work'
 import type { TranslationKey } from './en'
 
 export const kn: Record<TranslationKey, string> = {
   ...authKn,
   ...vfKn,
+  ...workKn,
   'app.name': 'ಹಾರ್ವೆಸ್ಟ್ ರೆಂಟಲ್ಸ್',
   'app.tagline': 'ನಿಮ್ಮ ಹಳ್ಳಿಯ ಸಮೀಪದಲ್ಲಿ ಕೊಯ್ಲು ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
   'app.description':

@@ -22,6 +22,7 @@ import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { searchMachines } from '../../services/machines'
+import { getBusyMachines } from '../../services/workStatus'
 import { deduplicateMachines } from '../../services/store'
 import { updateProfile } from '../../services/profiles'
 import { reverseGeocode } from '../../services/geocode'
@@ -80,6 +81,11 @@ export function FarmerHomePage() {
   const [detectedPlace, setDetectedPlace] = useState<{ place: string; district: string } | null>(null)
   const [searchError, setSearchError] = useState<TranslationKey | null>(null)
   const [results, setResults] = useState<MachineCardType[] | null>(null)
+  const [busyMachines, setBusyMachines] = useState<Map<string, string | null>>(() => new Map())
+
+  useEffect(() => {
+    void getBusyMachines().then((map) => setBusyMachines(map))
+  }, [])
   const [snapshot, setSnapshot] = useState<SearchSnapshot | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -605,6 +611,7 @@ export function FarmerHomePage() {
                     userLocation={activeUserLocation}
                     userVillage={snapshot?.village || village}
                     userDistrict={effectiveDistrict || district}
+                    isBusy={busyMachines.has(machine.id)}
                   />
                 ))}
               </div>

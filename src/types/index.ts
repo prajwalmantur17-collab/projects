@@ -9,6 +9,9 @@ export type NotificationKind =
   | 'booking_confirmed'
   | 'booking_rejected'
   | 'booking_cancelled'
+  | 'work_started'
+  | 'work_completed'
+  | 'machine_free'
 
 export type MachineType =
   | 'combine_harvester'
@@ -42,6 +45,18 @@ export interface Profile {
   state: string | null
   created_at: string
   updated_at: string
+}
+
+export type PaymentMethod = 'upi' | 'cash'
+
+/** Where a booking is in its life: waiting, accepted, working or finished. */
+export type WorkPhase = 'accepted' | 'working' | 'completed'
+
+export interface MachineStatus {
+  busy: boolean
+  expected_free_at: string | null
+  booked_dates: string[]
+  on_waitlist: boolean
 }
 
 export type PricingUnit = 'per_acre' | 'per_hour' | 'per_day'
@@ -102,6 +117,12 @@ export interface Booking {
   updated_at: string
   responded_at: string | null
   cancelled_at: string | null
+  work_started_at?: string | null
+  expected_free_at?: string | null
+  completed_at?: string | null
+  payment_method?: PaymentMethod | null
+  amount_paid?: number | null
+  paid_at?: string | null
 }
 
 export interface BookingMachineSummary {
@@ -131,6 +152,9 @@ export interface NotificationPayload {
   service_date?: string
   farmer_name?: string
   acreage?: number
+  machine_id?: string
+  amount?: number | null
+  payment_method?: PaymentMethod | null
 }
 
 export interface AppNotification {
