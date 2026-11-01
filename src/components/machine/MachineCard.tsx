@@ -92,14 +92,14 @@ export function MachineCard({
   const villageEqualsDistrict = machineDistrict === machineVillage
 
   return (
-    <article className="card-surface flex flex-col overflow-hidden transition-all duration-200 hover:shadow-lift">
+    <article className="card-surface flex flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lift hover:-translate-y-0.5">
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-cream-200">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={t('machine.imageAlt', { type: typeLabel })}
             loading="lazy"
-            className="size-full object-cover transition-transform duration-300 hover:scale-105"
+            className="size-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105"
             onError={() => setImageFailed(true)}
           />
         ) : (

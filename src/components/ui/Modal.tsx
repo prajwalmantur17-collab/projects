@@ -69,7 +69,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-0 backdrop-blur-xs transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:animate-in motion-safe:fade-in sm:items-center sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
@@ -80,7 +80,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className={`w-full ${maxWidth} rounded-t-2xl bg-white p-5 shadow-lift sm:rounded-2xl sm:p-6`}
+        className={`w-full ${maxWidth} rounded-t-2xl bg-white p-5 shadow-lift transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:animate-[apple-sheet-in_320ms_cubic-bezier(0.16,1,0.3,1)] sm:rounded-2xl sm:p-6`}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -97,7 +97,7 @@ export function Modal({
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-cream-100"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-cream-100 active:scale-90"
             aria-label="Close"
           >
             <X className="size-5" aria-hidden="true" />

@@ -42,7 +42,7 @@ export function CropCard({
       disabled={disabled}
       aria-pressed={selected}
       aria-label={`${cropName} (${selected ? 'Selected' : 'Not selected'})`}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 motion-safe:active:scale-[0.97] ${
         selected
           ? 'border-leaf-600 bg-leaf-50/70 shadow-sm ring-2 ring-leaf-600/20'
           : 'border-cream-200 bg-white hover:-translate-y-0.5 hover:border-leaf-400 hover:shadow-md'
@@ -68,7 +68,7 @@ export function CropCard({
                 setImageFailed(true)
               }
             }}
-            className="h-full w-full object-cover object-center transition-transform duration-300 motion-safe:group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:group-hover:scale-105"
           />
         )}
 
@@ -76,7 +76,7 @@ export function CropCard({
         {selected ? (
           <span
             aria-hidden="true"
-            className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-leaf-700 text-white shadow-sm ring-2 ring-white"
+            className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-leaf-700 text-white shadow-sm ring-2 ring-white motion-safe:animate-[apple-badge-pop_280ms_cubic-bezier(0.16,1,0.3,1)]"
           >
             <Check className="size-3.5 stroke-[3]" />
           </span>
@@ -120,21 +120,21 @@ export function AnyCropCard({
       onClick={onClick}
       aria-pressed={selected}
       aria-label={`${label} (${selected ? 'Selected' : 'Not selected'})`}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 motion-safe:active:scale-[0.97] ${
         selected
           ? 'border-leaf-600 bg-leaf-50/70 shadow-sm ring-2 ring-leaf-600/20'
           : 'border-cream-200 bg-white hover:-translate-y-0.5 hover:border-leaf-400 hover:shadow-md'
       } cursor-pointer ${className}`}
     >
       <div className="relative flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-cream-100 via-leaf-100/40 to-cream-200">
-        <div className="flex size-11 items-center justify-center rounded-full bg-white/80 shadow-xs ring-1 ring-leaf-200 transition-transform duration-300 group-hover:scale-110">
+        <div className="flex size-11 items-center justify-center rounded-full bg-white/80 shadow-xs ring-1 ring-leaf-200 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:group-hover:scale-110">
           <Sparkles className="size-5 text-leaf-700" aria-hidden="true" />
         </div>
 
         {selected ? (
           <span
             aria-hidden="true"
-            className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-leaf-700 text-white shadow-sm ring-2 ring-white"
+            className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-leaf-700 text-white shadow-sm ring-2 ring-white motion-safe:animate-[apple-badge-pop_280ms_cubic-bezier(0.16,1,0.3,1)]"
           >
             <Check className="size-3.5 stroke-[3]" />
           </span>
