@@ -8,7 +8,14 @@ import { Loader2, LocateFixed, Navigation, TriangleAlert } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { useRoadRoute } from '../../hooks/useRoadRoute'
 import type { Coordinates } from '../../types'
-import { createPhotoIcon, farmerIcon, machineIcon, meIcon, trackedIcon } from './mapIcons'
+import {
+  createMePhotoIcon,
+  createPhotoIcon,
+  farmerIcon,
+  machineIcon,
+  meIcon,
+  trackedIcon,
+} from './mapIcons'
 
 export interface MapMachine {
   id: string
@@ -26,6 +33,8 @@ interface LiveMapProps {
   tracked?: Coordinates | null
   /** Who `tracked` is: the machine (default) or the farmer, for the owner's map. */
   trackedKind?: 'machine' | 'farmer'
+  /** The viewer's own profile photo. When set it replaces the blue dot. */
+  mePhotoUrl?: string | null
   /** The tracked person's profile photo. When set it replaces the tractor / farmer icon. */
   trackedPhotoUrl?: string | null
   className?: string
@@ -92,9 +101,14 @@ export function LiveMap({
   tracked,
   trackedKind = 'machine',
   trackedPhotoUrl = null,
+  mePhotoUrl = null,
   className = 'h-72',
 }: LiveMapProps) {
   const { t } = useI18n()
+  const meMarkerIcon = useMemo(
+    () => (mePhotoUrl ? createMePhotoIcon(mePhotoUrl) : meIcon),
+    [mePhotoUrl],
+  )
   const trackedMarkerIcon = useMemo(
     () =>
       trackedPhotoUrl ? createPhotoIcon(trackedPhotoUrl) : trackedKind === 'farmer' ? farmerIcon : trackedIcon,
@@ -183,7 +197,7 @@ export function LiveMap({
             zIndexOffset={900}
           />
         ) : null}
-        {me ? <Marker position={toLatLng(me)} icon={meIcon} zIndexOffset={1000} /> : null}
+        {me ? <Marker position={toLatLng(me)} icon={meMarkerIcon} zIndexOffset={1000} /> : null}
       </MapContainer>
 
       {me && tracked ? (

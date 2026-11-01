@@ -3,6 +3,8 @@ import { Navigation } from 'lucide-react'
 import { distanceKm, formatDistance } from '../../lib/geo'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { useAvatarUrls } from '../../hooks/useAvatarUrls'
+import { useAuth } from '../../auth/AuthProvider'
+import { avatarUrl } from '../../services/avatars'
 import { getLiveLocations, subscribeToLiveLocations } from '../../services/liveLocation'
 import type { LiveLocation } from '../../types'
 import { Alert } from '../ui/Alert'
@@ -36,6 +38,8 @@ export function TrackMachine({
   otherLabel: string
 }) {
   const otherRole: Role = viewerRole === 'farmer' ? 'owner' : 'farmer'
+  const { profile } = useAuth()
+  const mePhotoUrl = avatarUrl(profile?.avatar_path)
   const { coordinates: browserPosition, request: requestMyLocation } = useGeolocation()
   const [rows, setRows] = useState<Rows>({})
   const [loading, setLoading] = useState(true)
@@ -162,6 +166,7 @@ export function TrackMachine({
           tracked={tracked}
           trackedKind={viewerRole === 'farmer' ? 'machine' : 'farmer'}
           trackedPhotoUrl={trackedPhotoUrl}
+          mePhotoUrl={mePhotoUrl}
           className="h-64 sm:h-80"
         />
       ) : null}

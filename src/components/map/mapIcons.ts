@@ -25,6 +25,17 @@ export const trackedIcon = L.divIcon({
   iconAnchor: [22, 22],
 })
 
+/** The viewer's own photo with a soft blue pulse, replacing the blue "you are here" dot. */
+export function createMePhotoIcon(url: string): L.DivIcon {
+  const safe = url.replace(/["'<>\s]/g, (char) => encodeURIComponent(char))
+  return L.divIcon({
+    className: 'hr-marker',
+    html: `<span class="hr-me hr-me-photo"><span class="hr-me-pulse"></span><span class="hr-pin hr-pin-photo hr-pin-me"><img src="${safe}" alt="" onerror="this.remove()" /></span></span>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+  })
+}
+
 /** A person's own photo as the map marker (medium size, round, white border). */
 export function createPhotoIcon(url: string): L.DivIcon {
   const safe = url.replace(/["'<>\s]/g, (char) => encodeURIComponent(char))
