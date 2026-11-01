@@ -5,6 +5,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import { LocateFixed } from 'lucide-react'
+import { useI18n } from '../../i18n'
+import { useRoadRoute } from '../../hooks/useRoadRoute'
 import type { Coordinates } from '../../types'
 import { farmerIcon, machineIcon, meIcon, trackedIcon } from './mapIcons'
 
@@ -70,6 +72,18 @@ function AutoFit({
   return null
 }
 
+function formatTravelTime(
+  seconds: number,
+  t: (key: 'route.minutes' | 'route.hoursMinutes', params: Record<string, string | number>) => string,
+): string {
+  const totalMinutes = Math.max(1, Math.round(seconds / 60))
+  if (totalMinutes < 60) return t('route.minutes', { count: totalMinutes })
+  return t('route.hoursMinutes', {
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60,
+  })
+}
+
 export function LiveMap({
   me,
   machines = [],
@@ -77,19 +91,24 @@ export function LiveMap({
   trackedKind = 'machine',
   className = 'h-72',
 }: LiveMapProps) {
+  const { t } = useI18n()
   const mapRef = useRef<L.Map | null>(null)
   const userMoved = useRef(false)
+  const { route, loading: routeLoading } = useRoadRoute(me, tracked)
 
   const points = useMemo(() => {
     const list: Coordinates[] = []
     if (me) list.push(me)
     if (tracked) {
       list.push(tracked)
+      if (route) {
+        for (const [latitude, longitude] of route.points) list.push({ latitude, longitude })
+      }
     } else {
       for (const machine of machines) list.push(machine.position)
     }
     return list
-  }, [me, tracked, machines])
+  }, [me, tracked, machines, route])
 
   const recenter = () => {
     userMoved.current = false
@@ -131,7 +150,18 @@ export function LiveMap({
             ))
           : null}
 
-        {me && tracked ? (
+        {me && tracked && route ? (
+          <>
+            <Polyline
+              positions={route.points}
+              pathOptions={{ color: '#ffffff', weight: 10, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+            />
+            <Polyline
+              positions={route.points}
+              pathOptions={{ color: '#2f6b35', weight: 6, lineCap: 'round', lineJoin: 'round' }}
+            />
+          </>
+        ) : me && tracked ? (
           <Polyline
             positions={[toLatLng(tracked), toLatLng(me)]}
             pathOptions={{ color: '#c48516', weight: 4, dashArray: '8 10' }}
@@ -147,6 +177,24 @@ export function LiveMap({
         ) : null}
         {me ? <Marker position={toLatLng(me)} icon={meIcon} zIndexOffset={1000} /> : null}
       </MapContainer>
+
+      {me && tracked ? (
+        <div className="absolute inset-x-3 bottom-3 z-[1000] rounded-xl bg-white/95 px-3 py-2 text-sm shadow-soft ring-1 ring-cream-300">
+          {route ? (
+            <p className="font-bold text-ink">
+              {t('route.distanceTime', {
+                distance: (route.distanceMeters / 1000).toFixed(1),
+                time: formatTravelTime(route.durationSeconds, t),
+              })}
+              <span className="ml-2 text-xs font-semibold text-ink-muted">{t('route.viaRoad')}</span>
+            </p>
+          ) : routeLoading ? (
+            <p className="text-ink-muted">{t('route.loading')}</p>
+          ) : (
+            <p className="text-ink-muted">{t('route.straightLine')}</p>
+          )}
+        </div>
+      ) : null}
 
       {points.length > 0 ? (
         <button
