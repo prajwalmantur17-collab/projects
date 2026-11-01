@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
 import {
@@ -97,10 +98,13 @@ export function FarmerBookingsPage() {
       await cancelBooking(cancelTarget.id)
       setCancelTarget(null)
       setSuccess('farmer.cancelled')
+      toast.success(t('farmer.cancelled'))
       reload()
     } catch (caught) {
       logError('farmer.cancelBooking', caught)
-      setActionError(mapErrorToKey(caught, 'farmer.cancelError'))
+      const key = mapErrorToKey(caught, 'farmer.cancelError')
+      setActionError(key)
+      toast.error(t(key))
     } finally {
       setCancelling(false)
     }

@@ -17,6 +17,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { CROP_KEYS, MACHINE_TYPES } from '../../lib/constants'
 import { normalizeWhitespace } from '../../lib/validation'
 import type { FieldErrors } from '../../lib/validation'
@@ -222,7 +223,9 @@ export function FarmerHomePage() {
       }
     } catch (caught) {
       logError('farmer.search', caught)
-      setSearchError(mapErrorToKey(caught, 'farmer.searchError'))
+      const key = mapErrorToKey(caught, 'farmer.searchError')
+      setSearchError(key)
+      toast.error(t(key))
     } finally {
       setSearching(false)
     }

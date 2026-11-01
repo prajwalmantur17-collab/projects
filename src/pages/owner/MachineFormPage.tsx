@@ -9,6 +9,7 @@ import { CROP_KEYS, MACHINE_TYPES, MAX_VILLAGES } from '../../lib/constants'
 import { CROP_DISPLAY_ORDER } from '../../lib/cropConfig'
 import { CropCard } from '../../components/crop/CropCard'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { validateMachineForm } from '../../lib/validation'
 import {
@@ -301,6 +302,7 @@ export function MachineFormPage() {
       setImageFile(null)
       setImageRemoved(false)
       setSaved(true)
+      toast.success(machineId ? 'Machine updated successfully' : 'Machine listed successfully')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return { ok: true }
     } catch (caught) {
@@ -312,6 +314,7 @@ export function MachineFormPage() {
       }
       const key = mapErrorToKey(caught, 'machine.saveError')
       setFormError(key)
+      toast.error(t(key))
       return { ok: false, key }
     } finally {
       setSaving(false)
@@ -324,6 +327,7 @@ export function MachineFormPage() {
     const result = await saveMachine(form)
     if (!result.ok && result.invalid) {
       formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+      toast.error(t(result.key))
     }
   }
 

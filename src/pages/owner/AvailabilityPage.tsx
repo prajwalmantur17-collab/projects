@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { formatDate } from '../../lib/format'
 import { addYearsIso, todayIsoInIndia, validateServiceDate } from '../../lib/validation'
 import { useAsync } from '../../hooks/useAsync'
@@ -72,10 +73,13 @@ export function AvailabilityPage() {
       await addBlackoutDate(machineId, date)
       setDate('')
       setSuccess('machine.dateAdded')
+      toast.success(t('machine.dateAdded'))
       reload()
     } catch (caught) {
       logError('machine.addBlackout', caught)
-      setActionError(mapErrorToKey(caught, 'machine.dateAddError'))
+      const key = mapErrorToKey(caught, 'machine.dateAddError')
+      setActionError(key)
+      toast.error(t(key))
     } finally {
       setAdding(false)
     }
@@ -88,10 +92,13 @@ export function AvailabilityPage() {
     setRemovingId(blackout.id)
     try {
       await removeBlackoutDate(blackout.id)
+      toast.info(t('common.success'))
       reload()
     } catch (caught) {
       logError('machine.removeBlackout', caught)
-      setActionError(mapErrorToKey(caught, 'machine.dateRemoveError'))
+      const key = mapErrorToKey(caught, 'machine.dateRemoveError')
+      setActionError(key)
+      toast.error(t(key))
     } finally {
       setRemovingId(null)
     }

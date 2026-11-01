@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { validateImageFile } from '../../lib/validation'
 import { getMachineImageUrl } from '../../services/machines'
+import { toast } from '../../lib/toast'
 import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
 
@@ -46,6 +47,7 @@ export function ImageUpload({
     const validationError = validateImageFile(file)
     if (validationError) {
       setError(validationError)
+      toast.error(t(validationError))
       if (inputRef.current) inputRef.current.value = ''
       return
     }

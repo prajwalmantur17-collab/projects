@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { AppHeader } from './AppHeader'
 import { LiveShareManager } from '../map/LiveShareManager'
+import { ToastContainer } from '../ui/Toast'
 import { BottomNav } from './BottomNav'
 
 export function AppShell() {
@@ -17,6 +18,7 @@ export function AppShell() {
       </a>
       <AppHeader />
       <LiveShareManager />
+      <ToastContainer />
       <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-14">
         <Outlet />
       </main>

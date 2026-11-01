@@ -13,6 +13,7 @@ import {
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { formatDate, formatDateTime, formatPrice } from '../../lib/format'
 import { CROP_KEYS, PHONE_DISPLAY_PREFIX, isCropKey } from '../../lib/constants'
 import {
@@ -489,6 +490,7 @@ function BookingForm({
       })
       writeLastPhone(validation.parsed.phone)
       setCreated(booking)
+      toast.success(t('farmer.bookingSuccessBody'), t('farmer.bookingSuccessTitle'))
       window.setTimeout(() => {
         document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 60)
@@ -497,6 +499,7 @@ function BookingForm({
       logError('booking.create', caught)
       const key = mapErrorToKey(caught, 'farmer.bookingError')
       setFormError(key)
+      toast.error(t(key))
       return { ok: false, key }
     } finally {
       setSubmitting(false)
@@ -509,6 +512,7 @@ function BookingForm({
     const result = await submitBooking({ serviceDate, village, acreage, crop, phone, notes })
     if (!result.ok && result.invalid) {
       formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+      toast.error(t(result.key))
     }
   }
 

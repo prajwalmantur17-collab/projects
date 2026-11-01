@@ -7,13 +7,13 @@ type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 type Size = 'md' | 'lg' | 'sm'
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-3'
+  'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100 focus-visible:outline-3'
 
 const variants: Record<Variant, string> = {
   primary: 'bg-leaf-700 text-cream-50 hover:bg-leaf-800 active:bg-leaf-900 shadow-soft',
   secondary: 'bg-harvest-400 text-ink hover:bg-harvest-300 active:bg-harvest-500',
-  outline: 'border-2 border-leaf-700 bg-white text-leaf-800 hover:bg-leaf-50',
-  ghost: 'text-leaf-800 hover:bg-leaf-50',
+  outline: 'border-2 border-leaf-700 bg-white text-leaf-800 hover:bg-leaf-50 active:bg-leaf-100',
+  ghost: 'text-leaf-800 hover:bg-leaf-50 active:bg-leaf-100',
   danger: 'bg-clay-600 text-white hover:bg-clay-700 active:bg-clay-800',
 }
 

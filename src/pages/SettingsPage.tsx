@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
 import { logError, mapErrorToKey } from '../lib/errors'
+import { toast } from '../lib/toast'
 import { validateProfileForm } from '../lib/validation'
 import type { FieldErrors } from '../lib/validation'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -79,6 +80,8 @@ export function SettingsPage() {
     const validation = validateProfileForm(form)
     if (!validation.parsed) {
       setErrors(validation.errors)
+      const firstErr = Object.values(validation.errors)[0]
+      if (firstErr) toast.error(t(firstErr as TranslationKey))
       return
     }
     setErrors({})
@@ -92,9 +95,12 @@ export function SettingsPage() {
       })
       await refreshProfile()
       setSuccess('settings.saved')
+      toast.success(t('settings.saved'))
     } catch (caught) {
       logError('settings.updateProfile', caught)
-      setFormError(mapErrorToKey(caught, 'settings.saveError'))
+      const key = mapErrorToKey(caught, 'settings.saveError')
+      setFormError(key)
+      toast.error(t(key))
     } finally {
       setSaving(false)
     }

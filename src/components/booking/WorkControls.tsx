@@ -3,6 +3,7 @@ import { CheckCircle2, Play, Wallet } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { formatDateTime, formatPrice } from '../../lib/format'
 import { completeWork, recordPayment, startWork, workPhase } from '../../services/workStatus'
 import { setWorkHours } from '../../services/record'
@@ -63,9 +64,12 @@ export function WorkControls({
       await action()
       setPanel(null)
       onChanged(message)
+      toast.success(t(message))
     } catch (caught) {
       logError('workControls', caught)
-      setError(mapErrorToKey(caught))
+      const errKey = mapErrorToKey(caught)
+      setError(errKey)
+      toast.error(t(errKey))
     } finally {
       setBusy(false)
     }
@@ -125,9 +129,11 @@ export function WorkControls({
     setBusy(false)
     if (hoursError) {
       setError(hoursError)
+      toast.error(t(hoursError))
     }
     if (completed) {
       onChanged('work.completedOk')
+      toast.success(t('work.completedOk'))
     }
   }
 

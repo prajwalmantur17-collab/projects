@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
+import { toast } from '../../lib/toast'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { cropLabelKey, machineTypeLabelKey } from '../../lib/labels'
 import { parseYesNo } from '../../lib/voiceParse'
@@ -120,11 +121,15 @@ export function OwnerBookingsPage() {
       }
       setTarget(null)
       setNote('')
-      setSuccess(target.decision === 'confirmed' ? 'owner.acceptSuccess' : 'owner.rejectSuccess')
+      const successKey = target.decision === 'confirmed' ? 'owner.acceptSuccess' : 'owner.rejectSuccess'
+      setSuccess(successKey)
+      toast.success(t(successKey))
       reload()
     } catch (caught) {
       logError('owner.respondToBooking', caught)
-      setResponseError(mapErrorToKey(caught, 'owner.respondError'))
+      const errKey = mapErrorToKey(caught, 'owner.respondError')
+      setResponseError(errKey)
+      toast.error(t(errKey))
     } finally {
       setResponding(false)
     }
