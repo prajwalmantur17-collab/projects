@@ -1,11 +1,15 @@
--- Harvest Rentals: "My record" page (earnings, spending, acres, hours, by-crop breakdown)
+-- Harvest Rentals: "My record" page (earnings, spending, acres, hours, by-crop breakdown, reset for new month)
 -- Safe to run repeatedly in the Supabase SQL editor.
 
 -- 1. Hours worked column on bookings -------------------------------------------
 alter table public.bookings
   add column if not exists hours_worked numeric(6, 2) check (hours_worked is null or (hours_worked >= 0 and hours_worked <= 1000));
 
--- 2. set_work_hours -----------------------------------------------------------
+-- 2. record_reset_at on profiles for monthly reset -----------------------------
+alter table public.profiles
+  add column if not exists record_reset_at timestamptz;
+
+-- 3. set_work_hours -----------------------------------------------------------
 create or replace function public.set_work_hours(
   p_booking_id uuid,
   p_hours numeric
@@ -52,7 +56,48 @@ begin
 end;
 $$;
 
--- 3. get_my_record ------------------------------------------------------------
+-- 4. reset_my_record and restore_my_record -------------------------------------
+create or replace function public.reset_my_record()
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_now timestamptz := now();
+begin
+  if auth.uid() is null then
+    raise exception 'HR_UNAUTHORIZED';
+  end if;
+
+  update public.profiles
+  set record_reset_at = v_now,
+      updated_at = v_now
+  where id = auth.uid();
+
+  return v_now;
+end;
+$$;
+
+create or replace function public.restore_my_record()
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'HR_UNAUTHORIZED';
+  end if;
+
+  update public.profiles
+  set record_reset_at = null,
+      updated_at = now()
+  where id = auth.uid();
+end;
+$$;
+
+-- 5. get_my_record ------------------------------------------------------------
 create or replace function public.get_my_record(
   p_year int default null
 )
@@ -65,6 +110,7 @@ as $$
 declare
   v_user_id uuid;
   v_role text;
+  v_reset_at timestamptz;
   v_years jsonb;
   v_total_jobs int := 0;
   v_total_acres numeric := 0;
@@ -80,7 +126,8 @@ begin
     raise exception 'HR_UNAUTHORIZED';
   end if;
 
-  select coalesce(role::text, 'farmer') into v_role
+  select coalesce(role::text, 'farmer'), record_reset_at
+  into v_role, v_reset_at
   from public.profiles
   where id = v_user_id;
 
@@ -88,7 +135,7 @@ begin
     v_role := 'farmer';
   end if;
 
-  -- Years with completed jobs for this user (unfiltered by p_year so dropdown has all choices)
+  -- Years with completed jobs for this user
   select coalesce(jsonb_agg(y), '[]'::jsonb)
   into v_years
   from (
@@ -97,6 +144,7 @@ begin
     where (case when v_role = 'owner' then owner_id = v_user_id else farmer_id = v_user_id end)
       and status = 'confirmed'
       and completed_at is not null
+      and (v_reset_at is null or completed_at >= v_reset_at)
     order by y desc
   ) y_sub;
 
@@ -127,6 +175,7 @@ begin
   where (case when v_role = 'owner' then owner_id = v_user_id else farmer_id = v_user_id end)
     and status = 'confirmed'
     and completed_at is not null
+    and (v_reset_at is null or completed_at >= v_reset_at)
     and (p_year is null or extract(year from service_date) = p_year);
 
   if v_total_hours is not null then
@@ -154,6 +203,7 @@ begin
       where farmer_id = v_user_id
         and status = 'confirmed'
         and completed_at is not null
+        and (v_reset_at is null or completed_at >= v_reset_at)
         and (p_year is null or extract(year from service_date) = p_year)
       group by crop
     ) c_sub;
@@ -186,6 +236,7 @@ begin
     where (case when v_role = 'owner' then b_inner.owner_id = v_user_id else b_inner.farmer_id = v_user_id end)
       and b_inner.status = 'confirmed'
       and b_inner.completed_at is not null
+      and (v_reset_at is null or b_inner.completed_at >= v_reset_at)
       and (p_year is null or extract(year from b_inner.service_date) = p_year)
     order by b_inner.service_date desc, b_inner.completed_at desc
     limit 200
@@ -204,13 +255,20 @@ begin
     'villages', v_villages,
     'by_crop', v_by_crop,
     'years', v_years,
-    'items', v_items
+    'items', v_items,
+    'reset_at', v_reset_at
   );
 end;
 $$;
 
 revoke all on function public.set_work_hours(uuid, numeric) from public, anon;
 grant execute on function public.set_work_hours(uuid, numeric) to authenticated;
+
+revoke all on function public.reset_my_record() from public, anon;
+grant execute on function public.reset_my_record() to authenticated;
+
+revoke all on function public.restore_my_record() from public, anon;
+grant execute on function public.restore_my_record() to authenticated;
 
 revoke all on function public.get_my_record(int) from public, anon;
 grant execute on function public.get_my_record(int) to authenticated;

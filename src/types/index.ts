@@ -253,4 +253,5 @@ export interface MyRecord {
   by_crop: CropRecordSummary[] | null
   years: number[]
   items: RecordItem[]
+  reset_at?: string | null
 }

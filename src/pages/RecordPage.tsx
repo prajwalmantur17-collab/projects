@@ -5,13 +5,16 @@ import {
   Calendar,
   Clock,
   Coins,
+  History,
   LandPlot,
   MapPin,
+  RotateCcw,
   Sprout,
   Tractor,
   Trash2,
   User,
 } from 'lucide-react'
+import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -26,7 +29,7 @@ import {
   getHiddenBookingIds,
   removeBookingFromHistory,
 } from '../services/bookings'
-import { getMyRecord } from '../services/record'
+import { getMyRecord, resetMyRecord, restoreMyRecord } from '../services/record'
 import type { MyRecord, RecordItem } from '../types'
 
 export function RecordPage() {
@@ -37,6 +40,10 @@ export function RecordPage() {
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getHiddenBookingIds())
   const [deleteTarget, setDeleteTarget] = useState<RecordItem | null>(null)
   const [clearAllOpen, setClearAllOpen] = useState(false)
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [toast, setToast] = useState<TranslationKey | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,6 +112,40 @@ export function RecordPage() {
     }
   }
 
+  const confirmResetForNewMonth = async () => {
+    if (resetting) return
+    setResetting(true)
+    try {
+      await resetMyRecord()
+      setHiddenIds(new Set())
+      setResetConfirmOpen(false)
+      setToast('record.resetSuccess')
+      const data = await getMyRecord(selectedYear)
+      setRecord(data)
+    } catch (caught) {
+      logError('record.reset', caught)
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  const confirmRestoreHistory = async () => {
+    if (resetting) return
+    setResetting(true)
+    try {
+      await restoreMyRecord()
+      setHiddenIds(new Set())
+      setRestoreConfirmOpen(false)
+      setToast('record.restoreSuccess')
+      const data = await getMyRecord(selectedYear)
+      setRecord(data)
+    } catch (caught) {
+      logError('record.restore', caught)
+    } finally {
+      setResetting(false)
+    }
+  }
+
   if (loading && !record) {
     return <LoadingScreen message={t('app.loading')} />
   }
@@ -158,32 +199,70 @@ export function RecordPage() {
         title={t('record.title')}
         description={t('record.subtitle')}
         action={
-          availableYears.length > 0 ? (
-            <div className="flex items-center gap-2">
-              <label htmlFor="record-year-filter" className="text-sm font-bold text-ink-soft">
-                <Calendar className="mr-1 inline-block size-4 text-leaf-700" aria-hidden="true" />
-                {t('record.filterYear')}
-              </label>
-              <select
-                id="record-year-filter"
-                value={selectedYear ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setSelectedYear(val ? Number(val) : undefined)
-                }}
-                className="min-h-11 rounded-xl border-2 border-cream-300 bg-white px-3 py-1.5 text-sm font-bold text-ink focus:border-leaf-600 focus:outline-none"
-              >
-                <option value="">{t('record.allTime')}</option>
-                {availableYears.map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-cream-300 text-clay-700 hover:border-clay-400 hover:bg-clay-50"
+              icon={<RotateCcw className="size-4 text-clay-600" aria-hidden="true" />}
+              onClick={() => setResetConfirmOpen(true)}
+            >
+              {t('record.resetBtn')}
+            </Button>
+
+            {availableYears.length > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <select
+                  id="record-year-filter"
+                  value={selectedYear ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSelectedYear(val ? Number(val) : undefined)
+                  }}
+                  className="min-h-10 rounded-xl border-2 border-cream-300 bg-white px-3 py-1.5 text-sm font-bold text-ink focus:border-leaf-600 focus:outline-none"
+                  aria-label={t('record.filterYear')}
+                >
+                  <option value="">{t('record.allTime')}</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+          </div>
         }
       />
+
+      {toast ? (
+        <Alert variant="success" className="mb-4">
+          {t(toast)}
+        </Alert>
+      ) : null}
+
+      {/* Notice if reset is active with restore option */}
+      {record?.reset_at ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-leaf-200 bg-leaf-50/70 p-3.5 sm:px-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-leaf-900 sm:text-sm">
+            <RotateCcw className="size-4 shrink-0 text-leaf-700" aria-hidden="true" />
+            <span>
+              {t('record.resetActive', {
+                date: formatDate(record.reset_at.slice(0, 10), language),
+              })}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs font-bold text-leaf-800 hover:bg-leaf-100"
+            icon={<History className="size-3.5 text-leaf-700" aria-hidden="true" />}
+            onClick={() => setRestoreConfirmOpen(true)}
+          >
+            {t('record.restoreBtn')}
+          </Button>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mb-6 rounded-2xl border border-clay-200 bg-clay-50 p-4 text-sm text-clay-800">
@@ -472,6 +551,37 @@ export function RecordPage() {
         cancelLabel={t('common.cancel')}
         danger
         loading={deleting}
+      />
+
+      {/* Reset for New Month Dialog */}
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        onClose={() => {
+          if (resetting) return
+          setResetConfirmOpen(false)
+        }}
+        onConfirm={() => void confirmResetForNewMonth()}
+        title={t('record.resetTitle')}
+        description={t('record.resetBody')}
+        confirmLabel={t('record.resetConfirm')}
+        cancelLabel={t('common.cancel')}
+        danger
+        loading={resetting}
+      />
+
+      {/* Restore History Dialog */}
+      <ConfirmDialog
+        open={restoreConfirmOpen}
+        onClose={() => {
+          if (resetting) return
+          setRestoreConfirmOpen(false)
+        }}
+        onConfirm={() => void confirmRestoreHistory()}
+        title={t('record.restoreTitle')}
+        description={t('record.restoreBody')}
+        confirmLabel={t('record.restoreConfirm')}
+        cancelLabel={t('common.cancel')}
+        loading={resetting}
       />
     </div>
   )

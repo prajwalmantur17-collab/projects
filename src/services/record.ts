@@ -21,3 +21,18 @@ export async function setWorkHours(bookingId: string, hours: number): Promise<Bo
   if (error) throw error
   return data as Booking
 }
+
+/** Resets the user's record totals and jobs list for the new month/period. */
+export async function resetMyRecord(): Promise<string> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('reset_my_record')
+  if (error) throw error
+  return data as string
+}
+
+/** Restores all historical records and totals. */
+export async function restoreMyRecord(): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('restore_my_record')
+  if (error) throw error
+}

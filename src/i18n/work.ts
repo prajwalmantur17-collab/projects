@@ -70,6 +70,17 @@ export const workEn = {
   'record.acresUnit': '{acres} acres',
   'work.hoursWorked': 'Hours worked',
   'work.hoursBad': 'Enter valid work hours (0.5 to 1000).',
+  'record.resetBtn': 'Reset for new month',
+  'record.resetTitle': 'Reset record for new month?',
+  'record.resetBody': 'This will reset your totals (earned, acres, jobs, hours) and clear your completed jobs list so you can start fresh for the new month.',
+  'record.resetConfirm': 'Reset fully',
+  'record.resetSuccess': 'Record has been reset for the new month.',
+  'record.resetActive': 'Reset active since {date}',
+  'record.restoreBtn': 'Restore all history',
+  'record.restoreTitle': 'Restore all-time history?',
+  'record.restoreBody': 'This will restore all your past completed jobs and recalculate your all-time totals.',
+  'record.restoreConfirm': 'Restore history',
+  'record.restoreSuccess': 'Full history restored.',
 } as const
 
 export const workKn: Record<keyof typeof workEn, string> = {
@@ -141,6 +152,17 @@ export const workKn: Record<keyof typeof workEn, string> = {
   'record.acresUnit': '{acres} ಎಕರೆ',
   'work.hoursWorked': 'ಕೆಲಸದ ಅವಧಿ (ಗಂಟೆಗಳು)',
   'work.hoursBad': 'ಸರಿಯಾದ ಕೆಲಸದ ಸಮಯ ನಮೂದಿಸಿ (0.5 ರಿಂದ 1000).',
+  'record.resetBtn': 'ಹೊಸ ತಿಂಗಳಿಗೆ ರೀಸೆಟ್',
+  'record.resetTitle': 'ಹೊಸ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ರೀಸೆಟ್ ಮಾಡಬೇಕೆ?',
+  'record.resetBody': 'ಇದು ನಿಮ್ಮ ಒಟ್ಟು ಮೊತ್ತ (ಗಳಿಕೆ, ಎಕರೆ, ಕೆಲಸಗಳು, ಅವಧಿ) ಗಳನ್ನು ಶೂನ್ಯಗೊಳಿಸುತ್ತದೆ ಮತ್ತು ಹೊಸ ತಿಂಗಳಿಗೆ ತಾಜಾವಾಗಿ ಪ್ರಾರಂಭಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+  'record.resetConfirm': 'ಪೂರ್ಣ ರೀಸೆಟ್ ಮಾಡಿ',
+  'record.resetSuccess': 'ಹೊಸ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ರೀಸೆಟ್ ಆಗಿದೆ.',
+  'record.resetActive': '{date} ರಿಂದ ರೀಸೆಟ್ ಸಕ್ರಿಯವಾಗಿದೆ',
+  'record.restoreBtn': 'ಎಲ್ಲಾ ಇತಿಹಾಸ ಮರುಸ್ಥಾಪಿಸಿ',
+  'record.restoreTitle': 'ಹಿಂದಿನ ಎಲ್ಲಾ ಇತಿಹಾಸವನ್ನು ಮರಳಿ ತರಬೇಕೆ?',
+  'record.restoreBody': 'ಇದು ನಿಮ್ಮ ಹಿಂದಿನ ಎಲ್ಲಾ ಮುಗಿದ ಕೆಲಸಗಳು ಮತ್ತು ಒಟ್ಟು ಮೊತ್ತವನ್ನು ಮರಳಿ ತರುತ್ತದೆ.',
+  'record.restoreConfirm': 'ಇತಿಹಾಸ ಮರುಸ್ಥಾಪಿಸಿ',
+  'record.restoreSuccess': 'ಪೂರ್ಣ ಇತಿಹಾಸವನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ.',
 }
 
 export const workHi: Record<keyof typeof workEn, string> = {
@@ -212,4 +234,15 @@ export const workHi: Record<keyof typeof workEn, string> = {
   'record.acresUnit': '{acres} एकड़',
   'work.hoursWorked': 'काम के घंटे',
   'work.hoursBad': 'काम के सही घंटे दर्ज करें (0.5 से 1000)।',
+  'record.resetBtn': 'नए महीने के लिए रीसेट',
+  'record.resetTitle': 'क्या नए महीने के लिए रिकॉर्ड रीसेट करें?',
+  'record.resetBody': 'यह आपकी कुल कमाई, एकड़, काम और घंटे रीसेट कर देगा ताकि आप नए महीने की नई शुरुआत कर सकें।',
+  'record.resetConfirm': 'पूरी तरह रीसेट करें',
+  'record.resetSuccess': 'नए महीने के लिए रिकॉर्ड रीसेट कर दिया गया है।',
+  'record.resetActive': '{date} से रीसेट सक्रिय है',
+  'record.restoreBtn': 'सारा इतिहास वापस लाएं',
+  'record.restoreTitle': 'क्या पिछला सारा इतिहास वापस लाएं?',
+  'record.restoreBody': 'यह आपके पहले के सभी पूरे हुए काम और आंकड़े वापस ले आएगा।',
+  'record.restoreConfirm': 'इतिहास वापस लाएं',
+  'record.restoreSuccess': 'पूरा इतिहास वापस ले आया गया है।',
 }
