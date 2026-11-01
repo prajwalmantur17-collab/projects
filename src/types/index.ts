@@ -136,6 +136,8 @@ export interface BookingMachineSummary {
   phone: string
   is_active: boolean
   crops: CropKey[]
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface BookingPerson {

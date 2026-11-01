@@ -449,6 +449,8 @@ export function OwnerBookingsPage() {
                     bookingId={booking.id}
                     serviceDate={booking.service_date}
                     farmerName={booking.farmer?.full_name ?? t('owner.farmer')}
+                    village={booking.village}
+                    farmerId={booking.farmer_id}
                   />
                 ) : null}
 

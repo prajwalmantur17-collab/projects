@@ -217,30 +217,32 @@ export function stopSharing(bookingId: string): void {
   const paused = readPaused()
   paused.add(bookingId)
   writePaused(paused)
+  void stopLiveLocation(bookingId).catch(() => undefined)
   releaseSharing(bookingId)
 }
 
 /** Stop one booking without remembering it as a manual stop. */
 export function releaseSharing(bookingId: string): void {
   if (!active.delete(bookingId)) return
-  void stopLiveLocation(bookingId).catch(() => undefined)
   if (active.size === 0) teardown()
   publish()
 }
 
 /** Stop everything (sign-out, permission denied) without remembering it as a manual stop. */
 export function releaseAll(): void {
-  const ids = [...active]
   active.clear()
   teardown()
-  ids.forEach((id) => void stopLiveLocation(id).catch(() => undefined))
   publish()
 }
 
 /** Person pressed Stop on the banner: stop every booking and do not auto-restart them. */
 export function stopAllSharing(): void {
   const paused = readPaused()
-  active.forEach((id) => paused.add(id))
+  const ids = [...active]
+  ids.forEach((id) => {
+    paused.add(id)
+    void stopLiveLocation(id).catch(() => undefined)
+  })
   writePaused(paused)
   releaseAll()
 }

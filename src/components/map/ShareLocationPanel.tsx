@@ -21,11 +21,15 @@ export function ShareLocationPanel({
   bookingId,
   serviceDate,
   farmerName,
+  village,
+  farmerId,
 }: {
   bookingId: string
   /** Booking service date as YYYY-MM-DD. */
   serviceDate: string
   farmerName: string
+  village?: string
+  farmerId?: string | null
 }) {
   const share = useSyncExternalStore(subscribeShare, getShareState, getShareState)
   const sharing = share.activeBookingIds.includes(bookingId)
@@ -90,7 +94,13 @@ export function ShareLocationPanel({
       ) : null}
 
       {inWindow ? (
-        <TrackMachine bookingId={bookingId} viewerRole="owner" otherLabel={farmerName} />
+        <TrackMachine
+          bookingId={bookingId}
+          viewerRole="owner"
+          otherLabel={farmerName}
+          fallbackVillage={village}
+          otherId={farmerId}
+        />
       ) : null}
     </div>
   )

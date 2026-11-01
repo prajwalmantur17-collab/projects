@@ -378,6 +378,13 @@ export function FarmerBookingsPage() {
                       bookingId={booking.id}
                       viewerRole="farmer"
                       otherLabel={typeLabel}
+                      fallbackCoords={
+                        machine?.latitude != null && machine?.longitude != null
+                          ? { latitude: machine.latitude, longitude: machine.longitude }
+                          : null
+                      }
+                      fallbackVillage={booking.village}
+                      otherId={booking.owner_id}
                     />
                   </div>
                 ) : null}

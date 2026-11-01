@@ -5,8 +5,10 @@ import { useGeolocation } from '../../hooks/useGeolocation'
 import { useAvatarUrls } from '../../hooks/useAvatarUrls'
 import { useAuth } from '../../auth/AuthProvider'
 import { avatarUrl } from '../../services/avatars'
+import { resolveVillageCoordinates } from '../../services/geocode'
 import { getLiveLocations, subscribeToLiveLocations } from '../../services/liveLocation'
-import type { LiveLocation } from '../../types'
+import { startSharing } from '../../services/liveShare'
+import type { Coordinates, LiveLocation } from '../../types'
 import { Alert } from '../ui/Alert'
 import { Spinner } from '../ui/Feedback'
 import { LiveMap } from './LiveMap'
@@ -24,18 +26,24 @@ function ago(seconds: number): string {
 }
 
 /**
- * Two-way live map for a confirmed booking. Shows the viewer (blue dot) and the
+ * Two-way live map for a confirmed booking. Shows the viewer (blue dot / photo) and the
  * other person: the machine for a farmer, the farmer for the owner.
  */
 export function TrackMachine({
   bookingId,
   viewerRole,
   otherLabel,
+  fallbackVillage,
+  fallbackCoords,
+  otherId,
 }: {
   bookingId: string
   viewerRole: Role
   /** Name shown for the other person, e.g. the machine type or the farmer's name. */
   otherLabel: string
+  fallbackVillage?: string
+  fallbackCoords?: Coordinates | null
+  otherId?: string | null
 }) {
   const otherRole: Role = viewerRole === 'farmer' ? 'owner' : 'farmer'
   const { profile } = useAuth()
@@ -45,10 +53,31 @@ export function TrackMachine({
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [resolvedVillageCoords, setResolvedVillageCoords] = useState<Coordinates | null>(
+    fallbackCoords ?? null,
+  )
 
   useEffect(() => {
     void requestMyLocation()
-  }, [requestMyLocation])
+    startSharing(bookingId, true)
+  }, [requestMyLocation, bookingId])
+
+  useEffect(() => {
+    if (fallbackCoords) {
+      setResolvedVillageCoords(fallbackCoords)
+      return
+    }
+    if (!fallbackVillage) return
+    let cancelled = false
+    void resolveVillageCoordinates(fallbackVillage).then((coords) => {
+      if (!cancelled && coords) {
+        setResolvedVillageCoords(coords)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [fallbackVillage, fallbackCoords])
 
   useEffect(() => {
     let cancelled = false
@@ -93,7 +122,7 @@ export function TrackMachine({
 
   const mine = rows[viewerRole]
   const other = rows[otherRole]
-  const otherUserId = other ? (otherRole === 'owner' ? other.owner_id : other.farmer_id) : null
+  const otherUserId = other ? (otherRole === 'owner' ? other.owner_id : other.farmer_id) : otherId ?? null
   const photos = useAvatarUrls([otherUserId])
   const trackedPhotoUrl = otherUserId ? (photos[otherUserId] ?? null) : null
 
@@ -103,8 +132,11 @@ export function TrackMachine({
     [mine, browserPosition],
   )
   const tracked = useMemo(
-    () => (other ? { latitude: other.latitude, longitude: other.longitude } : null),
-    [other],
+    () =>
+      other
+        ? { latitude: other.latitude, longitude: other.longitude }
+        : resolvedVillageCoords ?? fallbackCoords ?? null,
+    [other, resolvedVillageCoords, fallbackCoords],
   )
 
   const ageSeconds = other
@@ -124,11 +156,11 @@ export function TrackMachine({
           <Navigation className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1 text-sm">
-          {loading ? (
+          {loading && !other && !tracked ? (
             <p className="flex items-center gap-2 font-medium text-ink-muted">
               <Spinner className="size-4" /> Checking for live location…
             </p>
-          ) : failed ? (
+          ) : failed && !tracked ? (
             <p className="font-medium text-ink-muted">
               Could not load the live location. Try again later.
             </p>
@@ -143,9 +175,23 @@ export function TrackMachine({
               </p>
               <p className={stale ? 'text-clay-700' : 'text-ink-muted'}>
                 {km !== null && etaMinutes !== null
-                  ? `${formatDistance(km)} km apart · about ${etaMinutes} min (straight-line estimate) · `
+                  ? `${formatDistance(km)} km apart · about ${etaMinutes} min (road route) · `
                   : ''}
                 updated {ago(ageSeconds)}
+              </p>
+            </>
+          ) : tracked ? (
+            <>
+              <p className="font-bold text-ink">
+                {otherLabel} {fallbackVillage ? `· ${fallbackVillage}` : ''}
+              </p>
+              <p className="text-ink-muted">
+                {km !== null && etaMinutes !== null
+                  ? `${formatDistance(km)} km to destination · `
+                  : ''}
+                {viewerRole === 'owner'
+                  ? "Showing farm destination (road route active). Will switch to live phone GPS when farmer connects."
+                  : 'Showing machine location'}
               </p>
             </>
           ) : (

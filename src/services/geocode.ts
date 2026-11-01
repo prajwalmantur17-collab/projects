@@ -304,3 +304,98 @@ export async function reverseGeocode(
 
   return null
 }
+
+const KNOWN_PLACE_COORDINATES: Record<string, Coordinates> = {
+  kogilu: { latitude: 13.1067, longitude: 77.6174 },
+  yelahanka: { latitude: 13.1007, longitude: 77.5963 },
+  sampigehalli: { latitude: 13.0844, longitude: 77.6326 },
+  kattigenahalli: { latitude: 13.1186, longitude: 77.632 },
+  tikota: { latitude: 16.8286, longitude: 75.5412 },
+  toravi: { latitude: 16.8155, longitude: 75.6601 },
+  aninapur: { latitude: 16.85, longitude: 75.6 },
+  allalasandra: { latitude: 13.0838, longitude: 77.5855 },
+  hebbal: { latitude: 13.0358, longitude: 77.597 },
+  jalahalli: { latitude: 13.0528, longitude: 77.5407 },
+  babaleshwar: { latitude: 16.6667, longitude: 75.5333 },
+  hubballi: { latitude: 15.3647, longitude: 75.124 },
+  ranebennur: { latitude: 14.6231, longitude: 75.6218 },
+  sirsi: { latitude: 14.6195, longitude: 74.8354 },
+  sindhanur: { latitude: 15.7667, longitude: 76.7667 },
+  gangavathi: { latitude: 15.4333, longitude: 76.5333 },
+  bengaluru: { latitude: 12.9716, longitude: 77.5946 },
+  bangalore: { latitude: 12.9716, longitude: 77.5946 },
+  vijayapura: { latitude: 16.8302, longitude: 75.71 },
+  bijapur: { latitude: 16.8302, longitude: 75.71 },
+  bagalkot: { latitude: 16.18, longitude: 75.69 },
+  belagavi: { latitude: 15.8497, longitude: 74.4977 },
+  kalaburagi: { latitude: 17.3297, longitude: 76.8343 },
+}
+
+const memoryCoordsCache = new Map<string, Coordinates>()
+
+export async function resolveVillageCoordinates(
+  village: string,
+  district?: string,
+): Promise<Coordinates | null> {
+  const normVillage = normalizePlaceName(village, 'en').trim().toLowerCase()
+  if (!normVillage) return null
+
+  if (KNOWN_PLACE_COORDINATES[normVillage]) {
+    return KNOWN_PLACE_COORDINATES[normVillage]
+  }
+
+  const cacheKey = `${normVillage}:${(district || '').trim().toLowerCase()}`
+  if (memoryCoordsCache.has(cacheKey)) {
+    return memoryCoordsCache.get(cacheKey)!
+  }
+
+  try {
+    const rawStorage = typeof window !== 'undefined' ? window.localStorage.getItem(`hr_geo_${cacheKey}`) : null
+    if (rawStorage) {
+      const parsed = JSON.parse(rawStorage) as Coordinates
+      if (parsed && typeof parsed.latitude === 'number' && typeof parsed.longitude === 'number') {
+        memoryCoordsCache.set(cacheKey, parsed)
+        return parsed
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+
+  try {
+    const query = district ? `${village}, ${district}, Karnataka, India` : `${village}, Karnataka, India`
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 3500)
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=1`,
+      {
+        headers: { Accept: 'application/json', 'User-Agent': 'HarvestRentalsApp/1.0' },
+        signal: controller.signal,
+      },
+    )
+    clearTimeout(timer)
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0 && data[0].lat && data[0].lon) {
+        const coords: Coordinates = {
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+        }
+        memoryCoordsCache.set(cacheKey, coords)
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(`hr_geo_${cacheKey}`, JSON.stringify(coords))
+          }
+        } catch {
+          // Ignore
+        }
+        return coords
+      }
+    }
+  } catch {
+    // Offline or timeout
+  }
+
+  return null
+}
+

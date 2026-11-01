@@ -4,7 +4,7 @@ import type { Booking, BookingStatus, BookingWithRelations, CreateBookingInput }
 const BOOKING_SELECT = `
   *,
   machine:machines!bookings_machine_id_fkey(
-    id, owner_id, machine_type, model, image_path, phone, is_active, crops
+    id, owner_id, machine_type, model, image_path, phone, is_active, crops, latitude, longitude
   ),
   farmer:profiles!bookings_farmer_id_fkey(full_name),
   owner:profiles!bookings_owner_id_fkey(full_name)
