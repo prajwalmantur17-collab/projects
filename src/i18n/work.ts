@@ -43,6 +43,12 @@ export const workEn = {
   'booking.error.machineBusy': 'This machine is already working on another job.',
   'booking.error.notBusy': 'This machine is free right now, you can book it.',
   'booking.error.notFarmer': 'Only farmers can wait for a machine.',
+  'owner.filterCompleted': 'Completed',
+  'work.removeHistory': 'Remove from history',
+  'work.clearAll': 'Clear all',
+  'work.removeConfirm': 'Remove this job from your history?',
+  'work.clearConfirm': 'Remove all completed jobs from your history?',
+  'work.noCompleted': 'No completed jobs yet',
 } as const
 
 export const workKn: Record<keyof typeof workEn, string> = {
@@ -87,6 +93,12 @@ export const workKn: Record<keyof typeof workEn, string> = {
   'booking.error.machineBusy': 'ಈ ಯಂತ್ರ ಈಗಾಗಲೇ ಬೇರೆ ಕೆಲಸದಲ್ಲಿದೆ.',
   'booking.error.notBusy': 'ಈ ಯಂತ್ರ ಈಗ ಖಾಲಿ ಇದೆ, ನೀವು ಬುಕ್ ಮಾಡಬಹುದು.',
   'booking.error.notFarmer': 'ರೈತರು ಮಾತ್ರ ಯಂತ್ರಕ್ಕಾಗಿ ಕಾಯಬಹುದು.',
+  'owner.filterCompleted': 'ಮುಗಿದವು',
+  'work.removeHistory': 'ಇತಿಹಾಸದಿಂದ ತೆಗೆಯಿರಿ',
+  'work.clearAll': 'ಎಲ್ಲವನ್ನೂ ತೆಗೆಯಿರಿ',
+  'work.removeConfirm': 'ಈ ಕೆಲಸವನ್ನು ನಿಮ್ಮ ಇತಿಹಾಸದಿಂದ ತೆಗೆಯಬೇಕೆ?',
+  'work.clearConfirm': 'ಎಲ್ಲಾ ಮುಗಿದ ಕೆಲಸಗಳನ್ನು ಇತಿಹಾಸದಿಂದ ತೆಗೆಯಬೇಕೆ?',
+  'work.noCompleted': 'ಇನ್ನೂ ಯಾವುದೇ ಮುಗಿದ ಕೆಲಸಗಳಿಲ್ಲ',
 }
 
 export const workHi: Record<keyof typeof workEn, string> = {
@@ -131,4 +143,10 @@ export const workHi: Record<keyof typeof workEn, string> = {
   'booking.error.machineBusy': 'यह मशीन पहले से दूसरे काम में है।',
   'booking.error.notBusy': 'यह मशीन अभी खाली है, आप बुक कर सकते हैं।',
   'booking.error.notFarmer': 'केवल किसान मशीन का इंतज़ार कर सकते हैं।',
+  'owner.filterCompleted': 'पूरे हुए',
+  'work.removeHistory': 'इतिहास से हटाएं',
+  'work.clearAll': 'सब हटाएं',
+  'work.removeConfirm': 'क्या इस काम को अपने इतिहास से हटाएं?',
+  'work.clearConfirm': 'क्या सभी पूरे हुए काम इतिहास से हटाएं?',
+  'work.noCompleted': 'अभी कोई पूरा हुआ काम नहीं है',
 }

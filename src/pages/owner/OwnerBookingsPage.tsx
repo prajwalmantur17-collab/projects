@@ -9,7 +9,8 @@ import { cropLabelKey, machineTypeLabelKey } from '../../lib/labels'
 import { parseYesNo } from '../../lib/voiceParse'
 import { useAsync } from '../../hooks/useAsync'
 import { clearClosedBookingsFromHistory, getOwnerBookings, removeBookingFromHistory, respondToBooking, subscribeToBookings } from '../../services/bookings'
-import { isInShareWindow, startSharing } from '../../services/liveShare'
+import { isInShareWindow, startSharing, stopSharing } from '../../services/liveShare'
+import { workPhase } from '../../services/workStatus'
 import type { BookingStatus, BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
@@ -28,7 +29,7 @@ import { EmptyState, Spinner } from '../../components/ui/Feedback'
 import { Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 
-type Filter = 'pending' | 'confirmed' | 'closed'
+type Filter = 'pending' | 'confirmed' | 'completed' | 'closed'
 type Decision = Extract<BookingStatus, 'confirmed' | 'rejected'>
 
 export function OwnerBookingsPage() {
@@ -49,6 +50,7 @@ export function OwnerBookingsPage() {
   const [deleteTarget, setDeleteTarget] = useState<BookingWithRelations | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [clearClosedConfirmOpen, setClearClosedConfirmOpen] = useState(false)
+  const [clearCompletedConfirmOpen, setClearCompletedConfirmOpen] = useState(false)
   const [actionError, setActionError] = useState<TranslationKey | null>(null)
 
   const loader = useCallback(async () => {
@@ -69,7 +71,12 @@ export function OwnerBookingsPage() {
   const bookings = data ?? []
   const counts = {
     pending: bookings.filter((booking) => booking.status === 'pending').length,
-    confirmed: bookings.filter((booking) => booking.status === 'confirmed').length,
+    confirmed: bookings.filter(
+      (booking) => booking.status === 'confirmed' && !booking.completed_at,
+    ).length,
+    completed: bookings.filter(
+      (booking) => booking.status === 'confirmed' && Boolean(booking.completed_at),
+    ).length,
     closed: bookings.filter(
       (booking) => booking.status === 'rejected' || booking.status === 'cancelled',
     ).length,
@@ -77,7 +84,8 @@ export function OwnerBookingsPage() {
 
   const filtered = bookings.filter((booking) => {
     if (filter === 'pending') return booking.status === 'pending'
-    if (filter === 'confirmed') return booking.status === 'confirmed'
+    if (filter === 'confirmed') return booking.status === 'confirmed' && !booking.completed_at
+    if (filter === 'completed') return booking.status === 'confirmed' && Boolean(booking.completed_at)
     return booking.status === 'rejected' || booking.status === 'cancelled'
   })
 
@@ -132,6 +140,26 @@ export function OwnerBookingsPage() {
       reload()
     } catch (caught) {
       logError('owner.removeBooking', caught)
+      setActionError(mapErrorToKey(caught, 'error.generic'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const confirmClearCompleted = async () => {
+    if (deleting) return
+    setDeleting(true)
+    setActionError(null)
+    try {
+      const completedIds = bookings
+        .filter((b) => b.status === 'confirmed' && Boolean(b.completed_at))
+        .map((b) => b.id)
+      await clearClosedBookingsFromHistory(completedIds)
+      setClearCompletedConfirmOpen(false)
+      setSuccess('farmer.historyCleared')
+      reload()
+    } catch (caught) {
+      logError('owner.clearCompletedBookings', caught)
       setActionError(mapErrorToKey(caught, 'error.generic'))
     } finally {
       setDeleting(false)
@@ -245,6 +273,7 @@ export function OwnerBookingsPage() {
           [
             ['pending', t('owner.filterPending'), counts.pending],
             ['confirmed', t('owner.filterConfirmed'), counts.confirmed],
+            ['completed', t('owner.filterCompleted'), counts.completed],
             ['closed', t('owner.filterClosed'), counts.closed],
           ] as Array<[Filter, string, number]>
         ).map(([value, label, count]) => {
@@ -291,9 +320,19 @@ export function OwnerBookingsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title={filter === 'pending' ? t('owner.noRequestsTitle') : t('owner.noClosedBookings')}
+          title={
+            filter === 'pending'
+              ? t('owner.noRequestsTitle')
+              : filter === 'completed'
+                ? t('work.noCompleted')
+                : t('owner.noClosedBookings')
+          }
           description={
-            filter === 'pending' ? t('owner.noRequestsBody') : t('owner.requestsSubtitle')
+            filter === 'pending'
+              ? t('owner.noRequestsBody')
+              : filter === 'completed'
+                ? t('work.noCompleted')
+                : t('owner.requestsSubtitle')
           }
         />
       ) : (
@@ -370,7 +409,8 @@ export function OwnerBookingsPage() {
                   </div>
                 ) : null}
 
-                {booking.status === 'confirmed' ? (
+                {booking.status === 'confirmed' &&
+                (workPhase(booking) === 'accepted' || workPhase(booking) === 'working') ? (
                   <ShareLocationPanel
                     bookingId={booking.id}
                     serviceDate={booking.service_date}
@@ -382,10 +422,31 @@ export function OwnerBookingsPage() {
                   <WorkControls
                     booking={booking}
                     onChanged={(message) => {
+                      if (message === 'work.completedOk') {
+                        stopSharing(booking.id)
+                        setFilter('completed')
+                      }
                       setSuccess(message)
                       reload()
                     }}
                   />
+                ) : null}
+
+                {booking.status === 'confirmed' && Boolean(booking.completed_at) ? (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-cream-200 pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-cream-300 text-clay-700 hover:border-clay-400 hover:bg-clay-50"
+                      icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+                      onClick={() => {
+                        setActionError(null)
+                        setDeleteTarget(booking)
+                      }}
+                    >
+                      {t('work.removeHistory')}
+                    </Button>
+                  </div>
                 ) : null}
 
                 {booking.status === 'rejected' || booking.status === 'cancelled' ? (
@@ -473,9 +534,36 @@ export function OwnerBookingsPage() {
           setActionError(null)
         }}
         onConfirm={() => void confirmDeleteFromHistory()}
-        title={t('farmer.deleteBookingTitle')}
+        title={
+          deleteTarget?.completed_at
+            ? t('work.removeConfirm')
+            : t('farmer.deleteBookingTitle')
+        }
         description={t('farmer.deleteBookingBody')}
-        confirmLabel={t('farmer.deleteBookingYes')}
+        confirmLabel={
+          deleteTarget?.completed_at
+            ? t('work.removeHistory')
+            : t('farmer.deleteBookingYes')
+        }
+        cancelLabel={t('farmer.deleteBookingCancel')}
+        danger
+        loading={deleting}
+      >
+        {actionError ? <Alert variant="error">{t(actionError)}</Alert> : null}
+      </ConfirmDialog>
+
+      {/* Clear All Completed Bookings Dialog */}
+      <ConfirmDialog
+        open={clearCompletedConfirmOpen}
+        onClose={() => {
+          if (deleting) return
+          setClearCompletedConfirmOpen(false)
+          setActionError(null)
+        }}
+        onConfirm={() => void confirmClearCompleted()}
+        title={t('work.clearConfirm')}
+        description={t('farmer.clearClosedBody')}
+        confirmLabel={t('work.clearAll')}
         cancelLabel={t('farmer.deleteBookingCancel')}
         danger
         loading={deleting}

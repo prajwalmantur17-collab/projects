@@ -10,6 +10,7 @@ const BOOKING_SELECT = `
   owner:profiles!bookings_owner_id_fkey(full_name)
 `
 
+// The hidden list is saved per browser in localStorage, so removing a booking only hides it for that user on that device.
 const HIDDEN_BOOKINGS_KEY = 'harvest-rentals-hidden-bookings'
 
 export function getHiddenBookingIds(): Set<string> {
