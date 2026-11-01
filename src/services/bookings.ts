@@ -99,7 +99,8 @@ export async function getOwnerBookings(ownerId: string): Promise<BookingWithRela
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as BookingWithRelations[]
+  const hidden = getHiddenBookingIds()
+  return ((data ?? []) as BookingWithRelations[]).filter((b) => !hidden.has(b.id))
 }
 
 export async function getBooking(

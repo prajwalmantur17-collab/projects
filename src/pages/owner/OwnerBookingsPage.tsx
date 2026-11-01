@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Inbox, Mic, Phone } from 'lucide-react'
+import { Inbox, Mic, Phone, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -8,7 +8,7 @@ import { formatDate, formatDateTime } from '../../lib/format'
 import { cropLabelKey, machineTypeLabelKey } from '../../lib/labels'
 import { parseYesNo } from '../../lib/voiceParse'
 import { useAsync } from '../../hooks/useAsync'
-import { getOwnerBookings, respondToBooking, subscribeToBookings } from '../../services/bookings'
+import { clearClosedBookingsFromHistory, getOwnerBookings, removeBookingFromHistory, respondToBooking, subscribeToBookings } from '../../services/bookings'
 import { isInShareWindow, startSharing } from '../../services/liveShare'
 import type { BookingStatus, BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
@@ -46,6 +46,10 @@ export function OwnerBookingsPage() {
   const [success, setSuccess] = useState<TranslationKey | null>(null)
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voiceQueue, setVoiceQueue] = useState<BookingWithRelations[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<BookingWithRelations | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [clearClosedConfirmOpen, setClearClosedConfirmOpen] = useState(false)
+  const [actionError, setActionError] = useState<TranslationKey | null>(null)
 
   const loader = useCallback(async () => {
     if (!ownerId) return [] as BookingWithRelations[]
@@ -114,6 +118,43 @@ export function OwnerBookingsPage() {
       setResponseError(mapErrorToKey(caught, 'owner.respondError'))
     } finally {
       setResponding(false)
+    }
+  }
+
+  const confirmDeleteFromHistory = async () => {
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
+    setActionError(null)
+    try {
+      await removeBookingFromHistory(deleteTarget.id)
+      setDeleteTarget(null)
+      setSuccess('farmer.bookingRemoved')
+      reload()
+    } catch (caught) {
+      logError('owner.removeBooking', caught)
+      setActionError(mapErrorToKey(caught, 'error.generic'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const confirmClearClosed = async () => {
+    if (deleting) return
+    setDeleting(true)
+    setActionError(null)
+    try {
+      const closedIds = bookings
+        .filter((b) => b.status === 'rejected' || b.status === 'cancelled')
+        .map((b) => b.id)
+      await clearClosedBookingsFromHistory(closedIds)
+      setClearClosedConfirmOpen(false)
+      setSuccess('farmer.historyCleared')
+      reload()
+    } catch (caught) {
+      logError('owner.clearClosedBookings', caught)
+      setActionError(mapErrorToKey(caught, 'error.generic'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -347,6 +388,23 @@ export function OwnerBookingsPage() {
                   />
                 ) : null}
 
+                {booking.status === 'rejected' || booking.status === 'cancelled' ? (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-cream-200 pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-cream-300 text-clay-700 hover:border-clay-400 hover:bg-clay-50"
+                      icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+                      onClick={() => {
+                        setActionError(null)
+                        setDeleteTarget(booking)
+                      }}
+                    >
+                      {t('farmer.removeFromHistory')}
+                    </Button>
+                  </div>
+                ) : null}
+
                 {isPending ? (
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-cream-200 pt-4">
                     <Button
@@ -405,6 +463,43 @@ export function OwnerBookingsPage() {
             />
           </div>
         ) : null}
+      </ConfirmDialog>
+      {/* Remove Single Booking from History Dialog */}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => {
+          if (deleting) return
+          setDeleteTarget(null)
+          setActionError(null)
+        }}
+        onConfirm={() => void confirmDeleteFromHistory()}
+        title={t('farmer.deleteBookingTitle')}
+        description={t('farmer.deleteBookingBody')}
+        confirmLabel={t('farmer.deleteBookingYes')}
+        cancelLabel={t('farmer.deleteBookingCancel')}
+        danger
+        loading={deleting}
+      >
+        {actionError ? <Alert variant="error">{t(actionError)}</Alert> : null}
+      </ConfirmDialog>
+
+      {/* Clear All Closed Bookings Dialog */}
+      <ConfirmDialog
+        open={clearClosedConfirmOpen}
+        onClose={() => {
+          if (deleting) return
+          setClearClosedConfirmOpen(false)
+          setActionError(null)
+        }}
+        onConfirm={() => void confirmClearClosed()}
+        title={t('farmer.clearClosedTitle')}
+        description={t('farmer.clearClosedBody')}
+        confirmLabel={t('farmer.deleteBookingYes')}
+        cancelLabel={t('farmer.deleteBookingCancel')}
+        danger
+        loading={deleting}
+      >
+        {actionError ? <Alert variant="error">{t(actionError)}</Alert> : null}
       </ConfirmDialog>
     </div>
   )
