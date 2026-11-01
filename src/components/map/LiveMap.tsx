@@ -179,43 +179,41 @@ export function LiveMap({
       </MapContainer>
 
       {me && tracked ? (
-        <div className="absolute inset-x-3 bottom-3 z-[1000] flex min-h-[56px] items-center rounded-2xl border border-white/12 bg-[rgba(20,28,22,0.88)] px-4 py-3 shadow-lg shadow-black/40 backdrop-blur">
-          {route ? (
-            <div className="flex w-full items-center gap-3">
-              <div
-                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f5b638] to-[#e09e1f] shadow-md shadow-amber-950/30"
-                aria-hidden="true"
-              >
-                <Navigation className="size-5 fill-[#141c16] text-[#141c16]" />
-              </div>
-              <div className="min-w-0 flex-1 leading-tight">
-                <div className="truncate whitespace-nowrap text-xl font-extrabold tracking-tight text-white">
-                  {formatTravelTime(route.durationSeconds, t)}
-                </div>
-                <div className="text-sm font-medium text-white/70">
-                  {(route.distanceMeters / 1000).toFixed(1)} km
-                </div>
-              </div>
-              <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-[#4ade80] min-[360px]:inline-flex">
-                <span
-                  className="size-2 rounded-full bg-[#4ade80] motion-safe:animate-pulse"
-                  aria-hidden="true"
-                />
-                <span>{t('route.viaRoad')}</span>
-              </div>
-            </div>
-          ) : routeLoading ? (
-            <div className="flex w-full items-center gap-3">
-              <Loader2 className="size-5 shrink-0 text-white/80 motion-safe:animate-spin" aria-hidden="true" />
-              <p className="text-sm font-medium text-white/80">{t('route.loading')}</p>
-            </div>
-          ) : (
-            <div className="flex w-full items-center gap-3">
-              <TriangleAlert className="size-5 shrink-0 text-[#f5b638]" aria-hidden="true" />
-              <p className="text-sm font-medium text-white/80">{t('route.straightLine')}</p>
-            </div>
-          )}
-        </div>
+        route ? (
+          <div
+            className="absolute bottom-8 left-3 z-[1000] flex h-9 w-fit max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/10 bg-[rgba(20,28,22,0.85)] px-3 py-1.5 shadow-lg backdrop-blur-md"
+            title={t('route.viaRoad')}
+            aria-label={t('route.viaRoad')}
+          >
+            <Navigation className="size-4 shrink-0 fill-[#f5b638] text-[#f5b638]" aria-hidden="true" />
+            <span className="whitespace-nowrap text-sm font-bold text-white">
+              {formatTravelTime(route.durationSeconds, t)}
+            </span>
+            <span className="h-4 w-px shrink-0 bg-white/20" aria-hidden="true" />
+            <span className="whitespace-nowrap text-sm font-medium text-white/75">
+              {(route.distanceMeters / 1000).toFixed(1)} km
+            </span>
+            <span
+              className="size-1.5 shrink-0 rounded-full bg-[#4ade80] motion-safe:animate-pulse"
+              aria-hidden="true"
+            />
+          </div>
+        ) : routeLoading ? (
+          <div
+            className="absolute bottom-8 left-3 z-[1000] flex h-9 w-fit max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/10 bg-[rgba(20,28,22,0.85)] px-3 py-1.5 shadow-lg backdrop-blur-md"
+            aria-live="polite"
+          >
+            <Loader2 className="size-4 shrink-0 text-white/80 motion-safe:animate-spin" aria-hidden="true" />
+            <span className="whitespace-nowrap text-xs text-white/80">{t('route.loading')}</span>
+          </div>
+        ) : (
+          <div
+            className="absolute bottom-8 left-3 z-[1000] flex min-h-[36px] w-fit max-w-[16rem] items-center gap-2 rounded-2xl border border-white/10 bg-[rgba(20,28,22,0.85)] px-3 py-1.5 shadow-lg backdrop-blur-md"
+          >
+            <TriangleAlert className="size-4 shrink-0 text-[#f5b638]" aria-hidden="true" />
+            <span className="line-clamp-2 text-xs text-white/80">{t('route.straightLine')}</span>
+          </div>
+        )
       ) : null}
 
       {points.length > 0 ? (
