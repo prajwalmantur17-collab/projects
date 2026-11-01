@@ -114,6 +114,44 @@ export function RecordPage() {
   const visibleItems = items.filter((job) => !hiddenIds.has(job.id))
   const hasVisibleItems = visibleItems.length > 0
 
+  // Calculate dynamic totals from visible items so removing an item updates the numbers
+  const hasHiddenItems = hiddenIds.size > 0
+  const jobsCount = hasHiddenItems ? visibleItems.length : (record?.jobs ?? 0)
+  const totalAcres = hasHiddenItems
+    ? visibleItems.reduce((acc, job) => acc + (Number(job.acreage) || 0), 0)
+    : (record?.acres ?? 0)
+  const totalAmount = hasHiddenItems
+    ? visibleItems.reduce((acc, job) => {
+        if (job.payment_method && job.amount_paid != null) {
+          return acc + (Number(job.amount_paid) || 0)
+        }
+        return acc
+      }, 0)
+    : (record?.amount ?? 0)
+  const totalHours = hasHiddenItems
+    ? (isOwner ? visibleItems.reduce((acc, job) => acc + (Number(job.hours) || 0), 0) : null)
+    : (record?.hours ?? null)
+  const totalVillages = hasHiddenItems
+    ? (isOwner ? new Set(visibleItems.map((j) => j.village.trim()).filter(Boolean)).size : null)
+    : (record?.villages ?? null)
+  const unpaidJobsCount = hasHiddenItems
+    ? visibleItems.filter((j) => !j.payment_method || j.amount_paid == null).length
+    : (record?.unpaid_jobs ?? 0)
+
+  const visibleCrops = hasHiddenItems
+    ? Array.from(
+        visibleItems.reduce((map, item) => {
+          const prev = map.get(item.crop) || { crop: item.crop, acres: 0, amount: 0 }
+          prev.acres += Number(item.acreage) || 0
+          if (item.payment_method && item.amount_paid != null) {
+            prev.amount += Number(item.amount_paid) || 0
+          }
+          map.set(item.crop, prev)
+          return map
+        }, new Map<string, { crop: string; acres: number; amount: number }>()).values(),
+      ).sort((a, b) => b.acres - a.acres)
+    : (record?.by_crop ?? [])
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
       <PageHeader
@@ -169,7 +207,7 @@ export function RecordPage() {
             <Coins className="size-5 text-harvest-600" aria-hidden="true" />
           </div>
           <p className="mt-2 text-xl font-black text-ink sm:text-2xl">
-            {formatPrice(record?.amount ?? 0)}
+            {formatPrice(totalAmount)}
           </p>
         </Card>
 
@@ -181,7 +219,7 @@ export function RecordPage() {
             <LandPlot className="size-5 text-leaf-600" aria-hidden="true" />
           </div>
           <p className="mt-2 text-xl font-black text-ink sm:text-2xl">
-            {formatAcreage(record?.acres ?? 0)}
+            {formatAcreage(totalAcres)}
           </p>
         </Card>
 
@@ -193,7 +231,7 @@ export function RecordPage() {
             <Briefcase className="size-5 text-leaf-700" aria-hidden="true" />
           </div>
           <p className="mt-2 text-xl font-black text-ink sm:text-2xl">
-            {record?.jobs ?? 0}
+            {jobsCount}
           </p>
         </Card>
 
@@ -207,7 +245,7 @@ export function RecordPage() {
                 <Clock className="size-5 text-leaf-600" aria-hidden="true" />
               </div>
               <p className="mt-2 text-xl font-black text-ink sm:text-2xl">
-                {t('record.hoursUnit', { hours: String(record?.hours ?? 0) })}
+                {t('record.hoursUnit', { hours: String(Math.round((totalHours ?? 0) * 10) / 10) })}
               </p>
             </Card>
 
@@ -219,7 +257,7 @@ export function RecordPage() {
                 <MapPin className="size-5 text-leaf-700" aria-hidden="true" />
               </div>
               <p className="mt-2 text-xl font-black text-ink sm:text-2xl">
-                {record?.villages ?? 0}
+                {totalVillages ?? 0}
               </p>
             </Card>
           </>
@@ -227,22 +265,22 @@ export function RecordPage() {
       </div>
 
       {/* Unpaid jobs warning note */}
-      {record && record.unpaid_jobs > 0 ? (
+      {unpaidJobsCount > 0 ? (
         <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-harvest-200 bg-harvest-50 p-4 text-xs font-medium leading-relaxed text-harvest-900 sm:text-sm">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-harvest-700" aria-hidden="true" />
-          <p>{t('record.unpaidNote', { count: String(record.unpaid_jobs) })}</p>
+          <p>{t('record.unpaidNote', { count: String(unpaidJobsCount) })}</p>
         </div>
       ) : null}
 
       {/* Farmer by_crop breakdown */}
-      {!isOwner && record?.by_crop && record.by_crop.length > 0 ? (
+      {!isOwner && visibleCrops.length > 0 ? (
         <Card className="mt-6 p-4 sm:p-6">
           <h2 className="flex items-center gap-2 text-base font-bold text-ink sm:text-lg">
             <Sprout className="size-5 text-leaf-600" aria-hidden="true" />
             {t('record.byCrop')}
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {record.by_crop.map((c) => {
+            {visibleCrops.map((c) => {
               const cropKey = `crop.${c.crop}` as TranslationKey
               const cropName = t(cropKey) !== cropKey ? t(cropKey) : c.crop
               return (

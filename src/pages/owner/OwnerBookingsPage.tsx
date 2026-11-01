@@ -268,7 +268,8 @@ export function OwnerBookingsPage() {
         </Alert>
       ) : null}
 
-      <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={t('owner.requestsTitle')}>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('owner.requestsTitle')}>
         {(
           [
             ['pending', t('owner.filterPending'), counts.pending],
@@ -301,6 +302,35 @@ export function OwnerBookingsPage() {
             </button>
           )
         })}
+        </div>
+
+        {filter === 'completed' && counts.completed > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+            onClick={() => {
+              setActionError(null)
+              setClearCompletedConfirmOpen(true)
+            }}
+            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+          >
+            {t('work.clearAll')}
+          </Button>
+        ) : filter === 'closed' && counts.closed > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Trash2 className="size-4 text-clay-600" aria-hidden="true" />}
+            onClick={() => {
+              setActionError(null)
+              setClearClosedConfirmOpen(true)
+            }}
+            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+          >
+            {t('farmer.clearClosedHistory')}
+          </Button>
+        ) : null}
       </div>
 
       {loading ? (
