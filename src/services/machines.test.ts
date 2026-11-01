@@ -60,4 +60,62 @@ describe('deleteMachine', () => {
     const searchAfter = await searchMachines({ village: 'DeleteVillage' })
     expect(searchAfter.some((m) => m.id === newMachine.id)).toBe(false)
   })
+
+  it('correctly filters machines by selected crop identifier', async () => {
+    const ownerId = 'crop-test-owner'
+    const wheatMachine = await createMachine(
+      ownerId,
+      {
+        machine_type: 'combine_harvester',
+        model: 'WheatHarvester',
+        price_per_acre: 1800,
+        pricing_unit: 'per_acre',
+        crops: ['wheat', 'barley'],
+        phone: '9876543211',
+        latitude: 13.1,
+        longitude: 77.6,
+        locations: [{ village: 'CropFilterVillage', district: 'Bengaluru', state: 'Karnataka', is_primary: true }],
+      },
+      null,
+    )
+
+    const riceMachine = await createMachine(
+      ownerId,
+      {
+        machine_type: 'reaper',
+        model: 'RiceReaper',
+        price_per_acre: 1200,
+        pricing_unit: 'per_acre',
+        crops: ['rice', 'ragi'],
+        phone: '9876543212',
+        latitude: 13.1,
+        longitude: 77.6,
+        locations: [{ village: 'CropFilterVillage', district: 'Bengaluru', state: 'Karnataka', is_primary: true }],
+      },
+      null,
+    )
+
+    // Filter by wheat
+    const wheatResults = await searchMachines({ village: 'CropFilterVillage', crop: 'wheat' })
+    expect(wheatResults.some((m) => m.id === wheatMachine.id)).toBe(true)
+    expect(wheatResults.some((m) => m.id === riceMachine.id)).toBe(false)
+
+    // Filter by rice
+    const riceResults = await searchMachines({ village: 'CropFilterVillage', crop: 'rice' })
+    expect(riceResults.some((m) => m.id === riceMachine.id)).toBe(true)
+    expect(riceResults.some((m) => m.id === wheatMachine.id)).toBe(false)
+
+    // Filter by ragi (one of our integrated crops)
+    const ragiResults = await searchMachines({ village: 'CropFilterVillage', crop: 'ragi' })
+    expect(ragiResults.some((m) => m.id === riceMachine.id)).toBe(true)
+    expect(ragiResults.some((m) => m.id === wheatMachine.id)).toBe(false)
+
+    // Filter by cotton (neither supports)
+    const cottonResults = await searchMachines({ village: 'CropFilterVillage', crop: 'cotton' })
+    expect(cottonResults.some((m) => m.id === wheatMachine.id || m.id === riceMachine.id)).toBe(false)
+
+    // Clean up test machines
+    await deleteMachine(wheatMachine.id, ownerId)
+    await deleteMachine(riceMachine.id, ownerId)
+  })
 })

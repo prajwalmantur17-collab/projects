@@ -373,14 +373,19 @@ export const CROP_SYNONYMS: Record<string, string[]> = {
     'groundnut', 'peanut', 'moongfali', 'mungfali', 'मूंगफली', 'मूँगफली', 'ಶೇಂಗಾ', 'ಕಡಲೆಕಾಯಿ',
     'ಕಡಲೆ ಕಾಯಿ',
   ],
-  millet: [
-    'millet', 'bajra', 'jowar', 'jwar', 'ragi', 'sorghum', 'बाजरा', 'ज्वार', 'रागी', 'ಜೋಳ',
-    'ರಾಗಿ', 'ಸಜ್ಜೆ', 'ನವಣೆ',
-  ],
+  millet: ['millet', 'small millet', 'foxtail millet', 'navane', 'kodo', 'नवणे', 'ನವಣೆ', 'मिलेट', 'ಮಿಲೆಟ್'],
   barley: ['barley', 'jau', 'जौ', 'ಬಾರ್ಲಿ', 'ಜವೆಗೋಧಿ'],
   mustard: ['mustard', 'sarson', 'sarso', 'सरसों', 'सरसो', 'ಸಾಸಿವೆ'],
   chickpea: ['chickpea', 'chickpeas', 'gram', 'chana', 'channa', 'चना', 'चने', 'ಕಡಲೆ', 'ಕಡಲೆಬೇಳೆ'],
   pigeon_pea: ['pigeon pea', 'tur', 'toor', 'arhar', 'tuar', 'तूर', 'तुअर', 'अरहर', 'ತೊಗರಿ'],
+  jowar: ['jowar', 'jwar', 'sorghum', 'jola', 'jolada', 'ज्वार', 'जवार', 'ಜೋಳ'],
+  ragi: ['ragi', 'finger millet', 'mandua', 'nachni', 'रागी', 'मंडुआ', 'नाचनी', 'ರಾಗಿ'],
+  bajra: ['bajra', 'pearl millet', 'sajje', 'बाजरा', 'बाजरे', 'ಸಜ್ಜೆ'],
+  sunflower: ['sunflower', 'surajmukhi', 'suryakanti', 'सूरजमुखी', 'सनफ्लावर', 'ಸೂರ್ಯಕಾಂತಿ', 'ಸನ್ ಫ್ಲವರ್'],
+  sesame: ['sesame', 'til', 'gingelly', 'ellu', 'तिल', 'ಎಳ್ಳು'],
+  green_gram: ['green gram', 'moong', 'mung', 'moong dal', 'hesaru kalu', 'hesarukalu', 'मूंग', 'मुंग', 'ಹೆಸರುಕಾಳು', 'ಹೆಸರು ಕಾಳು', 'ಹೆಸರು'],
+  black_gram: ['black gram', 'urad', 'uddu', 'udad', 'उड़द', 'उरद', 'ಉದ್ದು'],
+  lentil: ['lentil', 'lentils', 'masoor', 'masur', 'मसूर', 'ಮಸೂರ್', 'ಮಸೂರ'],
 }
 
 export const MACHINE_SYNONYMS: Record<string, string[]> = {

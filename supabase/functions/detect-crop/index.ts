@@ -23,6 +23,14 @@ const CROPS = [
   'mustard',
   'chickpea',
   'pigeon_pea',
+  'jowar',
+  'ragi',
+  'bajra',
+  'sunflower',
+  'sesame',
+  'green_gram',
+  'black_gram',
+  'lentil',
 ] as const
 
 // Tried in order. Older models such as gemini-2.5-flash are closed to new keys.

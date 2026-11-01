@@ -22,6 +22,14 @@ export const CROP_KEYS: CropKey[] = [
   'mustard',
   'chickpea',
   'pigeon_pea',
+  'jowar',
+  'ragi',
+  'bajra',
+  'sunflower',
+  'sesame',
+  'green_gram',
+  'black_gram',
+  'lentil',
 ]
 
 export function isMachineType(value: unknown): value is MachineType {

@@ -12,6 +12,9 @@ export const cropPhotoEn = {
   'cropPhoto.cannotTell': 'We could not tell the crop. Please choose it yourself.',
   'cropPhoto.unavailable': 'Photo check is not available right now. Please choose the crop yourself.',
   'cropPhoto.selected': 'Crop selected: {crop}',
+  'cropPicker.open': 'All crops',
+  'cropPicker.title': 'Choose your crop',
+  'cropPicker.hint': 'Tap the picture of your crop.',
 } as const
 
 export const cropPhotoKn: Record<keyof typeof cropPhotoEn, string> = {
@@ -26,6 +29,9 @@ export const cropPhotoKn: Record<keyof typeof cropPhotoEn, string> = {
   'cropPhoto.cannotTell': 'ಬೆಳೆ ಗುರುತಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನೀವೇ ಆರಿಸಿ.',
   'cropPhoto.unavailable': 'ಫೋಟೋ ಪರಿಶೀಲನೆ ಈಗ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಳೆಯನ್ನು ನೀವೇ ಆರಿಸಿ.',
   'cropPhoto.selected': 'ಬೆಳೆ ಆಯ್ಕೆಯಾಗಿದೆ: {crop}',
+  'cropPicker.open': 'ಎಲ್ಲಾ ಬೆಳೆಗಳು',
+  'cropPicker.title': 'ನಿಮ್ಮ ಬೆಳೆಯನ್ನು ಆರಿಸಿ',
+  'cropPicker.hint': 'ನಿಮ್ಮ ಬೆಳೆಯ ಚಿತ್ರವನ್ನು ಒತ್ತಿ.',
 }
 
 export const cropPhotoHi: Record<keyof typeof cropPhotoEn, string> = {
@@ -40,4 +46,7 @@ export const cropPhotoHi: Record<keyof typeof cropPhotoEn, string> = {
   'cropPhoto.cannotTell': 'फसल पहचान नहीं सके। कृपया खुद चुनें।',
   'cropPhoto.unavailable': 'फ़ोटो जाँच अभी उपलब्ध नहीं है। कृपया फसल खुद चुनें।',
   'cropPhoto.selected': 'फसल चुनी गई: {crop}',
+  'cropPicker.open': 'सभी फसलें',
+  'cropPicker.title': 'अपनी फसल चुनें',
+  'cropPicker.hint': 'अपनी फसल की तस्वीर दबाएं।',
 }

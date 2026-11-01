@@ -1,7 +1,9 @@
 import { CheckCircle2, Play } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { formatDate, formatDateTime, formatPrice } from '../../lib/format'
+import { isCropKey } from '../../lib/constants'
 import { cropLabelKey } from '../../lib/labels'
+import { CropIcon } from '../crop/CropIcon'
 import { workPhase } from '../../services/workStatus'
 import type { BookingWithRelations } from '../../types'
 
@@ -29,8 +31,9 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
         </div>
         <div>
           <dt className="text-ink-muted">{t('booking.crop')}</dt>
-          <dd className="mt-0.5 font-semibold text-ink">
-            {t(cropLabelKey(booking.crop))}
+          <dd className="mt-0.5 flex items-center gap-1.5 font-semibold text-ink">
+            {isCropKey(booking.crop) ? <CropIcon crop={booking.crop} size={18} /> : null}
+            <span>{t(cropLabelKey(booking.crop))}</span>
           </dd>
         </div>
         <div>

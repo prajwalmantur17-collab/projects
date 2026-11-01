@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, MapPin, MessageCircle, Phone, Wheat } from 'lucide-react'
+import { CheckCircle2, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { formatPrice } from '../../lib/format'
 import { formatDistance } from '../../lib/geo'
 import { telHref, whatsappHref } from '../../lib/validation'
 import { getMachineImageUrl } from '../../services/machines'
-import type { MachineCard as MachineCardType } from '../../types'
+import type { CropKey, MachineCard as MachineCardType } from '../../types'
+import { CropIcon } from '../crop/CropIcon'
 import { MachinePlaceholder } from '../brand/MachinePlaceholder'
 import { LinkButton } from '../ui/Button'
 import { SpeakButton } from '../voice/SpeakButton'
@@ -219,13 +220,13 @@ export function MachineCard({
         {/* Crops */}
         {machine.crops.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            <Wheat className="size-4 text-leaf-600" aria-hidden="true" />
             {crops.map((crop) => (
               <span
                 key={crop}
-                className="rounded-full bg-cream-100 px-2 py-0.5 text-xs font-semibold text-ink-soft"
+                className="inline-flex items-center gap-1.5 rounded-full bg-cream-100 py-0.5 pl-1 pr-2.5 text-xs font-semibold text-ink-soft ring-1 ring-cream-300/60"
               >
-                {t(`crop.${crop}`)}
+                <CropIcon crop={crop as CropKey} size={15} />
+                <span>{t(`crop.${crop}` as TranslationKey)}</span>
               </span>
             ))}
             {extraCrops > 0 ? (

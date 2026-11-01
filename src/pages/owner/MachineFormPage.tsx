@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Check, CheckCircle2, LocateFixed, MapPin, Mic, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle2, LocateFixed, MapPin, Mic, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { CROP_KEYS, MACHINE_TYPES, MAX_VILLAGES } from '../../lib/constants'
+import { CROP_DISPLAY_ORDER } from '../../lib/cropConfig'
+import { CropCard } from '../../components/crop/CropCard'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { validateMachineForm } from '../../lib/validation'
@@ -686,31 +688,51 @@ export function MachineFormPage() {
           </div>
 
           <fieldset>
-            <legend className="text-base font-semibold text-ink">
-              {t('machine.cropsLabel')}
-              <span className="ml-1 text-clay-600" aria-hidden="true">
-                *
-              </span>
-            </legend>
-            <p className="mt-0.5 text-sm text-ink-muted">{t('machine.cropsHint')}</p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {CROP_KEYS.map((crop) => {
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <legend className="text-base font-semibold text-ink">
+                  {t('machine.cropsLabel')}
+                  <span className="ml-1 text-clay-600" aria-hidden="true">
+                    *
+                  </span>
+                </legend>
+                <p className="mt-0.5 text-sm text-ink-muted">{t('machine.cropsHint')}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-leaf-800">
+                  {form.crops.length} of {CROP_KEYS.length} selected
+                </span>
+                <span className="text-cream-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setField('crops', [...CROP_KEYS])}
+                  className="text-xs font-bold text-leaf-700 hover:underline"
+                >
+                  Select All
+                </button>
+                <span className="text-cream-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setField('crops', [])}
+                  className="text-xs font-bold text-ink-muted hover:underline"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5">
+              {CROP_DISPLAY_ORDER.map((crop) => {
                 const active = form.crops.includes(crop)
                 return (
-                  <button
+                  <CropCard
                     key={crop}
-                    type="button"
+                    crop={crop}
+                    selected={active}
                     onClick={() => toggleCrop(crop)}
-                    aria-pressed={active}
-                    className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-semibold transition-colors ${
-                      active
-                        ? 'border-leaf-600 bg-leaf-50 text-leaf-900'
-                        : 'border-cream-300 bg-white text-ink-soft hover:border-leaf-300'
-                    }`}
-                  >
-                    {active ? <Check className="size-4" aria-hidden="true" /> : null}
-                    {t(`crop.${crop}`)}
-                  </button>
+                    compact
+                  />
                 )
               })}
             </div>

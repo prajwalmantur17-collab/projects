@@ -34,6 +34,14 @@ export type CropKey =
   | 'mustard'
   | 'chickpea'
   | 'pigeon_pea'
+  | 'jowar'
+  | 'ragi'
+  | 'bajra'
+  | 'sunflower'
+  | 'sesame'
+  | 'green_gram'
+  | 'black_gram'
+  | 'lentil'
 
 export interface Profile {
   id: string

@@ -9,13 +9,12 @@ import {
   MapPin,
   Mic,
   Tractor,
-  Wheat,
 } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatDate, formatDateTime, formatPrice } from '../../lib/format'
-import { CROP_KEYS, PHONE_DISPLAY_PREFIX } from '../../lib/constants'
+import { CROP_KEYS, PHONE_DISPLAY_PREFIX, isCropKey } from '../../lib/constants'
 import {
   addYearsIso,
   parsePositiveNumber,
@@ -43,6 +42,7 @@ import { getMachineCard, getMachineImageUrl, listBlackoutDates } from '../../ser
 import { getMachineStatus, joinWaitlist, leaveWaitlist } from '../../services/workStatus'
 import type { Booking, CropKey, MachineCard, MachineStatus } from '../../types'
 import { MachinePlaceholder } from '../../components/brand/MachinePlaceholder'
+import { CropIcon } from '../../components/crop/CropIcon'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { SpeakButton } from '../../components/voice/SpeakButton'
 import { VoiceFlowAssistant } from '../../components/voice/VoiceFlowAssistant'
@@ -260,10 +260,10 @@ export function MachineDetailsPage() {
                     machine.crops.map((crop) => (
                       <span
                         key={crop}
-                        className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-2.5 py-0.5 text-sm text-ink-soft"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-cream-100 py-1 pl-1.5 pr-3 text-sm font-medium text-ink-soft ring-1 ring-cream-300/60"
                       >
-                        <Wheat className="size-3.5 text-leaf-600" aria-hidden="true" />
-                        {t(`crop.${crop}`)}
+                        <CropIcon crop={crop as CropKey} size={18} />
+                        <span>{t(`crop.${crop}`)}</span>
                       </span>
                     ))
                   )}
@@ -946,22 +946,30 @@ function BookingForm({
               required
             />
 
-            <Select
-              label={t('farmer.crop')}
-              value={crop}
-              onChange={(event) => {
-                setCrop(event.target.value)
-                clearFieldError('crop')
-              }}
-              error={errors.crop ? t(errors.crop) : null}
-              required
-            >
-              {cropOptions.map((key) => (
-                <option key={key} value={key}>
-                  {t(`crop.${key}`)}
-                </option>
-              ))}
-            </Select>
+            <div>
+              <Select
+                label={t('farmer.crop')}
+                value={crop}
+                onChange={(event) => {
+                  setCrop(event.target.value)
+                  clearFieldError('crop')
+                }}
+                error={errors.crop ? t(errors.crop) : null}
+                required
+              >
+                {cropOptions.map((key) => (
+                  <option key={key} value={key}>
+                    {t(`crop.${key}`)}
+                  </option>
+                ))}
+              </Select>
+              {crop && isCropKey(crop) ? (
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-leaf-800">
+                  <CropIcon crop={crop} size={18} />
+                  <span>{t(`crop.${crop}`)}</span>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <Input

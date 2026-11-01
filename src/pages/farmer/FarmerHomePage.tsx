@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -34,21 +35,15 @@ import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
 import { MachineCard } from '../../components/machine/MachineCard'
 import { CropPhotoDetector } from '../../components/crop/CropPhotoDetector'
+import { CropPickerModal } from '../../components/crop/CropPickerModal'
+import { CropCard, AnyCropCard } from '../../components/crop/CropCard'
+import { CROP_DISPLAY_ORDER, POPULAR_CROP_KEYS } from '../../lib/cropConfig'
 import { VoiceSearchButton } from '../../components/voice/VoiceSearchButton'
 import { LiveMap } from '../../components/map/LiveMap'
 import type { MapMachine } from '../../components/map/LiveMap'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { KisanVoiceAssistant } from '../../components/voice/KisanVoiceAssistant'
 import type { VoiceQueryResult } from '../../lib/voice'
-
-const POPULAR_CROPS: { key: CropKey; emoji: string }[] = [
-  { key: 'rice', emoji: '🌾' },
-  { key: 'wheat', emoji: '🌾' },
-  { key: 'sugarcane', emoji: '🎋' },
-  { key: 'maize', emoji: '🌽' },
-  { key: 'soybean', emoji: '🌱' },
-  { key: 'cotton', emoji: '☁️' },
-]
 
 interface SearchSnapshot {
   village: string
@@ -250,6 +245,21 @@ export function FarmerHomePage() {
     void runSearch()
   }
 
+  const [cropPickerOpen, setCropPickerOpen] = useState(false)
+  const [showAllCrops, setShowAllCrops] = useState(false)
+
+  // Visible crops: top 7 popular crops (or all 20 when expanded), always ensuring the active crop is visible
+  const visibleCrops = useMemo(() => {
+    if (showAllCrops) {
+      return CROP_DISPLAY_ORDER
+    }
+    const top = POPULAR_CROP_KEYS.slice(0, 7)
+    if (crop && !top.includes(crop as CropKey) && CROP_DISPLAY_ORDER.includes(crop as CropKey)) {
+      return [...top, crop as CropKey]
+    }
+    return top
+  }, [showAllCrops, crop])
+
   const handleQuickCrop = (selectedKey: string) => {
     const nextCrop = crop === selectedKey ? '' : selectedKey
     setCrop(nextCrop)
@@ -416,34 +426,84 @@ export function FarmerHomePage() {
             />
           </div>
 
-          {/* Popular Crops Quick Select Chips */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ink-muted mb-2">
-              Select Crop
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_CROPS.map((item) => {
-                const active = crop === item.key
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => handleQuickCrop(item.key)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-                      active
-                        ? 'bg-leaf-700 text-white shadow-xs'
-                        : 'bg-cream-100 text-ink-soft hover:bg-cream-200'
-                    }`}
-                  >
-                    <span>{item.emoji}</span>
-                    <span>{t(`crop.${item.key}`)}</span>
-                  </button>
-                )
-              })}
+          {/* Agricultural Crop Selection with Realistic Photographs */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                  {t('farmer.cropLabel')}
+                </label>
+                {crop ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-100 px-2.5 py-0.5 text-xs font-bold text-leaf-900 ring-1 ring-leaf-300">
+                    <span className="size-1.5 rounded-full bg-leaf-600" />
+                    {t(`crop.${crop}` as TranslationKey)}
+                    <button
+                      type="button"
+                      onClick={() => handleQuickCrop(crop)}
+                      className="ml-0.5 rounded-full p-0.5 text-leaf-700 hover:bg-leaf-200"
+                      aria-label="Clear selected crop"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CropPhotoDetector
+                  allCrops={CROP_KEYS}
+                  onConfirm={(selected) => {
+                    setCrop(selected)
+                    if (village.trim() || district.trim() || geo.coordinates) {
+                      void runSearch(selected)
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCropPickerOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1 text-xs font-semibold text-leaf-800 shadow-2xs hover:bg-cream-50"
+                >
+                  <span>{t('cropPicker.open')} (20)</span>
+                </button>
+              </div>
             </div>
-            <CropPhotoDetector
-              allCrops={CROP_KEYS}
-              onConfirm={(selected) => {
+
+            {/* Responsive Crop Cards Grid */}
+            <div className="grid grid-cols-2 gap-2.5 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8">
+              <AnyCropCard
+                selected={crop === ''}
+                onClick={() => handleQuickCrop('')}
+                compact
+              />
+              {visibleCrops.map((cropKey) => (
+                <CropCard
+                  key={cropKey}
+                  crop={cropKey}
+                  selected={crop === cropKey}
+                  onClick={() => handleQuickCrop(cropKey)}
+                  compact
+                />
+              ))}
+            </div>
+
+            {/* Inline expand/collapse toggle */}
+            <div className="flex justify-end pt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAllCrops((prev) => !prev)}
+                className="text-xs font-bold text-leaf-800 hover:text-leaf-950 hover:underline"
+              >
+                {showAllCrops ? 'Show top crops' : 'Show all 20 crops \u2193'}
+              </button>
+            </div>
+
+            <CropPickerModal
+              open={cropPickerOpen}
+              onClose={() => setCropPickerOpen(false)}
+              selected={crop}
+              allowAny
+              onSelect={(selected) => {
                 setCrop(selected)
                 if (village.trim() || district.trim() || geo.coordinates) {
                   void runSearch(selected)
