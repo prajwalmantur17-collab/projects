@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Inbox, Phone } from 'lucide-react'
+import { Inbox, Mic, Phone } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatDate, formatDateTime } from '../../lib/format'
-import { machineTypeLabelKey } from '../../lib/labels'
+import { cropLabelKey, machineTypeLabelKey } from '../../lib/labels'
+import { parseYesNo } from '../../lib/voiceParse'
 import { useAsync } from '../../hooks/useAsync'
 import { getOwnerBookings, respondToBooking, subscribeToBookings } from '../../services/bookings'
 import { isInShareWindow, startSharing } from '../../services/liveShare'
@@ -15,6 +16,9 @@ import { BookingMachineThumb } from '../../components/booking/BookingMachineThum
 import { StatusBadge } from '../../components/booking/StatusBadge'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { ShareLocationPanel } from '../../components/map/ShareLocationPanel'
+import { VoiceFlowAssistant } from '../../components/voice/VoiceFlowAssistant'
+import { askStep } from '../../components/voice/voiceSteps'
+import type { VoiceStep } from '../../components/voice/voiceSteps'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -39,6 +43,8 @@ export function OwnerBookingsPage() {
   const [responding, setResponding] = useState(false)
   const [responseError, setResponseError] = useState<TranslationKey | null>(null)
   const [success, setSuccess] = useState<TranslationKey | null>(null)
+  const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voiceQueue, setVoiceQueue] = useState<BookingWithRelations[]>([])
 
   const loader = useCallback(async () => {
     if (!ownerId) return [] as BookingWithRelations[]
@@ -110,9 +116,81 @@ export function OwnerBookingsPage() {
     }
   }
 
+  // ---- Voice: reads each new request aloud; the owner says yes (accept), no (reject) or skip.
+  const startVoice = () => {
+    setVoiceQueue(bookings.filter((booking) => booking.status === 'pending'))
+    setSuccess(null)
+    setVoiceOpen(true)
+  }
+
+  const voiceSteps: VoiceStep[] = voiceQueue.map((booking, index) =>
+    askStep<'yes' | 'no'>({
+      id: booking.id,
+      prompt: () =>
+        t('vf.requests.item', {
+          n: index + 1,
+          total: voiceQueue.length,
+          farmer: booking.farmer?.full_name ?? t('owner.farmer'),
+          machine: booking.machine
+            ? t(machineTypeLabelKey(booking.machine.machine_type))
+            : t('common.unknown'),
+          date: formatDate(booking.service_date, language),
+          acres: booking.acreage,
+          crop: t(cropLabelKey(booking.crop)),
+          village: booking.village,
+        }),
+      parse: (heard) => {
+        const answer = parseYesNo(heard)
+        return answer ? { ok: true, value: answer } : { ok: false, message: t('vf.yesNoRetry') }
+      },
+      confirmText: (answer) =>
+        t(answer === 'yes' ? 'vf.requests.confirmAccept' : 'vf.requests.confirmReject'),
+      apply: async (answer) => {
+        const decision: Decision = answer === 'yes' ? 'confirmed' : 'rejected'
+        try {
+          await respondToBooking(booking.id, decision)
+          if (decision === 'confirmed' && isInShareWindow(booking.service_date)) {
+            startSharing(booking.id, true)
+          }
+          reload()
+          return t(decision === 'confirmed' ? 'owner.acceptSuccess' : 'owner.rejectSuccess')
+        } catch (caught) {
+          logError('owner.voiceRespond', caught)
+          return t(mapErrorToKey(caught, 'owner.respondError'))
+        }
+      },
+    }),
+  )
+
   return (
     <div>
+      <VoiceFlowAssistant
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        title={t('vf.title.requests')}
+        intro={
+          voiceQueue.length === 0
+            ? t('vf.requests.none')
+            : t('vf.requests.intro', { count: voiceQueue.length })
+        }
+        createSteps={() => voiceSteps}
+      />
+
       <PageHeader title={t('owner.requestsTitle')} description={t('owner.requestsSubtitle')} />
+
+      {counts.pending > 0 ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          fullWidth
+          className="mb-4"
+          icon={<Mic className="size-5" aria-hidden="true" />}
+          onClick={startVoice}
+        >
+          {t('vf.cta.requests')}
+        </Button>
+      ) : null}
 
       {success ? (
         <Alert variant="success" className="mb-4">

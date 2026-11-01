@@ -7,6 +7,7 @@ import {
   Clock3,
   LocateFixed,
   MapPin,
+  Mic,
   Tractor,
   Wheat,
 } from 'lucide-react'
@@ -21,7 +22,19 @@ import {
   todayIsoInIndia,
   validateBookingForm,
 } from '../../lib/validation'
-import type { FieldErrors } from '../../lib/validation'
+import type { BookingFormValues, FieldErrors } from '../../lib/validation'
+import {
+  CROP_SYNONYMS,
+  cleanPlaceName,
+  extractPhone,
+  matchOption,
+  parseNumber,
+  parseSpokenDate,
+  parseYesNo,
+  spokenDigits,
+} from '../../lib/voiceParse'
+import type { SpokenOption } from '../../lib/voiceParse'
+import { useAuth } from '../../auth/AuthProvider'
 import { useAsync } from '../../hooks/useAsync'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { reverseGeocode } from '../../services/geocode'
@@ -31,6 +44,9 @@ import type { Booking, CropKey, MachineCard } from '../../types'
 import { MachinePlaceholder } from '../../components/brand/MachinePlaceholder'
 import { ContactButtons } from '../../components/contact/ContactButtons'
 import { SpeakButton } from '../../components/voice/SpeakButton'
+import { VoiceFlowAssistant } from '../../components/voice/VoiceFlowAssistant'
+import { askStep, sayStep } from '../../components/voice/voiceSteps'
+import type { VoiceStep } from '../../components/voice/voiceSteps'
 import { StatusBadge } from '../../components/booking/StatusBadge'
 import { Alert } from '../../components/ui/Alert'
 import { Button, LinkButton } from '../../components/ui/Button'
@@ -40,6 +56,8 @@ import { Input, Select, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 
 const LAST_PHONE_KEY = 'harvest-rentals-last-phone'
+
+type SubmitResult = { ok: true } | { ok: false; key: TranslationKey; invalid?: boolean }
 
 interface MachinePageData {
   machine: MachineCard | null
@@ -279,6 +297,14 @@ export function MachineDetailsPage() {
   )
 }
 
+interface VoiceBookingValues {
+  serviceDate: string
+  village: string
+  acreage: string
+  crop: string
+  phone: string
+}
+
 function BookingForm({ machine }: { machine: MachineCard }) {
   const { t, language } = useI18n()
   const today = todayIsoInIndia()
@@ -297,6 +323,15 @@ function BookingForm({ machine }: { machine: MachineCard }) {
   const geo = useGeolocation()
   const [geocoding, setGeocoding] = useState(false)
   const [detectedLoc, setDetectedLoc] = useState<string | null>(null)
+  const { session, profile } = useAuth()
+  const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voiceStart, setVoiceStart] = useState<VoiceBookingValues>({
+    serviceDate: '',
+    village: '',
+    acreage: '',
+    crop: '',
+    phone: '',
+  })
 
   const handleUseLocation = async () => {
     setDetectedLoc(null)
@@ -342,19 +377,17 @@ function BookingForm({ machine }: { machine: MachineCard }) {
       ? t('common.perDay')
       : t('common.perAcre')
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (submitting) return
+  const submitBooking = async (values: BookingFormValues): Promise<SubmitResult> => {
     setFormError(null)
 
-    const validation = validateBookingForm(
-      { serviceDate, village, acreage, crop, phone, notes },
-      { allowedCrops: cropOptions, today },
-    )
+    const validation = validateBookingForm(values, { allowedCrops: cropOptions, today })
     if (!validation.parsed) {
       setErrors(validation.errors)
-      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      return
+      return {
+        ok: false,
+        key: Object.values(validation.errors)[0] ?? 'farmer.bookingError',
+        invalid: true,
+      }
     }
     setErrors({})
     setSubmitting(true)
@@ -374,16 +407,179 @@ function BookingForm({ machine }: { machine: MachineCard }) {
       window.setTimeout(() => {
         document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 60)
+      return { ok: true }
     } catch (caught) {
       logError('booking.create', caught)
-      setFormError(mapErrorToKey(caught, 'farmer.bookingError'))
+      const key = mapErrorToKey(caught, 'farmer.bookingError')
+      setFormError(key)
+      return { ok: false, key }
     } finally {
       setSubmitting(false)
     }
   }
 
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (submitting) return
+    const result = await submitBooking({ serviceDate, village, acreage, crop, phone, notes })
+    if (!result.ok && result.invalid) {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    }
+  }
+
+  // ---- Voice booking: asks a few questions out loud and fills in the form.
+  const typeLabel = t(`machineType.${machine.machine_type}`)
+  const cropChoices: SpokenOption<CropKey>[] = cropOptions.map((key) => ({
+    value: key,
+    names: [...(CROP_SYNONYMS[key] ?? []), t(`crop.${key}`)],
+  }))
+  const cropList = cropOptions.map((key) => t(`crop.${key}`)).join(', ')
+  const voiceBlocked = !machine.is_active
+    ? t('farmer.paused')
+    : !session
+      ? t('vf.book.signIn')
+      : profile && profile.role !== 'farmer'
+        ? t('booking.error.role')
+        : undefined
+  const startVoice = () => {
+    setVoiceStart({ serviceDate, village, acreage, crop, phone })
+    setVoiceOpen(true)
+  }
+
+  const createVoiceSteps = (values: VoiceBookingValues): VoiceStep[] => {
+  const voiceMissing = () =>
+    !values.serviceDate || !values.village.trim() || !values.acreage || !values.crop || !values.phone
+
+  const cropStep = askStep<CropKey>({
+    id: 'crop',
+    prompt: t('vf.book.crop', { crops: cropList }),
+    parse: (heard) => {
+      const match = matchOption(heard, cropChoices)
+      return match
+        ? { ok: true, value: match }
+        : { ok: false, message: t('vf.book.cropBad', { crops: cropList }) }
+    },
+    describe: (key) => t(`crop.${key}`),
+    apply: (key) => {
+      values.crop = key
+      setCrop(key)
+      clearFieldError('crop')
+    },
+  })
+
+  return [
+    askStep<string>({
+      id: 'date',
+      prompt: t('vf.book.date'),
+      parse: (heard) => {
+        const iso = parseSpokenDate(heard, today)
+        if (!iso) return { ok: false, message: t('vf.book.dateBad') }
+        if (iso < today) return { ok: false, message: t('vf.book.datePast') }
+        if (iso > maxDate) return { ok: false, message: t('validation.dateTooFar') }
+        return { ok: true, value: iso }
+      },
+      describe: (iso) => formatDate(iso, language),
+      apply: (iso) => {
+        values.serviceDate = iso
+        setServiceDate(iso)
+        clearFieldError('serviceDate')
+      },
+    }),
+    askStep<string>({
+      id: 'village',
+      prompt: t('vf.book.village'),
+      parse: (heard) => {
+        const name = cleanPlaceName(heard)
+        return name.length >= 2 && name.length <= 80
+          ? { ok: true, value: name }
+          : { ok: false, message: t('vf.book.villageBad') }
+      },
+      describe: (name) => name,
+      apply: (name) => {
+        values.village = name
+        setVillage(name)
+        clearFieldError('village')
+      },
+    }),
+    askStep<string>({
+      id: 'acreage',
+      prompt: t('vf.book.acreage'),
+      parse: (heard) => {
+        const number = parseNumber(heard)
+        if (number === null || number < 0.1 || number > 500) {
+          return { ok: false, message: t('vf.book.acreageBad') }
+        }
+        return { ok: true, value: String(Math.round(number * 100) / 100) }
+      },
+      describe: (value) => `${value} ${t('common.acres')}`,
+      apply: (value) => {
+        values.acreage = value
+        setAcreage(value)
+        clearFieldError('acreage')
+      },
+    }),
+    ...(cropOptions.length > 1 ? [cropStep] : []),
+    askStep<string>({
+      id: 'phone',
+      prompt: t('vf.book.phone'),
+      parse: (heard) => {
+        const number = extractPhone(heard)
+        return number
+          ? { ok: true, value: number }
+          : { ok: false, message: t('vf.book.phoneBad') }
+      },
+      confirmText: (number) => t('vf.confirmAsk', { value: spokenDigits(number) }),
+      describe: (number) => spokenDigits(number),
+      apply: (number) => {
+        values.phone = number
+        setPhone(number)
+        clearFieldError('phone')
+      },
+    }),
+    askStep<'yes' | 'no'>({
+      id: 'summary',
+      allowSkip: false,
+      when: () => !voiceMissing(),
+      prompt: () => {
+        return t('vf.book.summary', {
+          machine: typeLabel,
+          date: formatDate(values.serviceDate, language),
+          village: values.village,
+          acres: values.acreage,
+          crop: t(`crop.${values.crop as CropKey}`),
+          phone: spokenDigits(values.phone),
+        })
+      },
+      parse: (heard) => {
+        const answer = parseYesNo(heard)
+        return answer ? { ok: true, value: answer } : { ok: false, message: t('vf.yesNoRetry') }
+      },
+      apply: async (answer) => {
+        if (answer === 'no') return t('vf.book.notSent')
+        const result = await submitBooking({ ...values, notes })
+        return result.ok ? t('vf.book.sent') : t(result.key)
+      },
+    }),
+    sayStep('incomplete', () => t('vf.incomplete'), voiceMissing),
+  ]
+  }
+
+  const voiceAssistant = (
+    <VoiceFlowAssistant
+      open={voiceOpen}
+      onClose={() => setVoiceOpen(false)}
+      title={t('vf.title.book')}
+      intro={t('vf.book.intro')}
+      initialValues={voiceStart}
+      createSteps={createVoiceSteps}
+      blockedMessage={voiceBlocked}
+    />
+  )
+
   if (created) {
     return (
+      <>
+      {voiceAssistant}
       <Card className="p-5 sm:p-6" >
         <div className="flex flex-col items-center text-center">
           <span className="flex size-14 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
@@ -430,10 +626,13 @@ function BookingForm({ machine }: { machine: MachineCard }) {
           </Button>
         </div>
       </Card>
+      </>
     )
   }
 
   return (
+    <>
+    {voiceAssistant}
     <Card className="p-5 sm:p-6">
       <div ref={formRef}>
         <div className="flex items-center gap-2">
@@ -447,6 +646,29 @@ function BookingForm({ machine }: { machine: MachineCard }) {
             </p>
           </div>
         </div>
+
+        {!session ? (
+          <Alert variant="warning" className="mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>{t('vf.book.signIn')}</span>
+              <LinkButton to="/login" size="sm" variant="outline">
+                {t('auth.signIn')}
+              </LinkButton>
+            </div>
+          </Alert>
+        ) : null}
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          fullWidth
+          className="mt-4"
+          icon={<Mic className="size-5" aria-hidden="true" />}
+          onClick={startVoice}
+        >
+          {t('vf.cta.book')}
+        </Button>
 
         {!machine.is_active ? (
           <Alert variant="warning" className="mt-4">
@@ -585,6 +807,7 @@ function BookingForm({ machine }: { machine: MachineCard }) {
         </form>
       </div>
     </Card>
+    </>
   )
 }
 

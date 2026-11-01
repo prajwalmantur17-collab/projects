@@ -1,8 +1,10 @@
 import { authHi } from './auth'
+import { vfHi } from './voiceFlow'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
   ...authHi,
+  ...vfHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास हार्वेस्टर मशीनें खोजें।',
   'app.description':

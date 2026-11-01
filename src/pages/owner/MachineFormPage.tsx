@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Check, CheckCircle2, LocateFixed, MapPin, Plus, Trash2 } from 'lucide-react'
+import { Check, CheckCircle2, LocateFixed, MapPin, Mic, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -9,6 +9,20 @@ import { CROP_KEYS, MACHINE_TYPES, MAX_VILLAGES } from '../../lib/constants'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { validateMachineForm } from '../../lib/validation'
+import {
+  CROP_SYNONYMS,
+  MACHINE_SYNONYMS,
+  PRICING_UNIT_SYNONYMS,
+  cleanPlaceName,
+  extractPhone,
+  matchAllOptions,
+  matchOption,
+  parseNumber,
+  parseYesNo,
+  saysAll,
+  spokenDigits,
+} from '../../lib/voiceParse'
+import type { SpokenOption } from '../../lib/voiceParse'
 import type { FieldErrors, MachineFormParsed } from '../../lib/validation'
 import { useAsync } from '../../hooks/useAsync'
 import { useGeolocation } from '../../hooks/useGeolocation'
@@ -32,6 +46,9 @@ import type {
   MachineType,
 } from '../../types'
 import { ImageUpload } from '../../components/machine/ImageUpload'
+import { VoiceFlowAssistant } from '../../components/voice/VoiceFlowAssistant'
+import { askStep, sayStep } from '../../components/voice/voiceSteps'
+import type { VoiceStep } from '../../components/voice/voiceSteps'
 import { Alert } from '../../components/ui/Alert'
 import { Button, LinkButton } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -51,6 +68,8 @@ interface FormState {
   phone: string
   extraVillages: string[]
 }
+
+type SaveResult = { ok: true } | { ok: false; key: TranslationKey; invalid?: boolean }
 
 interface EditData {
   machine: MachineCard | null
@@ -122,6 +141,8 @@ export function MachineFormPage() {
   const [autoFilledNotice, setAutoFilledNotice] = useState<string | null>(null)
   const [gpsMessage, setGpsMessage] = useState<'added' | 'denied' | null>(null)
   const [initialized, setInitialized] = useState(!isEdit)
+  const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voiceStart, setVoiceStart] = useState<FormState>(form)
   const formRef = useRef<HTMLFormElement>(null)
   const geo = useGeolocation()
 
@@ -228,17 +249,18 @@ export function MachineFormPage() {
     }
   }
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (saving) return
+  const saveMachine = async (values: FormState): Promise<SaveResult> => {
     const activeOwnerId = profile?.id ?? 'demo-owner'
     setFormError(null)
 
-    const validation = validateMachineForm(form)
+    const validation = validateMachineForm(values)
     if (!validation.parsed) {
       setErrors(validation.errors)
-      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      return
+      return {
+        ok: false,
+        key: Object.values(validation.errors)[0] ?? 'machine.saveError',
+        invalid: true,
+      }
     }
     setErrors({})
     setSaving(true)
@@ -254,7 +276,7 @@ export function MachineFormPage() {
         } catch (caught) {
           logError('machine.uploadImage', caught)
           setFormError('machine.photoError')
-          return
+          return { ok: false, key: 'machine.photoError' }
         }
       }
 
@@ -278,6 +300,7 @@ export function MachineFormPage() {
       setImageRemoved(false)
       setSaved(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      return { ok: true }
     } catch (caught) {
       logError('machine.save', caught)
       if (uploadedPath) {
@@ -285,11 +308,203 @@ export function MachineFormPage() {
           logError('machine.cleanupUpload', deleteError)
         })
       }
-      setFormError(mapErrorToKey(caught, 'machine.saveError'))
+      const key = mapErrorToKey(caught, 'machine.saveError')
+      setFormError(key)
+      return { ok: false, key }
     } finally {
       setSaving(false)
     }
   }
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (saving) return
+    const result = await saveMachine(form)
+    if (!result.ok && result.invalid) {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    }
+  }
+
+  // ---- Voice: asks a few questions out loud and fills in the form.
+  const unitLabel = (unit: FormState['pricingUnit']) =>
+    unit === 'per_hour'
+      ? t('common.perHour')
+      : unit === 'per_day'
+        ? t('common.perDay')
+        : t('common.perAcre')
+
+  const machineChoices: SpokenOption<MachineType>[] = MACHINE_TYPES.map((type) => ({
+    value: type,
+    names: [...(MACHINE_SYNONYMS[type] ?? []), t(machineTypeLabelKey(type))],
+  }))
+  const unitChoices: SpokenOption<FormState['pricingUnit']>[] = (
+    ['per_acre', 'per_hour', 'per_day'] as const
+  ).map((unit) => ({ value: unit, names: PRICING_UNIT_SYNONYMS[unit] ?? [] }))
+  const cropChoices: SpokenOption<CropKey>[] = CROP_KEYS.map((key) => ({
+    value: key,
+    names: [...(CROP_SYNONYMS[key] ?? []), t(`crop.${key}`)],
+  }))
+
+  const startVoice = () => {
+    setVoiceStart({ ...form, extraVillages: [...form.extraVillages] })
+    setVoiceOpen(true)
+  }
+
+  const createVoiceSteps = (values: FormState): VoiceStep[] => {
+  const voiceMissing = () => {
+    return (
+      !values.machineType ||
+      !values.pricePerAcre ||
+      values.crops.length === 0 ||
+      !values.primaryVillage.trim() ||
+      !values.district.trim() ||
+      !values.state.trim() ||
+      !values.phone
+    )
+  }
+
+  const placeStep = (
+    id: string,
+    prompt: TranslationKey,
+    field: 'primaryVillage' | 'district' | 'state',
+  ) =>
+    askStep<string>({
+      id,
+      prompt: t(prompt),
+      parse: (heard) => {
+        const name = cleanPlaceName(heard)
+        return name.length >= 2 && name.length <= 80
+          ? { ok: true, value: name }
+          : { ok: false, message: t('vf.machine.placeBad') }
+      },
+      describe: (name) => name,
+      apply: (name) => {
+        values[field] = name
+        setField(field, name)
+      },
+    })
+
+  return [
+    askStep<MachineType>({
+      id: 'type',
+      prompt: t('vf.machine.type'),
+      parse: (heard) => {
+        const match = matchOption(heard, machineChoices)
+        return match
+          ? { ok: true, value: match }
+          : { ok: false, message: t('vf.machine.typeBad') }
+      },
+      describe: (type) => t(machineTypeLabelKey(type)),
+      apply: (type) => {
+        values.machineType = type
+        setField('machineType', type)
+      },
+    }),
+    askStep<FormState['pricingUnit']>({
+      id: 'unit',
+      prompt: t('vf.machine.unit'),
+      parse: (heard) => {
+        const match = matchOption(heard, unitChoices)
+        return match
+          ? { ok: true, value: match }
+          : { ok: false, message: t('vf.machine.unitBad') }
+      },
+      describe: (unit) => unitLabel(unit),
+      apply: (unit) => {
+        values.pricingUnit = unit
+        setField('pricingUnit', unit)
+      },
+    }),
+    askStep<string>({
+      id: 'price',
+      prompt: () => t('vf.machine.price', { unit: unitLabel(values.pricingUnit) }),
+      parse: (heard) => {
+        const number = parseNumber(heard)
+        if (number === null || number < 1 || number > 1_000_000) {
+          return { ok: false, message: t('vf.machine.priceBad') }
+        }
+        return { ok: true, value: String(Math.round(number * 100) / 100) }
+      },
+      describe: (value) => `₹${value}`,
+      apply: (value) => {
+        values.pricePerAcre = value
+        setField('pricePerAcre', value)
+      },
+    }),
+    askStep<CropKey[]>({
+      id: 'crops',
+      prompt: t('vf.machine.crops'),
+      parse: (heard) => {
+        const crops = saysAll(heard) ? [...CROP_KEYS] : matchAllOptions(heard, cropChoices)
+        return crops.length > 0
+          ? { ok: true, value: crops }
+          : { ok: false, message: t('vf.machine.cropsBad') }
+      },
+      describe: (crops) => crops.map((key) => t(`crop.${key}`)).join(', '),
+      apply: (crops) => {
+        values.crops = crops
+        setField('crops', crops)
+      },
+    }),
+    placeStep('village', 'vf.machine.village', 'primaryVillage'),
+    placeStep('district', 'vf.machine.district', 'district'),
+    placeStep('state', 'vf.machine.state', 'state'),
+    askStep<string>({
+      id: 'phone',
+      prompt: t('vf.machine.phone'),
+      parse: (heard) => {
+        const number = extractPhone(heard)
+        return number
+          ? { ok: true, value: number }
+          : { ok: false, message: t('vf.book.phoneBad') }
+      },
+      confirmText: (number) => t('vf.confirmAsk', { value: spokenDigits(number) }),
+      describe: (number) => spokenDigits(number),
+      apply: (number) => {
+        values.phone = number
+        setField('phone', number)
+      },
+    }),
+    askStep<'yes' | 'no'>({
+      id: 'summary',
+      allowSkip: false,
+      when: () => !voiceMissing(),
+      prompt: () => {
+        return t('vf.machine.summary', {
+          type: t(machineTypeLabelKey(values.machineType)),
+          price: values.pricePerAcre,
+          unit: unitLabel(values.pricingUnit),
+          crops: values.crops.map((key) => t(`crop.${key as CropKey}`)).join(', '),
+          village: values.primaryVillage,
+          district: values.district,
+          state: values.state,
+          phone: spokenDigits(values.phone),
+        })
+      },
+      parse: (heard) => {
+        const answer = parseYesNo(heard)
+        return answer ? { ok: true, value: answer } : { ok: false, message: t('vf.yesNoRetry') }
+      },
+      apply: async (answer) => {
+        if (answer === 'no') return t('vf.machine.notSaved')
+        const result = await saveMachine(values)
+        return result.ok ? t('vf.machine.saved') : t(result.key)
+      },
+    }),
+    sayStep('incomplete', () => t('vf.incomplete'), voiceMissing),
+  ]
+  }
+
+  const voiceAssistant = (
+    <VoiceFlowAssistant
+      open={voiceOpen}
+      onClose={() => setVoiceOpen(false)}
+      title={t('vf.title.machine')}
+      intro={t('vf.machine.intro')}
+      initialValues={voiceStart}
+      createSteps={createVoiceSteps}
+    />
+  )
 
   if (isEdit && (loading || !initialized) && !error) {
     return <LoadingScreen message={t('common.loading')} />
@@ -334,6 +549,7 @@ export function MachineFormPage() {
   if (saved) {
     return (
       <div className="mx-auto max-w-xl">
+        {voiceAssistant}
         <Card className="p-6">
           <div className="flex flex-col items-center text-center">
             <span className="flex size-14 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
@@ -365,6 +581,19 @@ export function MachineFormPage() {
         backTo="/owner/machines"
         backLabel={t('machine.backToMachines')}
       />
+
+      {voiceAssistant}
+      <Button
+        type="button"
+        variant="secondary"
+        size="lg"
+        fullWidth
+        className="mb-5"
+        icon={<Mic className="size-5" aria-hidden="true" />}
+        onClick={startVoice}
+      >
+        {t('vf.cta.machine')}
+      </Button>
 
       <form ref={formRef} onSubmit={(event) => void onSubmit(event)} noValidate className="space-y-5">
         <Card className="space-y-5 p-5 sm:p-6">
