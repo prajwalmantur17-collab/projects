@@ -3,6 +3,7 @@ import { vfEn } from './voiceFlow'
 import { workEn } from './work'
 import { routeEn } from './route'
 import { navEn } from './nav'
+import { photoEn } from './photo'
 
 export const en = {
   ...authEn,
@@ -10,6 +11,7 @@ export const en = {
   ...workEn,
   ...routeEn,
   ...navEn,
+  ...photoEn,
   'app.name': 'Harvest Rentals',
   'app.tagline': 'Find harvesting machines near your village.',
   'app.description':

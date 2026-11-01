@@ -14,6 +14,7 @@ import { workPhase } from '../../services/workStatus'
 import type { BookingStatus, BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
+import { PersonChip } from '../../components/booking/PersonChip'
 import { WorkControls } from '../../components/booking/WorkControls'
 import { StatusBadge } from '../../components/booking/StatusBadge'
 import { ContactButtons } from '../../components/contact/ContactButtons'
@@ -386,11 +387,14 @@ export function OwnerBookingsPage() {
                       <p className="truncate text-sm text-ink-muted">
                         {machine?.model ?? t('farmer.noModel')}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-ink-soft">
-                        {t('owner.farmerName', {
+                      <PersonChip
+                        className="mt-1"
+                        userId={booking.farmer_id}
+                        name={booking.farmer?.full_name}
+                        label={t('owner.farmerName', {
                           name: booking.farmer?.full_name ?? t('owner.farmer'),
                         })}
-                      </p>
+                      />
                       <p className="mt-0.5 text-xs text-ink-muted">
                         {t('farmer.requestedOn', {
                           date: formatDateTime(booking.created_at, language),

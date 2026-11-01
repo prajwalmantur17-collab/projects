@@ -16,6 +16,7 @@ import {
 import type { BookingWithRelations } from '../../types'
 import { BookingDetails } from '../../components/booking/BookingDetails'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
+import { PersonChip } from '../../components/booking/PersonChip'
 import { StatusBadge } from '../../components/booking/StatusBadge'
 import { workPhase } from '../../services/workStatus'
 import { ContactButtons } from '../../components/contact/ContactButtons'
@@ -298,6 +299,13 @@ export function FarmerBookingsPage() {
                       <p className="truncate text-sm text-ink-muted">
                         {machine?.model ?? t('farmer.noModel')}
                       </p>
+                      {booking.owner ? (
+                        <PersonChip
+                          className="mt-1.5"
+                          userId={booking.owner_id}
+                          name={booking.owner.full_name}
+                        />
+                      ) : null}
                       <p className="mt-1 text-xs text-ink-muted">
                         {t('farmer.requestedOn', {
                           date: new Date(booking.created_at).toLocaleDateString('en-IN'),

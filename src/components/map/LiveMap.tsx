@@ -8,7 +8,7 @@ import { Loader2, LocateFixed, Navigation, TriangleAlert } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { useRoadRoute } from '../../hooks/useRoadRoute'
 import type { Coordinates } from '../../types'
-import { farmerIcon, machineIcon, meIcon, trackedIcon } from './mapIcons'
+import { createPhotoIcon, farmerIcon, machineIcon, meIcon, trackedIcon } from './mapIcons'
 
 export interface MapMachine {
   id: string
@@ -26,6 +26,8 @@ interface LiveMapProps {
   tracked?: Coordinates | null
   /** Who `tracked` is: the machine (default) or the farmer, for the owner's map. */
   trackedKind?: 'machine' | 'farmer'
+  /** The tracked person's profile photo. When set it replaces the tractor / farmer icon. */
+  trackedPhotoUrl?: string | null
   className?: string
 }
 
@@ -89,9 +91,15 @@ export function LiveMap({
   machines = [],
   tracked,
   trackedKind = 'machine',
+  trackedPhotoUrl = null,
   className = 'h-72',
 }: LiveMapProps) {
   const { t } = useI18n()
+  const trackedMarkerIcon = useMemo(
+    () =>
+      trackedPhotoUrl ? createPhotoIcon(trackedPhotoUrl) : trackedKind === 'farmer' ? farmerIcon : trackedIcon,
+    [trackedPhotoUrl, trackedKind],
+  )
   const mapRef = useRef<L.Map | null>(null)
   const userMoved = useRef(false)
   const { route, loading: routeLoading } = useRoadRoute(me, tracked)
@@ -171,7 +179,7 @@ export function LiveMap({
         {tracked ? (
           <Marker
             position={toLatLng(tracked)}
-            icon={trackedKind === 'farmer' ? farmerIcon : trackedIcon}
+            icon={trackedMarkerIcon}
             zIndexOffset={900}
           />
         ) : null}

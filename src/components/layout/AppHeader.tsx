@@ -7,6 +7,8 @@ import { LogoMark } from '../brand/Logo'
 import { LanguageSelector } from '../ui/LanguageSelector'
 import { NotificationBell } from './NotificationBell'
 import { NavBadge } from './NavBadge'
+import { Avatar } from '../ui/Avatar'
+import { avatarUrl } from '../../services/avatars'
 import { usePendingRequests } from '../../hooks/usePendingRequests'
 
 export function AppHeader() {
@@ -75,6 +77,15 @@ export function AppHeader() {
         <div className="flex shrink-0 items-center gap-1.5">
           <LanguageSelector compact />
           {session ? <NotificationBell /> : null}
+          {session ? (
+            <Link
+              to="/settings"
+              className="flex size-11 items-center justify-center rounded-xl hover:bg-cream-100"
+              aria-label={t('nav.profile')}
+            >
+              <Avatar url={avatarUrl(profile?.avatar_path)} name={profile?.full_name} size="sm" />
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>

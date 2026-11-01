@@ -18,6 +18,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Input } from '../components/ui/Input'
 import { LanguageSelector } from '../components/ui/LanguageSelector'
 import { PageHeader } from '../components/ui/PageHeader'
+import { ProfilePhotoCard } from '../components/profile/ProfilePhotoCard'
 
 export function SettingsPage() {
   const { profile, refreshProfile, signOut } = useAuth()
@@ -125,6 +126,8 @@ export function SettingsPage() {
           {t(success)}
         </Alert>
       ) : null}
+
+      <ProfilePhotoCard />
 
       <Card className="p-5 sm:p-6">
         <div className="flex items-center gap-2">

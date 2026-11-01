@@ -25,6 +25,17 @@ export const trackedIcon = L.divIcon({
   iconAnchor: [22, 22],
 })
 
+/** A person's own photo as the map marker (medium size, round, white border). */
+export function createPhotoIcon(url: string): L.DivIcon {
+  const safe = url.replace(/["'<>\s]/g, (char) => encodeURIComponent(char))
+  return L.divIcon({
+    className: 'hr-marker',
+    html: `<span class="hr-pin hr-pin-photo"><img src="${safe}" alt="" onerror="this.remove()" /></span>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+  })
+}
+
 /** The farmer (live position), shown on the owner's map. */
 export const farmerIcon = L.divIcon({
   className: 'hr-marker',

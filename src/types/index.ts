@@ -43,6 +43,7 @@ export interface Profile {
   village: string | null
   district: string | null
   state: string | null
+  avatar_path?: string | null
   created_at: string
   updated_at: string
 }

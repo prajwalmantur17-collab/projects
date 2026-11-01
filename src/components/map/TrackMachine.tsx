@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Navigation } from 'lucide-react'
 import { distanceKm, formatDistance } from '../../lib/geo'
 import { useGeolocation } from '../../hooks/useGeolocation'
+import { useAvatarUrls } from '../../hooks/useAvatarUrls'
 import { getLiveLocations, subscribeToLiveLocations } from '../../services/liveLocation'
 import type { LiveLocation } from '../../types'
 import { Alert } from '../ui/Alert'
@@ -88,6 +89,9 @@ export function TrackMachine({
 
   const mine = rows[viewerRole]
   const other = rows[otherRole]
+  const otherUserId = other ? (otherRole === 'owner' ? other.owner_id : other.farmer_id) : null
+  const photos = useAvatarUrls([otherUserId])
+  const trackedPhotoUrl = otherUserId ? (photos[otherUserId] ?? null) : null
 
   const me = useMemo(
     () =>
@@ -157,6 +161,7 @@ export function TrackMachine({
           me={me}
           tracked={tracked}
           trackedKind={viewerRole === 'farmer' ? 'machine' : 'farmer'}
+          trackedPhotoUrl={trackedPhotoUrl}
           className="h-64 sm:h-80"
         />
       ) : null}

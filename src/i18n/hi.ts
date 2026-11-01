@@ -3,6 +3,7 @@ import { vfHi } from './voiceFlow'
 import { workHi } from './work'
 import { routeHi } from './route'
 import { navHi } from './nav'
+import { photoHi } from './photo'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
@@ -11,6 +12,7 @@ export const hi: Record<TranslationKey, string> = {
   ...workHi,
   ...routeHi,
   ...navHi,
+  ...photoHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास हार्वेस्टर मशीनें खोजें।',
   'app.description':
