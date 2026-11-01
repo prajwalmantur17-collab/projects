@@ -116,7 +116,7 @@ create index bookings_service_date_idx on public.bookings (service_date);
 -- double taps and two tabs cannot create conflicting bookings.
 create unique index bookings_one_confirmed_per_machine_date
   on public.bookings (machine_id, service_date)
-  where status = 'confirmed';
+  where status = 'confirmed' and completed_at is null;
 create unique index bookings_one_pending_per_farmer_machine_date
   on public.bookings (machine_id, farmer_id, service_date)
   where status = 'pending';

@@ -38,7 +38,7 @@ create index if not exists bookings_service_date_idx
 
 create unique index if not exists bookings_one_confirmed_per_machine_date
   on public.bookings (machine_id, service_date)
-  where status = 'confirmed';
+  where status = 'confirmed' and completed_at is null;
 create unique index if not exists bookings_one_pending_per_farmer_machine_date
   on public.bookings (machine_id, farmer_id, service_date)
   where status = 'pending';
@@ -144,6 +144,7 @@ begin
     where b.machine_id = v_machine.id
       and b.service_date = p_service_date
       and b.status = 'confirmed'
+      and b.completed_at is null
   ) then
     raise exception 'HR_DATE_TAKEN: machine is already booked on that date' using errcode = 'P0001';
   end if;

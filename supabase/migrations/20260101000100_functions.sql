@@ -269,6 +269,7 @@ begin
     where b.machine_id = v_machine.id
       and b.service_date = p_service_date
       and b.status = 'confirmed'
+      and b.completed_at is null
   ) then
     raise exception 'HR_DATE_TAKEN: machine is already booked on that date' using errcode = 'P0001';
   end if;
