@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LocateFixed, LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { FileText, LocateFixed, LogOut, ShieldCheck, UserRound } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
@@ -228,6 +228,22 @@ export function SettingsPage() {
           </span>
         </div>
         <p className="mt-2 text-xs text-ink-muted">{t('settings.accountLocked')}</p>
+      </Card>
+
+            <Card className="mt-4 p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold">{t('record.title')}</h2>
+            <p className="mt-0.5 text-sm text-ink-muted">{t('record.subtitle')}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/record')}
+            icon={<FileText className="size-4" aria-hidden="true" />}
+          >
+            {t('record.link')}
+          </Button>
+        </div>
       </Card>
 
       <Card className="mt-4 p-5 sm:p-6">

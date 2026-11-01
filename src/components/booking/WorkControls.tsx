@@ -5,6 +5,7 @@ import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatDateTime, formatPrice } from '../../lib/format'
 import { completeWork, recordPayment, startWork, workPhase } from '../../services/workStatus'
+import { setWorkHours } from '../../services/record'
 import type { Booking, PaymentMethod } from '../../types'
 import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
@@ -20,6 +21,15 @@ const ETA_OPTIONS: Array<{ key: TranslationKey; hours: number | null }> = [
   { key: 'work.eta.d1', hours: 24 },
 ]
 
+function computeDefaultHours(workStartedAt?: string | null): string {
+  if (!workStartedAt) return '1'
+  const started = Date.parse(workStartedAt)
+  if (Number.isNaN(started)) return '1'
+  const diffHours = (Date.now() - started) / (3600 * 1000)
+  const rounded = Math.round(diffHours * 2) / 2
+  return String(Math.max(0.5, rounded))
+}
+
 /** Owner controls for an accepted booking: start work, finish the job, record the payment. */
 export function WorkControls({
   booking,
@@ -34,6 +44,7 @@ export function WorkControls({
   const [eta, setEta] = useState<number | null>(null)
   const [choice, setChoice] = useState<PayChoice>('upi')
   const [amount, setAmount] = useState(() => String(Math.round(booking.acreage * booking.price_per_acre)))
+  const [hoursWorked, setHoursWorked] = useState(() => computeDefaultHours(booking.work_started_at))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<TranslationKey | null>(null)
 
@@ -63,6 +74,9 @@ export function WorkControls({
   const parsedAmount = Number(amount)
   const amountOk = Number.isFinite(parsedAmount) && parsedAmount >= 0 && amount.trim() !== ''
 
+  const parsedHours = Number(hoursWorked)
+  const hoursOk = Number.isFinite(parsedHours) && parsedHours >= 0.5 && parsedHours <= 1000 && hoursWorked.trim() !== ''
+
   const methodLabel = (method: PaymentMethod) => t(method === 'upi' ? 'work.upi' : 'work.cash')
 
   const submitStart = () =>
@@ -75,15 +89,46 @@ export function WorkControls({
       'work.startedOk',
     )
 
-  const submitComplete = () => {
+  const submitComplete = async () => {
     if (choice !== 'none' && !amountOk) {
       setError('work.amountBad')
       return
     }
-    return run(
-      () => completeWork(booking.id, choice === 'none' ? null : { amount: parsedAmount, method: choice }),
-      'work.completedOk',
-    )
+    if (!hoursOk) {
+      setError('work.hoursBad')
+      return
+    }
+    if (busy) return
+    setBusy(true)
+    setError(null)
+
+    let completed = false
+    try {
+      await completeWork(booking.id, choice === 'none' ? null : { amount: parsedAmount, method: choice })
+      completed = true
+    } catch (caught) {
+      logError('workControls:complete', caught)
+      setError(mapErrorToKey(caught))
+      setBusy(false)
+      return
+    }
+
+    let hoursError: TranslationKey | null = null
+    try {
+      await setWorkHours(booking.id, parsedHours)
+    } catch (caught) {
+      logError('workControls:hours', caught)
+      hoursError = mapErrorToKey(caught)
+    }
+
+    setPanel(null)
+    setBusy(false)
+    if (hoursError) {
+      setError(hoursError)
+    }
+    if (completed) {
+      onChanged('work.completedOk')
+    }
   }
 
   const submitPayment = () => {
@@ -207,10 +252,28 @@ export function WorkControls({
       ) : null}
 
       {panel === 'complete' || panel === 'payment' ? (
-        <div>
+        <div className="space-y-3">
           <p className="text-sm font-bold text-ink-soft">
             {panel === 'complete' ? t('work.completeTitle') : t('work.recordPayment')}
           </p>
+          {panel === 'complete' ? (
+            <div>
+              <label htmlFor={`hours-${booking.id}`} className="mb-1.5 block text-sm font-bold text-ink-soft">
+                {t('work.hoursWorked')}
+              </label>
+              <input
+                id={`hours-${booking.id}`}
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min="0.5"
+                max="1000"
+                value={hoursWorked}
+                onChange={(event) => setHoursWorked(event.target.value)}
+                className="min-h-12 w-full rounded-xl border-2 border-cream-300 bg-white px-4 text-base focus:border-leaf-600"
+              />
+            </div>
+          ) : null}
           {paymentFields}
           <div className="mt-3 flex gap-2">
             <Button
@@ -241,6 +304,7 @@ export function WorkControls({
               icon={<CheckCircle2 className="size-4" aria-hidden="true" />}
               onClick={() => {
                 setChoice('upi')
+                setHoursWorked(computeDefaultHours(booking.work_started_at))
                 setPanel('complete')
               }}
             >

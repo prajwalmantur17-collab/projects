@@ -34,12 +34,14 @@ export function AppHeader() {
                 <HeaderLink to="/owner/machines/new" label={t('nav.addMachine')} />
                 <HeaderLink to="/owner/machines" label={t('nav.machines')} />
                 <HeaderLink to="/owner/bookings" label={t('nav.requests')} />
+                <HeaderLink to="/record" label={t('record.link')} />
                 <HeaderLink to="/settings" label={t('nav.settings')} />
               </>
             ) : (
               <>
                 <HeaderLink to="/" label={t('nav.find')} />
                 <HeaderLink to="/farmer/bookings" label={t('nav.bookings')} />
+                <HeaderLink to="/record" label={t('record.link')} />
                 <HeaderLink to="/settings" label={t('nav.settings')} />
               </>
             )

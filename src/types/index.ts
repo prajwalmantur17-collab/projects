@@ -123,6 +123,7 @@ export interface Booking {
   payment_method?: PaymentMethod | null
   amount_paid?: number | null
   paid_at?: string | null
+  hours_worked?: number | null
 }
 
 export interface BookingMachineSummary {
@@ -220,4 +221,36 @@ export interface LiveLocation {
   longitude: number
   heading: number | null
   updated_at: string
+}
+
+export interface CropRecordSummary {
+  crop: CropKey | string
+  acres: number
+  amount: number
+}
+
+export interface RecordItem {
+  id: string
+  service_date: string
+  village: string
+  acreage: number
+  crop: string
+  amount_paid: number | null
+  payment_method: PaymentMethod | null
+  hours: number | null
+  machine_type: MachineType
+  other_party_name: string
+}
+
+export interface MyRecord {
+  role: UserRole
+  jobs: number
+  acres: number
+  amount: number
+  unpaid_jobs: number
+  hours: number | null
+  villages: number | null
+  by_crop: CropRecordSummary[] | null
+  years: number[]
+  items: RecordItem[]
 }

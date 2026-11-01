@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfileErrorPage } from './pages/ProfileErrorPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { RecordPage } from './pages/RecordPage'
 import { RoleSelectionPage } from './pages/RoleSelectionPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { SetupRequiredPage } from './pages/SetupRequiredPage'
@@ -47,6 +48,7 @@ export function App() {
           <Route element={<RequireAuth />}>
             <Route path="/select-role" element={<RoleSelectionGate />} />
             <Route path="/settings" element={<SettingsGate />} />
+            <Route path="/record" element={<RecordGate />} />
 
             <Route element={<RequireRole role="farmer" />}>
               <Route path="/farmer/bookings" element={<FarmerBookingsPage />} />
@@ -114,4 +116,16 @@ function SettingsGate() {
     return <Navigate to="/select-role" replace />
   }
   return <SettingsPage />
+}
+
+function RecordGate() {
+  const { profileLoading, profileError, profile } = useAuth()
+  const { t } = useI18n()
+
+  if (!profile) {
+    if (profileLoading) return <LoadingScreen message={t('app.loading')} />
+    if (profileError) return <ProfileErrorPage />
+    return <Navigate to="/select-role" replace />
+  }
+  return <RecordPage />
 }
