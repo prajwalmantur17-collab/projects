@@ -1,16 +1,20 @@
 import { Link, NavLink } from 'react-router-dom'
-import { PlusCircle, User } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { CalendarDays, House, Inbox, PlusCircle, Search, Tractor, User } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../auth/AuthProvider'
 import { LogoMark } from '../brand/Logo'
 import { LanguageSelector } from '../ui/LanguageSelector'
 import { NotificationBell } from './NotificationBell'
+import { NavBadge } from './NavBadge'
+import { usePendingRequests } from '../../hooks/usePendingRequests'
 
 export function AppHeader() {
   const { t } = useI18n()
   const { profile, session } = useAuth()
   const isOwner = profile?.role === 'owner'
   const home = isOwner ? '/owner' : '/'
+  const pending = usePendingRequests(isOwner ? profile?.id : undefined)
 
   return (
     <header className="sticky top-0 z-30 border-b border-cream-200 bg-cream-50/95 backdrop-blur">
@@ -30,24 +34,26 @@ export function AppHeader() {
           {session ? (
             isOwner ? (
               <>
-                <HeaderLink to="/owner" label={t('nav.home')} />
-                <HeaderLink to="/owner/machines/new" label={t('nav.addMachine')} />
-                <HeaderLink to="/owner/machines" label={t('nav.machines')} />
-                <HeaderLink to="/owner/bookings" label={t('nav.requests')} />
-                <HeaderLink to="/record" label={t('record.link')} />
-                <HeaderLink to="/settings" label={t('nav.settings')} />
+                <HeaderLink to="/owner" label={t('nav.home')} icon={House} />
+                <HeaderLink
+                  to="/owner/bookings"
+                  label={t('nav.requestsShort')}
+                  icon={Inbox}
+                  badge={pending}
+                />
+                <HeaderLink to="/owner/machines" label={t('nav.machinesShort')} icon={Tractor} />
+                <HeaderLink to="/settings" label={t('nav.profile')} icon={User} />
               </>
             ) : (
               <>
-                <HeaderLink to="/" label={t('nav.find')} />
-                <HeaderLink to="/farmer/bookings" label={t('nav.bookings')} />
-                <HeaderLink to="/record" label={t('record.link')} />
-                <HeaderLink to="/settings" label={t('nav.settings')} />
+                <HeaderLink to="/" label={t('nav.find')} icon={Search} />
+                <HeaderLink to="/farmer/bookings" label={t('nav.bookingsShort')} icon={CalendarDays} />
+                <HeaderLink to="/settings" label={t('nav.profile')} icon={User} />
               </>
             )
           ) : (
             <>
-              <HeaderLink to="/" label={t('nav.find')} />
+              <HeaderLink to="/" label={t('nav.find')} icon={Search} />
               <Link
                 to="/owner/machines/new"
                 className="flex min-h-10 items-center gap-1.5 rounded-lg bg-leaf-100 px-3 text-sm font-bold text-leaf-900 transition-colors hover:bg-leaf-200"
@@ -75,18 +81,30 @@ export function AppHeader() {
   )
 }
 
-function HeaderLink({ to, label }: { to: string; label: string }) {
+function HeaderLink({
+  to,
+  label,
+  icon: Icon,
+  badge,
+}: {
+  to: string
+  label: string
+  icon?: LucideIcon
+  badge?: number
+}) {
   return (
     <NavLink
       to={to}
       end={to === '/' || to === '/farmer' || to === '/owner'}
       className={({ isActive }) =>
-        `flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold transition-colors ${
-          isActive ? 'bg-leaf-100 text-leaf-900' : 'text-ink-soft hover:bg-cream-100'
+        `flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-[15px] font-semibold transition-colors ${
+          isActive ? 'bg-leaf-100 font-bold text-leaf-900' : 'text-ink-soft hover:bg-cream-100'
         }`
       }
     >
-      {label}
+      {Icon ? <Icon className="size-5 shrink-0" aria-hidden="true" /> : null}
+      <span>{label}</span>
+      {badge ? <NavBadge count={badge} /> : null}
     </NavLink>
   )
 }
