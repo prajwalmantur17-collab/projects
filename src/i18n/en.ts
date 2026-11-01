@@ -4,6 +4,7 @@ import { workEn } from './work'
 import { routeEn } from './route'
 import { navEn } from './nav'
 import { photoEn } from './photo'
+import { cropPhotoEn } from './cropPhoto'
 
 export const en = {
   ...authEn,
@@ -12,6 +13,7 @@ export const en = {
   ...routeEn,
   ...navEn,
   ...photoEn,
+  ...cropPhotoEn,
   'app.name': 'Harvest Rentals',
   'app.tagline': 'Find harvesting machines near your village.',
   'app.description':

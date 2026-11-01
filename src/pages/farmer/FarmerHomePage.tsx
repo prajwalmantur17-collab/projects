@@ -33,6 +33,7 @@ import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
 import { MachineCard } from '../../components/machine/MachineCard'
+import { CropPhotoDetector } from '../../components/crop/CropPhotoDetector'
 import { VoiceSearchButton } from '../../components/voice/VoiceSearchButton'
 import { LiveMap } from '../../components/map/LiveMap'
 import type { MapMachine } from '../../components/map/LiveMap'
@@ -440,6 +441,15 @@ export function FarmerHomePage() {
                 )
               })}
             </div>
+            <CropPhotoDetector
+              allCrops={CROP_KEYS}
+              onConfirm={(selected) => {
+                setCrop(selected)
+                if (village.trim() || district.trim() || geo.coordinates) {
+                  void runSearch(selected)
+                }
+              }}
+            />
           </div>
 
           {/* Collapsible More Filters */}
