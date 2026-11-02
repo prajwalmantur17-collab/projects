@@ -26,3 +26,12 @@ export const routeHi: Record<keyof typeof routeEn, string> = {
   'route.minutes': '{count} मिनट',
   'route.hoursMinutes': '{hours} घंटे {minutes} मिनट',
 }
+
+export const routeTa: Record<keyof typeof routeEn, string> = {
+  'route.distanceTime': '{distance} கி.மீ - சுமார் {time}',
+  'route.viaRoad': 'சாலை வழி',
+  'route.straightLine': 'சாலை வழி கிடைக்கவில்லை, நேர்கோடு காட்டப்படுகிறது.',
+  'route.loading': 'சாலை வழி தேடப்படுகிறது...',
+  'route.minutes': '{count} நிமிடம்',
+  'route.hoursMinutes': '{hours} மணி {minutes} நிமிடம்',
+}

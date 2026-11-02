@@ -36,6 +36,7 @@ export const kn: Record<TranslationKey, string> = {
   'language.en': 'English',
   'language.kn': 'ಕನ್ನಡ',
   'language.hi': 'हिन्दी',
+  'language.ta': 'தமிழ்',
   'language.hint': 'ನಿಮಗೆ ಸುಲಭವಾಗಿ ಓದಲು ಬರುವ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.',
   'language.saved': 'ಭಾಷೆ ಬದಲಾಗಿದೆ.',
 

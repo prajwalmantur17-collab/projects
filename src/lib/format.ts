@@ -18,6 +18,7 @@ const dateLocales: Record<Language, string> = {
   en: 'en-IN',
   kn: 'kn-IN',
   hi: 'hi-IN',
+  ta: 'ta-IN',
 }
 
 /** Formats a yyyy-mm-dd date without timezone shifts. */

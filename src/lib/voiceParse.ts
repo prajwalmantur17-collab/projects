@@ -5,9 +5,11 @@
  */
 
 export function normalizeDigits(value: string): string {
-  return value.replace(/[०-९೦-೯]/g, (char) => {
+  return value.replace(/[०-९೦-೯௦-௯]/g, (char) => {
     const code = char.charCodeAt(0)
-    return String(code >= 0x0ce6 ? code - 0x0ce6 : code - 0x0966)
+    if (code >= 0x0ce6) return String(code - 0x0ce6) // Kannada
+    if (code >= 0x0be6) return String(code - 0x0be6) // Tamil
+    return String(code - 0x0966) // Devanagari
   })
 }
 
@@ -62,17 +64,26 @@ const UNIT_WORDS = normalizeKeys<number>({
   'ಅರವತ್ತು': 60, 'ಎಪ್ಪತ್ತು': 70, 'ಎಂಬತ್ತು': 80, 'ತೊಂಬತ್ತು': 90, 'ಇನ್ನೂರು': 200,
   'ಮುನ್ನೂರು': 300, 'ನಾನೂರು': 400, 'ಐನೂರು': 500, 'ಆರುನೂರು': 600, 'ಏಳುನೂರು': 700,
   'ಎಂಟುನೂರು': 800, 'ಒಂಬೈನೂರು': 900,
+  // Tamil
+  'பூஜ்ஜியம்': 0, 'சைபர்': 0, 'ஜீரோ': 0, 'ஒன்று': 1, 'ஒரு': 1, 'இரண்டு': 2, 'மூன்று': 3,
+  'நான்கு': 4, 'ஐந்து': 5, 'ஆறு': 6, 'ஏழு': 7, 'எட்டு': 8, 'ஒன்பது': 9, 'பத்து': 10,
+  'பதினொன்று': 11, 'பன்னிரண்டு': 12, 'பதிமூன்று': 13, 'பதினான்கு': 14, 'பதினைந்து': 15,
+  'பதினாறு': 16, 'பதினேழு': 17, 'பதினெட்டு': 18, 'பத்தொன்பது': 19, 'இருபது': 20,
+  'முப்பது': 30, 'நாற்பது': 40, 'ஐம்பது': 50, 'அறுபது': 60, 'எழுபது': 70, 'எண்பது': 80,
+  'தொண்ணூறு': 90, 'இருநூறு': 200, 'முன்னூறு': 300, 'நானூறு': 400, 'ஐந்நூறு': 500,
+  'அறுநூறு': 600, 'எழுநூறு': 700, 'எண்ணூறு': 800, 'தொள்ளாயிரம்': 900,
 })
 
 const MULTIPLIER_WORDS = normalizeKeys<number>({
-  hundred: 100, sau: 100, 'सौ': 100, 'ನೂರು': 100,
+  hundred: 100, sau: 100, 'सौ': 100, 'ನೂರು': 100, 'நூறு': 100,
   thousand: 1000, hazaar: 1000, hazar: 1000, 'हजार': 1000, 'हज़ार': 1000, 'ಸಾವಿರ': 1000,
-  lakh: 100000, lac: 100000, 'लाख': 100000, 'ಲಕ್ಷ': 100000,
+  'ஆயிரம்': 1000,
+  lakh: 100000, lac: 100000, 'लाख': 100000, 'ಲಕ್ಷ': 100000, 'லட்சம்': 100000,
 })
 
-const HALF_WORDS = normalizeList(['half', 'aadha', 'adha', 'aadhe', 'आधा', 'आधे', 'ಅರ್ಧ'])
-const ONE_AND_HALF_WORDS = normalizeList(['dedh', 'डेढ़', 'डेढ', 'ಒಂದೂವರೆ'])
-const TWO_AND_HALF_WORDS = normalizeList(['dhai', 'dhaai', 'ढाई', 'ಎರಡೂವರೆ'])
+const HALF_WORDS = normalizeList(['half', 'aadha', 'adha', 'aadhe', 'आधा', 'आधे', 'ಅರ್ಧ', 'அரை'])
+const ONE_AND_HALF_WORDS = normalizeList(['dedh', 'डेढ़', 'डेढ', 'ಒಂದೂವರೆ', 'ஒன்றரை'])
+const TWO_AND_HALF_WORDS = normalizeList(['dhai', 'dhaai', 'ढाई', 'ಎರಡೂವರೆ', 'இரண்டரை'])
 
 function numberFromWords(tokens: string[]): number | null {
   let total = 0
@@ -117,7 +128,7 @@ export function parseNumber(text: string): number | null {
 // ------------------------------------------------------------------ phone
 
 const REPEAT_WORDS = normalizeKeys<number>({
-  double: 2, triple: 3, dabal: 2, 'डबल': 2, 'ट्रिपल': 3, 'ಡಬಲ್': 2,
+  double: 2, triple: 3, dabal: 2, 'डबल': 2, 'ट्रिपल': 3, 'ಡಬಲ್': 2, 'டபுள்': 2, 'டிரிபிள்': 3,
 })
 
 /** Collects spoken digits ("98765 43210", "nine eight ...") into a 10 digit Indian mobile number. */
@@ -174,9 +185,9 @@ function buildIso(year: number, month: number, day: number): string | null {
   return date.toISOString().slice(0, 10)
 }
 
-const TODAY_WORDS = normalizeList(['today', 'aaj', 'आज', 'ಇಂದು'])
-const TOMORROW_WORDS = normalizeList(['tomorrow', 'kal', 'कल', 'ನಾಳೆ'])
-const DAY_AFTER_WORDS = normalizeList(['parso', 'parson', 'परसों', 'परसो', 'ನಾಡಿದ್ದು'])
+const TODAY_WORDS = normalizeList(['today', 'aaj', 'आज', 'ಇಂದು', 'இன்று'])
+const TOMORROW_WORDS = normalizeList(['tomorrow', 'kal', 'कल', 'ನಾಳೆ', 'நாளை'])
+const DAY_AFTER_WORDS = normalizeList(['parso', 'parson', 'परसों', 'परसो', 'ನಾಡಿದ್ದು', 'நாளைமறுநாள்', 'நாளன்னிக்கு'])
 const DAY_AFTER_PHRASES = normalizeList(['day after tomorrow', 'day after'])
 
 const MONTHS = normalizeKeys<number>({
@@ -188,6 +199,8 @@ const MONTHS = normalizeKeys<number>({
   'नवंबर': 11, 'नवम्बर': 11, 'दिसंबर': 12, 'दिसम्बर': 12,
   'ಜನವರಿ': 1, 'ಫೆಬ್ರವರಿ': 2, 'ಮಾರ್ಚ್': 3, 'ಏಪ್ರಿಲ್': 4, 'ಮೇ': 5, 'ಜೂನ್': 6, 'ಜುಲೈ': 7,
   'ಆಗಸ್ಟ್': 8, 'ಸೆಪ್ಟೆಂಬರ್': 9, 'ಅಕ್ಟೋಬರ್': 10, 'ನವೆಂಬರ್': 11, 'ಡಿಸೆಂಬರ್': 12,
+  'ஜனவரி': 1, 'பிப்ரவரி': 2, 'மார்ச்': 3, 'ஏப்ரல்': 4, 'மே': 5, 'ஜூன்': 6, 'ஜூலை': 7,
+  'ஆகஸ்ட்': 8, 'செப்டம்பர்': 9, 'அக்டோபர்': 10, 'நவம்பர்': 11, 'டிசம்பர்': 12,
 })
 
 function findMonth(tokens: string[]): { month: number; index: number } | null {
@@ -247,7 +260,7 @@ export function parseSpokenDate(text: string, todayIso: string): string | null {
     return finish(Number(numeric[2]), Number(numeric[1]), year)
   }
 
-  const relative = normalized.match(/(\d+)\s*(?:days?|din|दिन|ದಿನ)/)
+  const relative = normalized.match(/(\d+)\s*(?:days?|din|दिन|ದಿನ|நாட்கள்|நாள்)/)
   if (relative) {
     const days = Number(relative[1])
     if (days >= 0 && days <= 365) return addDaysIso(todayIso, days)
@@ -262,14 +275,16 @@ const YES_WORDS = normalizeList([
   'send', 'submit', 'save', 'accept', 'haan', 'haa', 'han', 'ha', 'ji', 'theek', 'thik', 'sahi',
   'bilkul', 'हाँ', 'हां', 'हा', 'जी', 'ठीक', 'सही', 'बिलकुल', 'बिल्कुल', 'भेजो', 'भेज',
   'स्वीकार', 'ಹೌದು', 'ಹೌದ', 'ಸರಿ', 'ಓಕೆ', 'ಆಯ್ತು', 'ಹೂಂ', 'ಹು', 'ಒಪ್ಪುತ್ತೇನೆ',
+  'ஆம்', 'ஆமாம்', 'சரி', 'ஓகே', 'அனுப்பு', 'அனுப்புங்கள்', 'சேமி', 'ஏற்கிறேன்', 'ஏற்கவும்',
 ])
 const NO_WORDS = normalizeList([
   'no', 'nope', 'nah', 'not', 'nahi', 'nahin', 'nai', 'na', 'cancel', 'wrong', 'stop', 'reject',
   'नहीं', 'नही', 'ना', 'गलत', 'ग़लत', 'मत', 'मना', 'ಇಲ್ಲ', 'ಇಲ್ಲಾ', 'ಬೇಡ', 'ತಪ್ಪು', 'ತಿರಸ್ಕರಿಸಿ',
+  'இல்லை', 'இல்ல', 'வேண்டாம்', 'தவறு', 'நிராகரி', 'நிராகரிக்கவும்',
 ])
 const SKIP_WORDS = normalizeList([
   'skip', 'next', 'later', 'pass', 'chhodo', 'chodo', 'agla', 'baad', 'छोड़ो', 'छोड़', 'अगला',
-  'बाद', 'ಬಿಡಿ', 'ಮುಂದೆ', 'ನಂತರ', 'ಸ್ಕಿಪ್',
+  'बाद', 'ಬಿಡಿ', 'ಮುಂದೆ', 'ನಂತರ', 'ಸ್ಕಿಪ್', 'தவிர்', 'தவிர்க்கவும்', 'அடுத்து', 'பிறகு', 'ஸ்கிப்',
 ])
 
 export type Decision = 'yes' | 'no' | 'skip'
@@ -354,6 +369,7 @@ export function matchAllOptions<T>(text: string, options: SpokenOption<T>[]): T[
 
 const ALL_WORDS = normalizeList([
   'all', 'every', 'everything', 'sab', 'sabhi', 'सब', 'सभी', 'ಎಲ್ಲಾ', 'ಎಲ್ಲ', 'ಎಲ್ಲವೂ',
+  'எல்லாம்', 'எல்லா', 'அனைத்தும்',
 ])
 
 export function saysAll(text: string): boolean {

@@ -7,7 +7,7 @@ import { formatDate, formatDateTime } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAuth } from '../../auth/AuthProvider'
 import { useNotifications } from '../../hooks/useNotifications'
-import type { AppNotification } from '../../types'
+import type { AppNotification, Language } from '../../types'
 import { Spinner } from '../ui/Feedback'
 
 export function NotificationBell() {
@@ -176,7 +176,7 @@ export function NotificationBell() {
 
 function notificationText(
   notification: AppNotification,
-  language: 'en' | 'kn' | 'hi',
+  language: Language,
   t: (key: TranslationKey, params?: Record<string, string | number>) => string,
 ): string {
   const date = notification.payload.service_date

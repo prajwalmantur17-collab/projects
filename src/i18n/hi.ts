@@ -36,6 +36,7 @@ export const hi: Record<TranslationKey, string> = {
   'language.en': 'English',
   'language.kn': 'ಕನ್ನಡ',
   'language.hi': 'हिन्दी',
+  'language.ta': 'தமிழ்',
   'language.hint': 'वह भाषा चुनें जो आपको पढ़ने में सबसे आसान लगे।',
   'language.saved': 'भाषा बदल गई।',
 

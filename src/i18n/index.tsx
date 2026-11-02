@@ -5,21 +5,24 @@ import { en } from './en'
 import type { TranslationKey } from './en'
 import { kn } from './kn'
 import { hi } from './hi'
+import { ta } from './ta'
 
-export const LANGUAGES: Language[] = ['en', 'kn', 'hi']
+export const LANGUAGES: Language[] = ['en', 'kn', 'hi', 'ta']
 
 export const LANGUAGE_NATIVE_NAMES: Record<Language, string> = {
   en: 'English',
   kn: 'ಕನ್ನಡ',
   hi: 'हिन्दी',
+  ta: 'தமிழ்',
 }
 
-const dictionaries: Record<Language, Record<TranslationKey, string>> = { en, kn, hi }
+const dictionaries: Record<Language, Record<TranslationKey, string>> = { en, kn, hi, ta }
 
 const LOCALES: Record<Language, string> = {
   en: 'en-IN',
   kn: 'kn-IN',
   hi: 'hi-IN',
+  ta: 'ta-IN',
 }
 
 const STORAGE_KEY = 'harvest-rentals-language'

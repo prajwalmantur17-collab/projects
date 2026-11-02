@@ -9,6 +9,7 @@ export const SPEECH_LOCALES: Record<Language, string> = {
   en: 'en-IN',
   hi: 'hi-IN',
   kn: 'kn-IN',
+  ta: 'ta-IN',
 }
 
 interface RecognitionAlternative {

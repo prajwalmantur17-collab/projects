@@ -50,3 +50,20 @@ export const cropPhotoHi: Record<keyof typeof cropPhotoEn, string> = {
   'cropPicker.title': 'अपनी फसल चुनें',
   'cropPicker.hint': 'अपनी फसल की तस्वीर दबाएं।',
 }
+
+export const cropPhotoTa: Record<keyof typeof cropPhotoEn, string> = {
+  'cropPhoto.button': 'உங்கள் பயிரின் புகைப்படம் எடுங்கள்',
+  'cropPhoto.hint': 'புகைப்படத்திலிருந்து பயிரை ஆப் ஊகிக்கும். நீங்கள் உறுதிப்படுத்துங்கள்.',
+  'cropPhoto.analysing': 'உங்கள் புகைப்படத்தைப் பார்க்கிறோம்...',
+  'cropPhoto.ask': 'இது {crop} போலத் தெரிகிறது. சரியா?',
+  'cropPhoto.askUnsure': 'இது {crop} ஆக இருக்கலாம், ஆனால் உறுதியில்லை. சரியா?',
+  'cropPhoto.yes': 'ஆம்',
+  'cropPhoto.no': 'இல்லை',
+  'cropPhoto.pickOther': 'இது எந்தப் பயிர்?',
+  'cropPhoto.cannotTell': 'பயிரைக் கண்டறிய முடியவில்லை. நீங்களே தேர்ந்தெடுங்கள்.',
+  'cropPhoto.unavailable': 'புகைப்பட சரிபார்ப்பு இப்போது கிடைக்கவில்லை. பயிரை நீங்களே தேர்ந்தெடுங்கள்.',
+  'cropPhoto.selected': 'பயிர் தேர்ந்தெடுக்கப்பட்டது: {crop}',
+  'cropPicker.open': 'எல்லாப் பயிர்களும்',
+  'cropPicker.title': 'உங்கள் பயிரைத் தேர்ந்தெடுக்கவும்',
+  'cropPicker.hint': 'உங்கள் பயிரின் படத்தைத் தொடுங்கள்.',
+}

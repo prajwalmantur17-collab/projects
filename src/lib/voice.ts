@@ -69,6 +69,30 @@ const CROP_VOICE_MAP: Record<string, CropKey> = {
   'ಕಡಲೆಕಾಯಿ': 'groundnut',
   'ಶೇಂಗಾ': 'groundnut',
   'मूंगफली': 'groundnut',
+
+  // Tamil
+  nel: 'rice',
+  arisi: 'rice',
+  'நெல்': 'rice',
+  'அரிசி': 'rice',
+  'கோதுமை': 'wheat',
+  'கரும்பு': 'sugarcane',
+  'மக்காச்சோளம்': 'maize',
+  'சோளம்': 'jowar',
+  'பருத்தி': 'cotton',
+  'சோயாபீன்': 'soybean',
+  'நிலக்கடலை': 'groundnut',
+  'வேர்க்கடலை': 'groundnut',
+  'கம்பு': 'bajra',
+  'கேழ்வரகு': 'ragi',
+  'ராகி': 'ragi',
+  'துவரை': 'pigeon_pea',
+  'உளுந்து': 'black_gram',
+  'பச்சைப்பயறு': 'green_gram',
+  'எள்': 'sesame',
+  'சூரியகாந்தி': 'sunflower',
+  'கடுகு': 'mustard',
+  'கொண்டைக்கடலை': 'chickpea',
 }
 
 export function isSpeechRecognitionSupported(): boolean {
@@ -90,6 +114,8 @@ export function getVoiceLocale(lang: Language): string {
       return 'kn-IN'
     case 'hi':
       return 'hi-IN'
+    case 'ta':
+      return 'ta-IN'
     case 'en':
     default:
       return 'en-IN'
@@ -124,7 +150,8 @@ export function parseSpokenQuery(transcript: string): VoiceQueryResult {
     const fillers = new Set([
       'harvest', 'harvester', 'machine', 'rent', 'rental', 'for', 'in', 'near',
       'ಹಾರ್ವೆಸ್ಟರ್', 'ಯಂತ್ರ', 'ಬೇಕು', 'ಬಾಡಿಗೆ', 'ಎಕರೆ',
-      'हार्वेस्टर', 'मशीन', 'चाहिए', 'किराया', 'एकड़', 'में'
+      'हार्वेस्टर', 'मशीन', 'चाहिए', 'किराया', 'एकड़', 'में',
+      'அறுவடை', 'இயந்திரம்', 'வேண்டும்', 'வாடகை', 'ஏக்கர்', 'இல்'
     ])
     if (!fillers.has(word)) {
       remainingWords.push(word)

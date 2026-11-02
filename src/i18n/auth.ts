@@ -186,4 +186,67 @@ const authHi: Record<keyof typeof authEn, string> = {
   'setup.docsEmail': 'डेटाबेस और ईमेल लॉगिन सेटअप के लिए README.md देखें।',
 }
 
-export { authEn, authKn, authHi }
+const authTa: Record<keyof typeof authEn, string> = {
+  'auth.email': 'மின்னஞ்சல் முகவரி',
+  'auth.emailPlaceholder': 'you@example.com',
+  'auth.password': 'கடவுச்சொல்',
+  'auth.passwordHint': 'குறைந்தது 6 எழுத்துகள்.',
+  'auth.name': 'உங்கள் பெயர்',
+  'auth.namePlaceholder': 'லட்சுமி',
+  'auth.signIn': 'உள்நுழைக',
+  'auth.createAccount': 'கணக்கை உருவாக்குக',
+  'auth.creatingAccount': 'கணக்கு உருவாக்கப்படுகிறது…',
+  'auth.welcomeBack': 'மீண்டும் வரவேற்கிறோம்',
+  'auth.signInSubtitle': 'உங்கள் மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழையுங்கள்.',
+  'auth.createTitle': 'உங்கள் கணக்கை உருவாக்குங்கள்',
+  'auth.createSubtitle': 'மின்னஞ்சல் மற்றும் கடவுச்சொல்லைப் பயன்படுத்துங்கள். Google கணக்கு தேவையில்லை.',
+  'auth.newHere': 'புதியவரா?',
+  'auth.haveAccount': 'ஏற்கனவே கணக்கு உள்ளதா?',
+  'auth.createLink': 'கணக்கை உருவாக்குக',
+  'auth.signInLink': 'உள்நுழைக',
+  'auth.checkEmailTitle': 'உங்கள் மின்னஞ்சலைப் பாருங்கள்',
+  'auth.checkEmailBody':
+    '{email} முகவரிக்கு உறுதிப்படுத்தும் இணைப்பை அனுப்பியுள்ளோம். அதைத் திறந்து, பின்னர் திரும்பி வந்து உள்நுழையுங்கள்.',
+  'auth.backToSignIn': 'உள்நுழைவுக்குத் திரும்பு',
+  'auth.invalidCredentials': 'மின்னஞ்சல் அல்லது கடவுச்சொல் தவறானது.',
+  'auth.emailNotConfirmed': 'உள்நுழைவதற்கு முன் உங்கள் மின்னஞ்சலை உறுதிப்படுத்துங்கள்.',
+  'auth.emailInUse': 'இந்த மின்னஞ்சலுடன் கணக்கு ஏற்கனவே உள்ளது. அதற்குப் பதிலாக உள்நுழையுங்கள்.',
+  'auth.emailRateLimit': 'அதிக மின்னஞ்சல்கள் அனுப்பப்பட்டுள்ளன. சில நிமிடங்கள் காத்திருங்கள்.',
+  'auth.emailInvalid': 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடுங்கள்.',
+  'auth.passwordShort': 'கடவுச்சொல் குறைந்தது 6 எழுத்துகளாக இருக்க வேண்டும்.',
+  'auth.nameRequired': 'உங்கள் பெயரை உள்ளிடுங்கள்.',
+  'auth.serviceUnavailable':
+    'உள்நுழைவு சேவையை அணுக முடியவில்லை. .env கோப்பில் உள்ள Supabase திட்ட URL சரியானதா என்பதையும் திட்டம் செயலில் உள்ளதா என்பதையும் சரிபாருங்கள்.',
+  'auth.secureNote':
+    'உங்கள் கடவுச்சொல் பாதுகாப்பாகச் சேமிக்கப்படும். இயந்திர உரிமையாளர்களுக்கு அதை ஒருபோதும் காட்ட மாட்டோம்.',
+  'auth.accountNote': 'ஒரே கணக்கை விவசாயியாகவோ இயந்திர உரிமையாளராகவோ பயன்படுத்தலாம்.',
+  'auth.forgotPassword': 'கடவுச்சொல்லை மறந்துவிட்டீர்களா?',
+  'auth.forgotTitle': 'உங்கள் கடவுச்சொல்லை மீட்டமைக்கவும்',
+  'auth.forgotSubtitle':
+    'உங்கள் மின்னஞ்சலை உள்ளிடுங்கள். புதிய கடவுச்சொல்லை அமைக்க இணைப்பை அனுப்புவோம்.',
+  'auth.sendResetLink': 'மீட்டமைப்பு இணைப்பை அனுப்புக',
+  'auth.sendingResetLink': 'அனுப்பப்படுகிறது…',
+  'auth.resetSentBody':
+    '{email} முகவரிக்குக் கணக்கு இருந்தால், கடவுச்சொல்லை மீட்டமைக்கும் இணைப்பை அனுப்பியுள்ளோம். தொடர இந்தச் சாதனத்திலேயே அதைத் திறக்கவும்.',
+  'auth.resetTitle': 'புதிய கடவுச்சொல்லை அமைக்கவும்',
+  'auth.resetSubtitle': 'உங்கள் கணக்கிற்குப் புதிய கடவுச்சொல்லைத் தேர்ந்தெடுக்கவும்.',
+  'auth.newPassword': 'புதிய கடவுச்சொல்',
+  'auth.confirmPassword': 'புதிய கடவுச்சொல்லை உறுதிப்படுத்துக',
+  'auth.passwordMismatch': 'கடவுச்சொற்கள் பொருந்தவில்லை.',
+  'auth.passwordSame': 'புதிய கடவுச்சொல் பழையதிலிருந்து வேறுபட்டிருக்க வேண்டும்.',
+  'auth.updatePassword': 'கடவுச்சொல்லைப் புதுப்பிக்கவும்',
+  'auth.updatingPassword': 'புதுப்பிக்கப்படுகிறது…',
+  'auth.passwordUpdatedTitle': 'கடவுச்சொல் புதுப்பிக்கப்பட்டது',
+  'auth.passwordUpdatedBody': 'உங்கள் கடவுச்சொல் மாற்றப்பட்டது. நீங்கள் உள்நுழைந்துள்ளீர்கள்.',
+  'auth.continue': 'தொடரவும்',
+  'auth.resetLinkInvalidTitle': 'இணைப்பின் காலம் முடிந்தது',
+  'auth.resetLinkInvalidBody':
+    'இந்த மீட்டமைப்பு இணைப்பு தவறானது அல்லது காலாவதியானது. உள்நுழைவுப் பக்கத்திலிருந்து புதியதைக் கோருங்கள்.',
+  'auth.resetFailed': 'இதை முடிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.',
+  'settings.emailNote': 'மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழைந்துள்ளீர்கள்.',
+  'settings.logoutConfirmBodyEmail':
+    'முன்பதிவுகளை நிர்வகிக்க மீண்டும் உள்நுழைய வேண்டும்.',
+  'setup.docsEmail': 'தரவுத்தளம் மற்றும் மின்னஞ்சல் உள்நுழைவு அமைப்புக்கு README.md ஐப் பாருங்கள்.',
+}
+
+export { authEn, authKn, authHi, authTa }

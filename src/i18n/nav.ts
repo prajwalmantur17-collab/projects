@@ -23,3 +23,11 @@ export const navHi: Record<keyof typeof navEn, string> = {
   'nav.bookingsShort': 'मेरी बुकिंग',
   'nav.pendingCount': '{count} प्रतीक्षा में',
 }
+
+export const navTa: Record<keyof typeof navEn, string> = {
+  'nav.profile': 'சுயவிவரம்',
+  'nav.requestsShort': 'கோரிக்கைகள்',
+  'nav.machinesShort': 'என் இயந்திரங்கள்',
+  'nav.bookingsShort': 'என் முன்பதிவுகள்',
+  'nav.pendingCount': '{count} காத்திருக்கின்றன',
+}

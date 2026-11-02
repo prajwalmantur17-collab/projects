@@ -1,4 +1,4 @@
-export type Language = 'en' | 'kn' | 'hi'
+export type Language = 'en' | 'kn' | 'hi' | 'ta'
 
 export type UserRole = 'farmer' | 'owner'
 

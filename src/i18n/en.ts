@@ -35,6 +35,7 @@ export const en = {
   'language.en': 'English',
   'language.kn': 'ಕನ್ನಡ',
   'language.hi': 'हिन्दी',
+  'language.ta': 'தமிழ்',
   'language.hint': 'Choose the language you read most easily.',
   'language.saved': 'Language updated.',
 
