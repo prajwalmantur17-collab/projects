@@ -28,9 +28,9 @@ export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
  * - Adam (pNInz6obpgDQGcFmaJgB): Expressive multilingual voice with Hindi/Tamil support
  */
 export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
-  en: '21m00Tcm4TlvDq8ikWAM', // Rachel
-  hi: 'pNInz6obpgDQGcFmaJgB', // Adam
-  ta: 'pNInz6obpgDQGcFmaJgB', // Adam
+  en: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  hi: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  ta: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
   kn: '',                     // Requires custom voice or eleven_v4 compatible voice
 }
 

@@ -3,7 +3,7 @@ import {
   MAX_TEXT_LENGTH,
   resolveSpeechConfig,
   type SupportedLanguage,
-} from './speechConfig.js'
+} from './speechConfig.ts'
 
 interface SpeechRequestBody {
   text?: unknown

@@ -46,7 +46,7 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
   })
 
   it('resolves correct default voices for English, Hindi, and Tamil', () => {
-    expect(DEFAULT_VOICES.en).toBe('21m00Tcm4TlvDq8ikWAM') // Rachel
+    expect(DEFAULT_VOICES.en).toBe('pNInz6obpgDQGcFmaJgB') // Adam (Free tier compatible)
     expect(DEFAULT_VOICES.hi).toBe('pNInz6obpgDQGcFmaJgB') // Adam
     expect(DEFAULT_VOICES.ta).toBe('pNInz6obpgDQGcFmaJgB') // Adam
     expect(DEFAULT_VOICES.kn).toBe('')
