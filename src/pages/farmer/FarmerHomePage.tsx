@@ -361,10 +361,10 @@ export function FarmerHomePage() {
   return (
     <div className="space-y-6">
       {/* Hero Banner with Clean Value Props & Blended Farmer Portrait */}
-      <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
+      <div className="group relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
         {/* Right-Side Indian Farmer Portrait with Professional Edge Blending */}
         <div
-          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[44%] md:w-[40%] lg:w-[42%] xl:w-[40%] select-none overflow-hidden"
+          className="hr-hero-wrap pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[44%] md:w-[40%] lg:w-[42%] xl:w-[40%] select-none overflow-hidden"
           aria-hidden="true"
         >
           <img
