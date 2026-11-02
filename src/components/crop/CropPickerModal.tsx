@@ -151,7 +151,7 @@ export function CropPickerModal({
                 }}
                 className="mt-2 text-xs font-bold text-leaf-700 hover:underline"
               >
-                Reset filters
+                {t('ui.resetFilters')}
               </button>
             </div>
           ) : null}

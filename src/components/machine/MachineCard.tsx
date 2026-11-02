@@ -53,7 +53,7 @@ export function MachineCard({
   // WhatsApp pre-filled inquiry text
   const cropName = selectedCrop ? t(`crop.${selectedCrop}` as TranslationKey) : 'crops'
   const pricingDetail = `${formatPrice(machine.price_per_acre)} ${unitLabel}`
-  const waMessage = `Namaste ${machine.owner_name}, I saw your ${machine.model || typeLabel} (${pricingDetail}) on HarvestRental. I need harvesting for ${
+  const waMessage = `Namaste ${machine.owner_name}, I saw your ${machine.model || typeLabel} (${pricingDetail}) on Harvest Rentals. I need harvesting for ${
     hasAcreage ? `${acreage} acres of ` : ''
   }${cropName} in ${machine.village}. Is your machine available?`
 
@@ -163,42 +163,22 @@ export function MachineCard({
         {/* Live Estimator for Acreage / Hourly / Daily */}
         {hasAcreage && machine.pricing_unit === 'per_hour' ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
-            <span className="text-leaf-700">Hourly Rate: </span>
+            <span className="text-leaf-700">{t('ui.hourlyRate')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / hr</span>
-            <span className="text-leaf-600"> (approx. ~1.5 hrs/acre)</span>
+            <span className="text-leaf-600"> {t('ui.hoursPerAcre')}</span>
           </div>
         ) : hasAcreage && machine.pricing_unit === 'per_day' ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
-            <span className="text-leaf-700">Daily Rate: </span>
+            <span className="text-leaf-700">{t('ui.dailyRate')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / day</span>
           </div>
-        ) : estimatedTotal ? (
+        ) : estimatedTotal && hasAcreage ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
-            <span className="text-leaf-700">Estimated Total: </span>
+            <span className="text-leaf-700">{t('ui.estTotal')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(estimatedTotal)}</span>
-            <span className="text-leaf-600"> ({acreage} acres)</span>
+            <span className="text-leaf-600"> {t('ui.acresCount', { n: acreage ?? 0 })}</span>
           </div>
         ) : null}
-
-        {isBusy ? (
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-harvest-300 bg-harvest-50 px-2.5 py-1 text-xs font-bold text-harvest-900">
-            <span className="size-2 rounded-full bg-harvest-500 animate-pulse" aria-hidden="true" />
-            <span>{t('work.busyBadge')}</span>
-          </div>
-        ) : null}
-
-        {/* In Village or Same District Highlight Tag */}
-        {isInYourVillage ? (
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-leaf-400 bg-leaf-50 px-2.5 py-1 text-xs font-bold text-leaf-900">
-            <CheckCircle2 className="size-3.5 text-leaf-700" />
-            <span>{t('farmer.inYourVillageBadge')} • {machine.village}</span>
-          </div>
-        ) : (
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-leaf-300 bg-leaf-50 px-2.5 py-1 text-xs font-bold text-leaf-900">
-            <CheckCircle2 className="size-3.5 text-leaf-700" />
-            <span>{t('farmer.sameDistrictBadge')} • {machine.district}</span>
-          </div>
-        )}
 
         {/* Clean Location without repeating village if village == district */}
         <p className="flex items-start gap-1.5 text-sm text-ink-soft">
@@ -214,7 +194,7 @@ export function MachineCard({
         {/* Diesel & Driver status */}
         <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
           <CheckCircle2 className="size-3.5 text-leaf-600" />
-          <span>Operator & Diesel included</span>
+          <span>{t('ui.operatorIncluded')}</span>
         </div>
 
         {/* Crops */}
@@ -244,12 +224,16 @@ export function MachineCard({
 
         {/* Direct Action Buttons - Clean & Non-Redundant */}
         <div className="mt-auto space-y-2 pt-2">
+          <LinkButton to={`/farmer/machines/${machine.id}`} variant="primary" size="sm" fullWidth className="min-h-11 font-bold">
+            {t('farmer.bookTitle')}
+          </LinkButton>
+
           <div className="grid grid-cols-2 gap-2">
             <a
               href={telHref(machine.phone)}
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-leaf-700 bg-white px-3 text-xs font-bold text-leaf-800 transition-colors hover:bg-leaf-50 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-xs font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
             >
-              <Phone className="size-4 shrink-0" aria-hidden="true" />
+              <Phone className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('farmer.callOwner')}</span>
             </a>
 
@@ -257,16 +241,12 @@ export function MachineCard({
               href={whatsappHref(machine.phone, waMessage)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-leaf-700 px-3 text-xs font-bold text-cream-50 transition-colors hover:bg-leaf-800 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-leaf-700 px-3 text-xs font-bold text-cream-50 transition-colors hover:bg-leaf-800 active:scale-95"
             >
-              <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
+              <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('farmer.whatsappOwner')}</span>
             </a>
           </div>
-
-          <LinkButton to={`/farmer/machines/${machine.id}`} variant="outline" size="sm" fullWidth>
-            {t('common.viewDetails')} &amp; {t('farmer.bookTitle')}
-          </LinkButton>
         </div>
       </div>
     </article>

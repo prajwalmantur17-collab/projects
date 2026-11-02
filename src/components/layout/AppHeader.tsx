@@ -61,14 +61,14 @@ export function AppHeader() {
                 className="flex min-h-10 items-center gap-1.5 rounded-lg bg-leaf-100 px-3 text-sm font-bold text-leaf-900 transition-colors hover:bg-leaf-200"
               >
                 <PlusCircle className="size-4 text-leaf-700" />
-                <span>List Your Machine</span>
+                <span>{t('ui.listMachine')}</span>
               </Link>
               <Link
                 to="/login"
                 className="flex min-h-10 items-center gap-1.5 rounded-lg border border-cream-300 px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-cream-100"
               >
                 <User className="size-4 text-ink-muted" />
-                <span>Owner Login</span>
+                <span>{t('ui.login')}</span>
               </Link>
             </>
           )}

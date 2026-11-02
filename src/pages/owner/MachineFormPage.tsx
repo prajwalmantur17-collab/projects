@@ -713,7 +713,7 @@ export function MachineFormPage() {
                   onClick={() => setField('crops', [...CROP_KEYS])}
                   className="text-xs font-bold text-leaf-700 hover:underline"
                 >
-                  Select All
+                  {t('ui.selectAll')}
                 </button>
                 <span className="text-cream-300">|</span>
                 <button
@@ -721,7 +721,7 @@ export function MachineFormPage() {
                   onClick={() => setField('crops', [])}
                   className="text-xs font-bold text-ink-muted hover:underline"
                 >
-                  Clear All
+                  {t('ui.clearAll')}
                 </button>
               </div>
             </div>

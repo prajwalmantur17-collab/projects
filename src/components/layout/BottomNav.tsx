@@ -35,8 +35,8 @@ export function BottomNav() {
         ]
       : [
           { to: '/', label: t('nav.find'), icon: Search, end: true },
-          { to: '/owner/machines/new', label: 'List Machine', icon: PlusCircle, end: false },
-          { to: '/login', label: 'Owner Login', icon: User, end: false },
+          { to: '/owner/machines/new', label: t('ui.listMachineShort'), icon: PlusCircle, end: false },
+          { to: '/login', label: t('ui.login'), icon: User, end: false },
         ]
 
   return (

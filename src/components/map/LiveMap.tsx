@@ -164,7 +164,7 @@ export function LiveMap({
                       to={`/farmer/machines/${machine.id}`}
                       className="text-xs font-bold text-leaf-700 underline"
                     >
-                      View machine
+                      {t('ui.viewMachine')}
                     </Link>
                   </div>
                 </Popup>

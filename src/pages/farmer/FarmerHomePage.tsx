@@ -200,7 +200,7 @@ export function FarmerHomePage() {
       })
       setResults(found)
       setSnapshot({
-        village: cleanedVillage || cleanedDistrict || 'Nearby',
+        village: cleanedVillage || cleanedDistrict || t('ui.nearby'),
         crop: activeCrop,
         machineType,
         acreage,
@@ -361,7 +361,7 @@ export function FarmerHomePage() {
   return (
     <div className="space-y-6">
       {/* Hero Banner with Clean Value Props & Blended Farmer Portrait */}
-      <div className="group relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
+      <div className="group relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-5 text-white shadow-soft sm:p-8">
         {/* Right-Side Indian Farmer Portrait with Professional Edge Blending */}
         <div
           className="hr-hero-wrap pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[44%] md:w-[40%] lg:w-[42%] xl:w-[40%] select-none overflow-hidden"
@@ -389,7 +389,7 @@ export function FarmerHomePage() {
           <div className="motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.16,1,0.3,1)_both]">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-xs">
               <Sparkles className="size-3.5" aria-hidden="true" />
-              Direct Farmer-to-Owner Rental Platform
+              {t('ui.heroBadge')}
             </span>
           </div>
 
@@ -401,18 +401,18 @@ export function FarmerHomePage() {
             {t('farmer.subtitle')}
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 motion-safe:animate-[hero-fade-up_700ms_cubic-bezier(0.16,1,0.3,1)_180ms_both] sm:grid-cols-3">
+          <div className="mt-5 hidden sm:grid sm:grid-cols-3 gap-3 motion-safe:animate-[hero-fade-up_700ms_cubic-bezier(0.16,1,0.3,1)_180ms_both]">
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <CheckCircle2 className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">Verified Machines</span>
+              <span className="text-xs font-medium sm:text-sm">{t('ui.verified')}</span>
             </div>
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <PhoneCall className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">Direct Owner Call</span>
+              <span className="text-xs font-medium sm:text-sm">{t('ui.directCall')}</span>
             </div>
-            <div className="col-span-2 flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs sm:col-span-1">
+            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <ShieldCheck className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">Zero Commission</span>
+              <span className="text-xs font-medium sm:text-sm">{t('ui.zeroCommission')}</span>
             </div>
           </div>
         </div>
@@ -426,9 +426,24 @@ export function FarmerHomePage() {
               <h2 id="search-heading" className="text-xl font-extrabold text-ink sm:text-2xl">
                 {t('farmer.findTitle')}
               </h2>
-              <p className="text-xs text-ink-muted sm:text-sm">{t('farmer.findSubtitle')}</p>
+              <p className="text-sm text-ink-muted">{t('farmer.findSubtitle')}</p>
             </div>
             <VoiceSearchButton onVoiceResult={handleVoiceResult} />
+          </div>
+
+          {/* Mobile Quick Action: Use Location */}
+          <div className="sm:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              fullWidth
+              onClick={() => void locate()}
+              loading={geo.loading || geocoding}
+              icon={<LocateFixed className="size-4" aria-hidden="true" />}
+            >
+              {geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}
+            </Button>
           </div>
 
           {/* Primary Village Input */}
@@ -458,9 +473,9 @@ export function FarmerHomePage() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <p className="text-sm font-bold uppercase tracking-wider text-ink-muted">
                   {t('farmer.cropLabel')}
-                </label>
+                </p>
                 {crop ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-100 px-2.5 py-0.5 text-xs font-bold text-leaf-900 ring-1 ring-leaf-300">
                     <span className="size-1.5 rounded-full bg-leaf-600" />
@@ -469,7 +484,7 @@ export function FarmerHomePage() {
                       type="button"
                       onClick={() => handleQuickCrop(crop)}
                       className="ml-0.5 rounded-full p-0.5 text-leaf-700 hover:bg-leaf-200"
-                      aria-label="Clear selected crop"
+                      aria-label={t('ui.clearCrop')}
                     >
                       <X className="size-3" />
                     </button>
@@ -492,7 +507,7 @@ export function FarmerHomePage() {
                   onClick={() => setCropPickerOpen(true)}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1 text-xs font-semibold text-leaf-800 shadow-2xs hover:bg-cream-50"
                 >
-                  <span>{t('cropPicker.open')} (20)</span>
+                  <span>{t('ui.allCropsBtn', { n: CROP_KEYS.length })}</span>
                 </button>
               </div>
             </div>
@@ -522,7 +537,7 @@ export function FarmerHomePage() {
                 onClick={() => setShowAllCrops((prev) => !prev)}
                 className="text-xs font-bold text-leaf-800 hover:text-leaf-950 hover:underline"
               >
-                {showAllCrops ? 'Show top crops' : 'Show all 20 crops \u2193'}
+                {showAllCrops ? t('ui.showTopCrops') : `${t('ui.showAllCrops')} \u2193`}
               </button>
             </div>
 
@@ -587,7 +602,7 @@ export function FarmerHomePage() {
                 value={district}
                 onChange={(event) => setDistrict(event.target.value)}
                 autoComplete="address-level2"
-                placeholder="e.g. Mandya / Vijayapura"
+                placeholder={t('ui.districtPlaceholder')}
               />
             </div>
           </div>
@@ -610,6 +625,7 @@ export function FarmerHomePage() {
               onClick={() => void locate()}
               loading={geo.loading || geocoding}
               icon={<LocateFixed className="size-5" aria-hidden="true" />}
+              className="hidden sm:inline-flex"
             >
               {geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}
             </Button>
@@ -634,11 +650,9 @@ export function FarmerHomePage() {
         <Card as="section" className="overflow-hidden border-2 border-leaf-100 p-0 shadow-soft">
           <div className="flex items-center justify-between gap-3 border-b border-cream-200 px-5 py-3">
             <div>
-              <h2 className="text-lg font-extrabold text-ink">Nearby Harvesters Map</h2>
+              <h2 className="text-lg font-extrabold text-ink">{t('ui.mapTitle')}</h2>
               <p className="text-sm text-ink-muted">
-                {geo.coordinates
-                  ? 'Blue dot is your farm. Green pins show harvesters near you.'
-                  : 'Tap on any machine pin to view details and booking.'}
+                {geo.coordinates ? t('ui.mapSubGps') : t('ui.mapSubTap')}
               </p>
             </div>
           </div>
@@ -661,7 +675,7 @@ export function FarmerHomePage() {
             </div>
             <h3 className="text-2xl font-extrabold text-ink">
               {t('farmer.scanningNearby', {
-                location: snapshot?.village || village || district || 'your farm area',
+                location: snapshot?.village || village || district || t('ui.yourFarmArea'),
               })}
             </h3>
             <p className="mt-2 max-w-md text-sm text-ink-muted">
@@ -669,7 +683,7 @@ export function FarmerHomePage() {
             </p>
             <div className="mt-6 flex items-center gap-2 rounded-full border border-leaf-200 bg-white px-4 py-1.5 text-xs font-bold text-leaf-800 shadow-sm">
               <Radio className="size-3.5 animate-pulse text-leaf-600" />
-              <span>Scanning registered machines & live availability…</span>
+              <span>{t('ui.scanning')}</span>
             </div>
           </div>
         ) : hasSearched ? (
@@ -686,9 +700,9 @@ export function FarmerHomePage() {
                 <p className="mt-1 text-sm text-ink-muted">
                   {snapshot?.village
                     ? t('farmer.resultsFor', { village: snapshot.village })
-                    : 'Machines ready for booking in your area'}
+                    : t('ui.readyArea')}
                   {sortedResults ? ` • ${t('farmer.resultsCount', { count: sortedResults.length })}` : ''}
-                  {parsedAcreage ? ` • For ~${parsedAcreage} acres` : ''}
+                  {parsedAcreage ? ` • ${t('ui.forAcres', { n: parsedAcreage })}` : ''}
                 </p>
               </div>
 
@@ -746,9 +760,9 @@ export function FarmerHomePage() {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
                   1
                 </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">Enter Location</h4>
+                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step1Title')}</h4>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Type your village or tap "Use My Location" for instant GPS auto-fill.
+                  {t('ui.step1Body')}
                 </p>
               </div>
 
@@ -756,9 +770,9 @@ export function FarmerHomePage() {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
                   2
                 </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">Scan Harvesters</h4>
+                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step2Title')}</h4>
                 <p className="mt-1 text-xs text-ink-muted">
-                  We scan and sort verified harvesters operating in your village & district.
+                  {t('ui.step2Body')}
                 </p>
               </div>
 
@@ -766,24 +780,11 @@ export function FarmerHomePage() {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
                   3
                 </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">Direct Contact</h4>
+                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step3Title')}</h4>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Call or WhatsApp machine owners directly with transparent hourly/acre rates.
+                  {t('ui.step3Body')}
                 </p>
               </div>
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                icon={<LocateFixed className="size-5" aria-hidden="true" />}
-                onClick={() => void locate()}
-                loading={geo.loading || geocoding}
-              >
-                {t('farmer.useLocation')}
-              </Button>
             </div>
           </div>
         )}

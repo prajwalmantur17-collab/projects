@@ -5,6 +5,7 @@ import { routeHi } from './route'
 import { navHi } from './nav'
 import { photoHi } from './photo'
 import { cropPhotoHi } from './cropPhoto'
+import { uiHi } from './ui'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
@@ -15,6 +16,7 @@ export const hi: Record<TranslationKey, string> = {
   ...navHi,
   ...photoHi,
   ...cropPhotoHi,
+  ...uiHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास हार्वेस्टर मशीनें खोजें।',
   'app.description':
