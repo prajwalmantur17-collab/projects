@@ -300,7 +300,7 @@
 }
 
 
-/* Farmer hero photo: smooth rise on hover */
-.hr-hero-wrap{transform-origin:bottom right;transition:transform .7s cubic-bezier(.22,1,.36,1),filter .7s ease;will-change:transform}
-@media (hover:hover){.group:hover .hr-hero-wrap{transform:translate3d(-6px,-10px,0) scale(1.05);filter:saturate(1.08) contrast(1.03)}}
-@media (prefers-reduced-motion:reduce){.hr-hero-wrap{transition:none}.group:hover .hr-hero-wrap{transform:none;filter:none}}
+/* Farmer hero photo: smooth zoom on hover (wrapper stays fixed so edges never show a gap) */
+.hr-hero-wrap img{transform-origin:bottom right;transition:scale .8s cubic-bezier(.22,1,.36,1),filter .8s ease}
+@media (hover:hover){.group:hover .hr-hero-wrap img{scale:1.07;filter:saturate(1.08) contrast(1.03)}}
+@media (prefers-reduced-motion:reduce){.hr-hero-wrap img{transition:none}.group:hover .hr-hero-wrap img{scale:1;filter:none}}
