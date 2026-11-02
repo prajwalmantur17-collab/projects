@@ -64,6 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null)
         setProfileError(null)
         setProfileLoading(false)
+        try {
+          window.localStorage.removeItem('hr_user_role')
+        } catch {
+          // localStorage disabled
+        }
       }
     })
 
@@ -103,7 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         let loaded = await getProfile(userId)
         if (!loaded) loaded = await ensureProfile()
-        if (!cancelled) setProfile(loaded)
+        if (!cancelled) {
+          setProfile(loaded)
+          try {
+            if (loaded?.role) {
+              window.localStorage.setItem('hr_user_role', loaded.role)
+            }
+          } catch {
+            // ignore
+          }
+        }
       } catch (caught) {
         logError('auth.loadProfile', caught)
         if (!cancelled) setProfileError(mapErrorToKey(caught, 'error.profileLoad'))
@@ -128,6 +142,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (loaded) {
         setProfile(loaded)
         setProfileError(null)
+        try {
+          if (loaded?.role) {
+            window.localStorage.setItem('hr_user_role', loaded.role)
+          }
+        } catch {
+          // ignore
+        }
         return loaded
       }
       setProfileVersion((value) => value + 1)

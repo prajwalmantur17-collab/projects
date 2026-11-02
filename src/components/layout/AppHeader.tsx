@@ -31,7 +31,9 @@ export function AppHeader() {
   const { toggleMobile, toggleCollapsed, collapsed } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
-  const isOwnerRoute = location.pathname.startsWith('/owner')
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
+  const isOwnerUser = profile?.role === 'owner' || (!profile && cachedRole === 'owner')
+  const isOwnerRoute = location.pathname.startsWith('/owner') || (isOwnerUser && location.pathname !== '/farmer' && location.pathname !== '/')
   const [searchQuery, setSearchQuery] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [searching, setSearching] = useState(false)

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CalendarClock,
@@ -19,7 +19,7 @@ import { logError, mapErrorToKey } from '../../lib/errors'
 import { formatDate, formatPrice } from '../../lib/format'
 import { machineTypeLabelKey } from '../../lib/labels'
 import { useAsync } from '../../hooks/useAsync'
-import { getOwnerBookings } from '../../services/bookings'
+import { getOwnerBookings, subscribeToBookings } from '../../services/bookings'
 import {
   deleteMachine,
   getDeletedMachineIds,
@@ -63,6 +63,13 @@ export function OwnerHomePage() {
     enabled: Boolean(ownerId),
     fallback: 'owner.requestsError',
   })
+
+  useEffect(() => {
+    if (!ownerId) return
+    return subscribeToBookings(ownerId, 'owner', () => {
+      requests.reload()
+    }, 'owner-home-bookings')
+  }, [ownerId, requests.reload])
 
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => getDeletedMachineIds())
 
@@ -324,7 +331,7 @@ export function OwnerHomePage() {
                           <span className="text-xs font-normal text-[#718073]">{unitLabel}</span>
                         </p>
 
-                        {machine.service_villages && machine.service_villages.length > 0 ? (
+                        {Array.isArray(machine.service_villages) && machine.service_villages.length > 0 ? (
                           <p className="flex items-center gap-1 text-xs text-[#718073]">
                             <MapPin className="size-3.5 text-[#31572C] shrink-0" />
                             <span className="truncate max-w-xs">{machine.service_villages.join(', ')}</span>

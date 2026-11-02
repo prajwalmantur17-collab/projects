@@ -38,7 +38,8 @@ export function Sidebar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
-  const isOwner = profile?.role === 'owner' || location.pathname.startsWith('/owner')
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
+  const isOwner = profile?.role === 'owner' || (!profile && cachedRole === 'owner') || location.pathname.startsWith('/owner')
   const homePath = isOwner ? '/owner' : '/'
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
   const { unreadCount } = useNotifications(profile?.id, 'sidebar')
@@ -138,9 +139,9 @@ export function Sidebar() {
     {
       id: 'owner-profile',
       label: t('nav.profile'),
-      to: session ? '/settings' : '/login',
+      to: session ? '/settings?tab=profile' : '/login',
       icon: User,
-      isActive: location.pathname === '/settings' || location.pathname === '/profile',
+      isActive: location.pathname === '/profile' || location.search.includes('tab=profile'),
     },
     {
       id: 'owner-notifications',
@@ -160,7 +161,7 @@ export function Sidebar() {
       label: t('nav.settings'),
       to: session ? '/settings' : '/login',
       icon: Settings,
-      isActive: location.pathname === '/settings',
+      isActive: location.pathname === '/settings' && !location.search.includes('tab=profile'),
     },
     {
       id: 'owner-help',
@@ -496,14 +497,18 @@ export function Sidebar() {
             }`}
           >
             {isOwner ? (
-              <>
+              <Link
+                to="/owner/machines/new"
+                onClick={() => handleNavClick()}
+                className="block group cursor-pointer"
+              >
                 <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
                   <Tractor className="size-3.5" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8BCB73]">Partner Dashboard</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8BCB73]">Partner Fleet</span>
                 </div>
-                <p className="text-xs font-bold text-white leading-tight">Harvest Partner</p>
-                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">Direct farmer bookings · 0% fee</p>
-              </>
+                <p className="text-xs font-bold text-white leading-tight group-hover:text-[#4ade80] transition-colors">List More Machines</p>
+                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">Direct farmer bookings · 0% fee →</p>
+              </Link>
             ) : (
               <>
                 <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">

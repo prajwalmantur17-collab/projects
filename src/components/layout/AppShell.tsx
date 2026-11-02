@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import { AppHeader } from './AppHeader'
 import { Sidebar } from './Sidebar'
@@ -12,7 +13,10 @@ function AppShellContent() {
   const { t } = useI18n()
   const location = useLocation()
   const { collapsed } = useSidebar()
-  const isOwnerRoute = location.pathname.startsWith('/owner')
+  const { profile } = useAuth()
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
+  const isOwnerUser = profile?.role === 'owner' || (!profile && cachedRole === 'owner')
+  const isOwnerRoute = location.pathname.startsWith('/owner') || (isOwnerUser && location.pathname !== '/farmer' && location.pathname !== '/')
 
   return (
     <div

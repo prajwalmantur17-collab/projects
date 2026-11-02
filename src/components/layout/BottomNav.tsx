@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { CalendarDays, House, Inbox, PlusCircle, Search, Tractor, User } from 'lucide-react'
 import { useI18n } from '../../i18n'
@@ -17,7 +17,9 @@ interface Item {
 export function BottomNav() {
   const { t } = useI18n()
   const { profile, session } = useAuth()
-  const isOwner = profile?.role === 'owner'
+  const location = useLocation()
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
+  const isOwner = profile?.role === 'owner' || (!profile && cachedRole === 'owner') || location.pathname.startsWith('/owner')
   const pending = usePendingRequests(isOwner ? profile?.id : undefined)
 
   const items: Item[] = isOwner

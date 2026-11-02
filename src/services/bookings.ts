@@ -147,22 +147,32 @@ export function subscribeToBookings(
   /** Distinct scopes get distinct realtime channels; a channel cannot be shared once subscribed. */
   scope = 'list',
 ): () => void {
-  const client = requireSupabase()
-  const column = role === 'farmer' ? 'farmer_id' : 'owner_id'
-  const channel = client
-    .channel(`bookings-${role}-${userId}-${scope}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'bookings',
-        filter: `${column}=eq.${userId}`,
-      },
-      onChange,
-    )
-    .subscribe()
-  return () => {
-    void client.removeChannel(channel)
+  try {
+    const client = requireSupabase()
+    const column = role === 'farmer' ? 'farmer_id' : 'owner_id'
+    const channelId = `bookings-${role}-${userId}-${scope}-${Math.random().toString(36).slice(2, 7)}`
+    const channel = client
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `${column}=eq.${userId}`,
+        },
+        onChange,
+      )
+      .subscribe()
+    return () => {
+      try {
+        void client.removeChannel(channel)
+      } catch {
+        // cleanup safety
+      }
+    }
+  } catch (err) {
+    console.warn('Realtime bookings subscription skipped:', err)
+    return () => {}
   }
 }

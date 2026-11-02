@@ -29,7 +29,7 @@ export function App() {
       <Routes>
         <Route element={<AppShell />}>
           {/* Public Farmer & Machine Discovery (Zero Login Required) */}
-          <Route path="/" element={<FarmerHomePage />} />
+          <Route path="/" element={<HomeRouteGate />} />
           <Route path="/farmer" element={<FarmerHomePage />} />
           <Route path="/farmer/machines/:machineId" element={<MachineDetailsPage />} />
           <Route path="/machines/:machineId" element={<MachineDetailsPage />} />
@@ -96,11 +96,29 @@ function PublicOnly() {
   return <Outlet />
 }
 
+/**
+ * Role-aware root router:
+ * - If signed in as machine owner -> seamlessly routes to /owner (Harvester Owner Dashboard)
+ * - If guest or farmer -> renders FarmerHomePage for instant machine discovery
+ * - Direct navigation to /farmer is always available for farmers or owners wishing to view the farmer catalog
+ */
+function HomeRouteGate() {
+  const { session, profile } = useAuth()
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
+  const effectiveRole = profile?.role || (session ? cachedRole : null)
+
+  if (session && effectiveRole === 'owner') {
+    return <Navigate to="/owner" replace />
+  }
+
+  return <FarmerHomePage />
+}
+
 function RoleSelectionGate() {
   const { profileLoading, profileError, profile } = useAuth()
   const { t } = useI18n()
 
-  if (profileLoading) return <LoadingScreen message={t('app.loading')} />
+  if (profileLoading || (!profile && !profileError)) return <LoadingScreen message={t('app.loading')} />
   if (profileError && !profile) return <ProfileErrorPage />
   if (profile?.role) return <Navigate to={homeForProfile(profile)} replace />
   return <RoleSelectionPage />
@@ -111,7 +129,7 @@ function SettingsGate() {
   const { t } = useI18n()
 
   if (!profile) {
-    if (profileLoading) return <LoadingScreen message={t('app.loading')} />
+    if (profileLoading || !profileError) return <LoadingScreen message={t('app.loading')} />
     if (profileError) return <ProfileErrorPage />
     return <Navigate to="/select-role" replace />
   }
@@ -123,7 +141,7 @@ function RecordGate() {
   const { t } = useI18n()
 
   if (!profile) {
-    if (profileLoading) return <LoadingScreen message={t('app.loading')} />
+    if (profileLoading || !profileError) return <LoadingScreen message={t('app.loading')} />
     if (profileError) return <ProfileErrorPage />
     return <Navigate to="/select-role" replace />
   }

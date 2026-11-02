@@ -194,7 +194,7 @@ export function OwnerMachinesPage() {
                     {t('farmer.serviceAreas')}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    {machine.service_villages.map((village) => (
+                    {(Array.isArray(machine.service_villages) ? machine.service_villages : []).map((village) => (
                       <span
                         key={village}
                         className="rounded-full bg-cream-100 px-2.5 py-0.5 text-xs text-ink-soft"

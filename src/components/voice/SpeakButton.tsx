@@ -36,7 +36,8 @@ export function SpeakButton({
     }
 
     const typeLabel = t(`machineType.${machine.machine_type}`)
-    const cropNames = machine.crops.map((c) => t(`crop.${c}`)).join(', ')
+    const cropList = Array.isArray(machine.crops) ? machine.crops : []
+    const cropNames = cropList.map((c) => t(`crop.${c}`)).join(', ')
 
     const knUnit =
       machine.pricing_unit === 'per_hour'
