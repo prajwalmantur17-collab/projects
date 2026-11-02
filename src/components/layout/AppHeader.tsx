@@ -1,121 +1,120 @@
-import { Link, NavLink } from 'react-router-dom'
-import type { LucideIcon } from 'lucide-react'
-import { CalendarDays, House, Inbox, PlusCircle, Search, Tractor, User } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Menu,
+  PanelLeft,
+  Search,
+  User,
+  X,
+} from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../auth/AuthProvider'
-import { LogoMark } from '../brand/Logo'
 import { LanguageSelector } from '../ui/LanguageSelector'
 import { NotificationBell } from './NotificationBell'
-import { NavBadge } from './NavBadge'
 import { Avatar } from '../ui/Avatar'
 import { avatarUrl } from '../../services/avatars'
-import { usePendingRequests } from '../../hooks/usePendingRequests'
+import { useSidebar } from './SidebarContext'
 
 export function AppHeader() {
   const { t } = useI18n()
   const { profile, session } = useAuth()
-  const isOwner = profile?.role === 'owner'
-  const home = isOwner ? '/owner' : '/'
-  const pending = usePendingRequests(isOwner ? profile?.id : undefined)
+  const { toggleMobile, toggleCollapsed, collapsed } = useSidebar()
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = searchQuery.trim()
+    if (!q) return
+
+    // If on home, focus or scroll to search input
+    if (window.location.pathname === '/' || window.location.pathname === '/farmer') {
+      const input = document.querySelector('input[placeholder*="village"]') as HTMLInputElement | null
+      if (input) {
+        input.value = q
+        input.focus()
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+    }
+    navigate(`/?q=${encodeURIComponent(q)}`)
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-cream-200 bg-cream-50/95 backdrop-blur">
-      <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-        <Link
-          to={home}
-          className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg pr-1"
-          aria-label={t('app.name')}
-        >
-          <LogoMark className="size-9 shrink-0" />
-          <span className="truncate text-lg font-extrabold tracking-tight text-leaf-900 sm:text-xl">
-            {t('app.name')}
-          </span>
-        </Link>
+      <div className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        {/* Left: Sidebar Toggles & Search */}
+        <div className="flex flex-1 items-center gap-2 sm:gap-3 max-w-xl">
+          {/* Mobile Hamburger Menu Toggle */}
+          <button
+            type="button"
+            onClick={toggleMobile}
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-cream-300 bg-white text-ink-muted hover:bg-cream-100 hover:text-ink lg:hidden"
+            aria-label="Open sidebar menu"
+          >
+            <Menu className="size-5" />
+          </button>
 
-        <nav aria-label={t('a11y.primaryNav')} className="hidden items-center gap-1.5 lg:flex">
-          {session ? (
-            isOwner ? (
-              <>
-                <HeaderLink to="/owner" label={t('nav.home')} icon={House} />
-                <HeaderLink
-                  to="/owner/bookings"
-                  label={t('nav.requestsShort')}
-                  icon={Inbox}
-                  badge={pending}
-                />
-                <HeaderLink to="/owner/machines" label={t('nav.machinesShort')} icon={Tractor} />
-                <HeaderLink to="/settings" label={t('nav.profile')} icon={User} />
-              </>
-            ) : (
-              <>
-                <HeaderLink to="/" label={t('nav.find')} icon={Search} />
-                <HeaderLink to="/farmer/bookings" label={t('nav.bookingsShort')} icon={CalendarDays} />
-                <HeaderLink to="/settings" label={t('nav.profile')} icon={User} />
-              </>
-            )
-          ) : (
-            <>
-              <HeaderLink to="/" label={t('nav.find')} icon={Search} />
-              <Link
-                to="/owner/machines/new"
-                className="flex min-h-10 items-center gap-1.5 rounded-lg bg-leaf-100 px-3 text-sm font-bold text-leaf-900 transition-colors hover:bg-leaf-200"
-              >
-                <PlusCircle className="size-4 text-leaf-700" />
-                <span>{t('ui.listMachine')}</span>
-              </Link>
-              <Link
-                to="/login"
-                className="flex min-h-10 items-center gap-1.5 rounded-lg border border-cream-300 px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-cream-100"
-              >
-                <User className="size-4 text-ink-muted" />
-                <span>{t('ui.login')}</span>
-              </Link>
-            </>
-          )}
-        </nav>
+          {/* Desktop Sidebar Toggle */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="hidden size-10 shrink-0 items-center justify-center rounded-xl border border-cream-300 bg-white text-ink-muted hover:bg-cream-100 hover:text-ink lg:flex"
+            title={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
+            aria-label={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
+          >
+            <PanelLeft className="size-5" />
+          </button>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+          {/* Top Bar Quick Search Input */}
+          <form onSubmit={handleSearch} className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-ink-muted pointer-events-none" aria-hidden="true" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('ui.searchPlaceholder')}
+              className="h-10 w-full rounded-xl border border-cream-300 bg-white pl-9 pr-8 text-sm font-medium text-ink placeholder:text-ink-muted/70 focus:border-leaf-600 focus:outline-none focus:ring-2 focus:ring-leaf-400/20"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                aria-label="Clear search"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </form>
+        </div>
+
+        {/* Right: Actions (Language, Notifications, User) */}
+        <div className="flex shrink-0 items-center gap-2">
           <LanguageSelector compact />
+
           {session ? <NotificationBell /> : null}
-          {session ? (
+
+          {session && profile ? (
             <Link
               to="/settings"
-              className="flex size-11 items-center justify-center rounded-xl hover:bg-cream-100"
+              className="flex size-10 items-center justify-center rounded-xl hover:bg-cream-100"
               aria-label={t('nav.profile')}
+              title={profile.full_name}
             >
               <Avatar url={avatarUrl(profile?.avatar_path)} name={profile?.full_name} size="sm" />
             </Link>
-          ) : null}
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3.5 py-1.5 text-sm font-bold text-ink hover:bg-cream-100"
+            >
+              <User className="size-4 text-ink-muted" />
+              <span>{t('ui.login')}</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>
-  )
-}
-
-function HeaderLink({
-  to,
-  label,
-  icon: Icon,
-  badge,
-}: {
-  to: string
-  label: string
-  icon?: LucideIcon
-  badge?: number
-}) {
-  return (
-    <NavLink
-      to={to}
-      end={to === '/' || to === '/farmer' || to === '/owner'}
-      className={({ isActive }) =>
-        `flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-[15px] font-semibold transition-colors ${
-          isActive ? 'bg-leaf-100 font-bold text-leaf-900' : 'text-ink-soft hover:bg-cream-100'
-        }`
-      }
-    >
-      {Icon ? <Icon className="size-5 shrink-0" aria-hidden="true" /> : null}
-      <span>{label}</span>
-      {badge ? <NavBadge count={badge} /> : null}
-    </NavLink>
   )
 }

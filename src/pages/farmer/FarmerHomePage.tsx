@@ -245,6 +245,22 @@ export function FarmerHomePage() {
     }
   }
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const qParam = params.get('q')
+      if (qParam) {
+        setVillage(qParam)
+        void runSearch(undefined, qParam)
+      } else if (params.get('section') === 'crops') {
+        window.setTimeout(() => {
+          document.getElementById('crop-selection-section')?.scrollIntoView({ behavior: 'smooth' })
+        }, 200)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleVoiceResult = (result: VoiceQueryResult) => {
     if (result.village) setVillage(result.village)
     if (result.crop) setCrop(result.crop)
@@ -522,7 +538,7 @@ export function FarmerHomePage() {
           </div>
 
           {/* Agricultural Crop Selection with Realistic Photographs */}
-          <div className="space-y-3">
+          <div id="crop-selection-section" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-bold uppercase tracking-wider text-ink-muted">

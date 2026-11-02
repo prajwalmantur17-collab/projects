@@ -47,6 +47,17 @@ export const uiEn = {
   'ui.changeSearch': 'Change',
   'ui.viewList': 'List',
   'ui.viewMap': 'Map',
+  'ui.myCrops': 'My Crops',
+  'ui.helpSupport': 'Help & Support',
+  'ui.logout': 'Logout',
+  'ui.collapseSidebar': 'Collapse sidebar',
+  'ui.expandSidebar': 'Expand sidebar',
+  'ui.kisanHelpline': 'Kisan Call Centre (Toll-Free)',
+  'ui.supportSubtitle': '24/7 Farmer & Machine Owner Assistance',
+  'ui.searchPlaceholder': 'Search machines, crops, or village…',
+  'ui.kisanNumber': '1800-180-1551',
+  'ui.whatsappSupport': 'WhatsApp Helpdesk',
+  'ui.viewProfile': 'View Profile',
 } as const
 
 export const uiKn: Record<keyof typeof uiEn, string> = {
@@ -96,6 +107,17 @@ export const uiKn: Record<keyof typeof uiEn, string> = {
   'ui.changeSearch': 'ಬದಲಿಸಿ',
   'ui.viewList': 'ಪಟ್ಟಿ',
   'ui.viewMap': 'ನಕ್ಷೆ',
+  'ui.myCrops': 'ನನ್ನ ಬೆಳೆಗಳು',
+  'ui.helpSupport': 'ಸಹಾಯ ಮತ್ತು ಬೆಂಬಲ',
+  'ui.logout': 'ಲಾಗ್‌ಔಟ್',
+  'ui.collapseSidebar': 'ಸೈಡ್‌ಬಾರ್ ಮುಚ್ಚಿ',
+  'ui.expandSidebar': 'ಸೈಡ್‌ಬಾರ್ ವಿಸ್ತರಿಸಿ',
+  'ui.kisanHelpline': 'ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ (ಶುಲ್ಕ ರಹಿತ)',
+  'ui.supportSubtitle': '24/7 ರೈತರು ಮತ್ತು ಯಂತ್ರ ಮಾಲೀಕರ ಸಹಾಯ',
+  'ui.searchPlaceholder': 'ಯಂತ್ರಗಳು, ಬೆಳೆಗಳು ಅಥವಾ ಹಳ್ಳಿ ಹುಡುಕಿ…',
+  'ui.kisanNumber': '1800-180-1551',
+  'ui.whatsappSupport': 'ವಾಟ್ಸಾಪ್ ಸಹಾಯವಾಣಿ',
+  'ui.viewProfile': 'ಪ್ರೊಫೈಲ್ ನೋಡಿ',
 }
 
 export const uiHi: Record<keyof typeof uiEn, string> = {
@@ -145,6 +167,17 @@ export const uiHi: Record<keyof typeof uiEn, string> = {
   'ui.changeSearch': 'बदलें',
   'ui.viewList': 'सूची',
   'ui.viewMap': 'नक्शा',
+  'ui.myCrops': 'मेरी फसलें',
+  'ui.helpSupport': 'सहायता और समर्थन',
+  'ui.logout': 'लॉग आउट',
+  'ui.collapseSidebar': 'साइडबार समेटें',
+  'ui.expandSidebar': 'साइडबार फैलाएँ',
+  'ui.kisanHelpline': 'किसान कॉल सेंटर (टोल-फ्री)',
+  'ui.supportSubtitle': '24/7 किसान और मशीन मालिक सहायता',
+  'ui.searchPlaceholder': 'मशीनें, फसलें या गाँव खोजें…',
+  'ui.kisanNumber': '1800-180-1551',
+  'ui.whatsappSupport': 'व्हाट्सऐप सहायता',
+  'ui.viewProfile': 'प्रोफ़ाइल देखें',
 }
 
 export const uiTa: Record<keyof typeof uiEn, string> = {
@@ -194,4 +227,15 @@ export const uiTa: Record<keyof typeof uiEn, string> = {
   'ui.changeSearch': 'மாற்று',
   'ui.viewList': 'பட்டியல்',
   'ui.viewMap': 'வரைபடம்',
+  'ui.myCrops': 'என் பயிர்கள்',
+  'ui.helpSupport': 'உதவி மற்றும் ஆதரவு',
+  'ui.logout': 'வெளியேறு',
+  'ui.collapseSidebar': 'பக்கப்பட்டியை சுருக்கு',
+  'ui.expandSidebar': 'பக்கப்பட்டியை விரிவாக்கு',
+  'ui.kisanHelpline': 'கிசான் அழைப்பு மையம் (இலவசம்)',
+  'ui.supportSubtitle': '24/7 விவசாயி மற்றும் இயந்திர உரிமையாளர் உதவி',
+  'ui.searchPlaceholder': 'இயந்திரங்கள், பயிர்கள் அல்லது கிராமத்தைத் தேடுங்கள்…',
+  'ui.kisanNumber': '1800-180-1551',
+  'ui.whatsappSupport': 'வாட்ஸ்அப் உதவி',
+  'ui.viewProfile': 'சுயவிவரத்தைப் பார்',
 }
