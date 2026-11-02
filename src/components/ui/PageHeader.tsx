@@ -22,7 +22,7 @@ export function PageHeader({
       {backTo ? (
         <Link
           to={backTo}
-          className="mb-3 inline-flex min-h-10 items-center gap-1.5 rounded-lg pr-2 text-sm font-semibold text-leaf-700 hover:text-leaf-900"
+          className="mb-3 inline-flex min-h-10 items-center gap-1.5 rounded-lg pr-2 text-sm font-semibold text-white/90 drop-shadow-xs hover:text-white transition-colors"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           {backLabel ?? t('common.back')}
@@ -30,9 +30,9 @@ export function PageHeader({
       ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-white drop-shadow-md">{title}</h1>
           {description ? (
-            <p className="mt-1.5 text-base leading-relaxed text-ink-muted">{description}</p>
+            <p className="mt-1.5 text-base leading-relaxed text-white/90 drop-shadow-xs">{description}</p>
           ) : null}
         </div>
         {action}

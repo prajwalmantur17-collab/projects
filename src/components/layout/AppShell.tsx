@@ -1,5 +1,4 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import { AppHeader } from './AppHeader'
 import { Sidebar } from './Sidebar'
@@ -13,25 +12,13 @@ function AppShellContent() {
   const { t } = useI18n()
   const location = useLocation()
   const { collapsed } = useSidebar()
-  const { profile } = useAuth()
-  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
-  const isOwnerUser = profile?.role === 'owner' || (!profile && cachedRole === 'owner')
-  const isOwnerRoute = location.pathname.startsWith('/owner') || (isOwnerUser && location.pathname !== '/farmer' && location.pathname !== '/')
 
   return (
     <div
-      className={`min-h-dvh overflow-x-hidden relative ${
-        isOwnerRoute
-          ? 'bg-[#F8F8F2] text-[#1C2B20] selection:bg-[#31572C] selection:text-white'
-          : 'bg-cover bg-center bg-fixed bg-no-repeat text-ink selection:bg-leaf-600 selection:text-white'
-      }`}
-      style={
-        isOwnerRoute
-          ? undefined
-          : {
-              backgroundImage: "url('/images/paddy-countryside.jpg')",
-            }
-      }
+      className="min-h-dvh overflow-x-hidden relative bg-cover bg-center bg-fixed bg-no-repeat text-ink selection:bg-leaf-600 selection:text-white"
+      style={{
+        backgroundImage: "url('/images/paddy-countryside.jpg')",
+      }}
     >
       <a
         href="#main-content"
@@ -63,13 +50,7 @@ function AppShellContent() {
           </div>
         </main>
 
-        <footer
-          className={`mt-auto px-6 py-4 text-center text-xs backdrop-blur-md ${
-            isOwnerRoute
-              ? 'border-t border-[#E8E6DA] bg-white text-[#718073]'
-              : 'border-t border-white/20 bg-black/40 text-white/90'
-          }`}
-        >
+        <footer className="mt-auto px-6 py-4 text-center text-xs backdrop-blur-md border-t border-white/20 bg-black/40 text-white/90">
           <p>
             {t('app.name')} · {t('app.footer')}
           </p>

@@ -98,13 +98,7 @@ export function AppHeader() {
   }
 
   return (
-    <header
-      className={`sticky top-0 z-30 transition-all ${
-        isOwnerRoute
-          ? 'border-b border-[#E8E6DA] bg-white/95 backdrop-blur-md shadow-2xs'
-          : 'border-b border-white/20 bg-white/40 backdrop-blur-md'
-      }`}
-    >
+    <header className="sticky top-0 z-30 transition-all border-b border-white/20 bg-white/45 backdrop-blur-md">
       <div className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
         {/* Left: Sidebar Toggles & Search */}
         <div className="flex flex-1 items-center gap-2 sm:gap-3 max-w-xl">
@@ -112,11 +106,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleMobile}
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:hidden ${
-              isOwnerRoute
-                ? 'border border-[#E8E6DA] bg-[#F8F8F2] text-[#1C2B20] hover:bg-white'
-                : 'border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white'
-            }`}
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:hidden border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white cursor-pointer"
             aria-label="Open sidebar menu"
           >
             <Menu className="size-5" />
@@ -126,11 +116,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className={`hidden size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:flex ${
-              isOwnerRoute
-                ? 'border border-[#E8E6DA] bg-[#F8F8F2] text-[#1C2B20] hover:bg-white'
-                : 'border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white'
-            }`}
+            className="hidden size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:flex border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white cursor-pointer"
             title={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
             aria-label={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
           >
@@ -141,9 +127,7 @@ export function AppHeader() {
           <div ref={searchContainerRef} className="relative flex-1 max-w-md">
             <form onSubmit={handleSearch} className="relative w-full">
               <Search
-                className={`absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none ${
-                  isOwnerRoute ? 'text-[#718073]' : 'text-gray-400'
-                }`}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none text-gray-400"
                 aria-hidden="true"
               />
               <input
@@ -155,11 +139,7 @@ export function AppHeader() {
                   setDropdownOpen(true)
                 }}
                 placeholder={isOwnerRoute ? 'Search machines, bookings…' : 'Search machines, crops, or village...'}
-                className={`h-10 w-full pl-10 pr-9 text-xs sm:text-sm font-medium focus:outline-none transition-all ${
-                  isOwnerRoute
-                    ? 'rounded-xl border border-[#E8E6DA] bg-[#F8F8F2] text-[#1C2B20] placeholder:text-[#718073] focus:bg-white focus:border-[#31572C] focus:ring-2 focus:ring-[#31572C]/10 shadow-2xs'
-                    : 'rounded-full border border-white/70 bg-white/85 backdrop-blur-md text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-xs'
-                }`}
+                className="h-10 w-full pl-10 pr-9 text-xs sm:text-sm font-medium focus:outline-none transition-all rounded-full border border-white/70 bg-white/85 backdrop-blur-md text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
               />
               {searchQuery ? (
                 <button
@@ -303,9 +283,7 @@ export function AppHeader() {
           {session && profile ? (
             <Link
               to="/settings"
-              className={`flex size-10 items-center justify-center rounded-full shadow-xs overflow-hidden hover:opacity-90 transition-opacity ${
-                isOwnerRoute ? 'ring-2 ring-[#E8E6DA]' : 'ring-2 ring-white/90'
-              }`}
+              className="flex size-10 items-center justify-center rounded-full shadow-xs overflow-hidden hover:opacity-90 transition-opacity ring-2 ring-white/90"
               aria-label={t('nav.profile')}
               title={profile.full_name}
             >
@@ -314,11 +292,7 @@ export function AppHeader() {
           ) : (
             <Link
               to="/login"
-              className={`inline-flex min-h-10 items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-bold shadow-xs transition-colors ${
-                isOwnerRoute
-                  ? 'rounded-xl border border-[#E8E6DA] bg-[#F8F8F2] text-[#1C2B20] hover:bg-white'
-                  : 'rounded-full border border-white/60 bg-white/85 text-gray-800 backdrop-blur-md hover:bg-white'
-              }`}
+              className="inline-flex min-h-10 items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-bold shadow-xs transition-colors rounded-full border border-white/60 bg-white/85 text-gray-800 backdrop-blur-md hover:bg-white"
             >
               <User className="size-4 text-emerald-700" />
               <span>{t('ui.login')}</span>

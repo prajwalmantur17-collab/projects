@@ -124,17 +124,16 @@ export function OwnerHomePage() {
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#E8E6DA] pb-6">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a2312] via-[#0f341b] to-[#184e2a] p-6 sm:p-8 text-white shadow-xl border border-white/10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1C2B20]">
-              {t('owner.greeting', { name })}
-            </h1>
-            <span className="hidden sm:inline-flex items-center rounded-full bg-[#31572C]/10 px-2.5 py-0.5 text-xs font-bold text-[#31572C]">
-              {t('role.owner')}
-            </span>
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur-md">
+            <Tractor className="size-3.5 text-emerald-400" aria-hidden="true" />
+            <span>{t('role.owner')}</span>
           </div>
-          <p className="mt-1 text-sm font-medium text-[#718073]">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            {t('owner.greeting', { name })}
+          </h1>
+          <p className="mt-1 text-sm font-medium text-emerald-100/90">
             {t('owner.subtitle')}
           </p>
         </div>
@@ -142,7 +141,7 @@ export function OwnerHomePage() {
         <div>
           <Link
             to="/owner/machines/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#31572C] px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-[#244221] active:scale-[0.98] transition-all"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-500 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="size-4" aria-hidden="true" />
             <span>{t('owner.addMachine')}</span>
@@ -165,20 +164,20 @@ export function OwnerHomePage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
           to="/owner/bookings"
-          className="group flex items-center justify-between rounded-2xl border border-[#E8E6DA] bg-white p-5 shadow-xs hover:shadow-md hover:border-[#31572C]/40 transition-all"
+          className="group flex items-center justify-between rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md p-5 shadow-lg hover:shadow-xl hover:border-emerald-500/40 transition-all"
         >
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 border border-amber-200/50">
               <Inbox className="size-7" aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs font-bold uppercase tracking-wider text-[#718073]">
+              <span className="block text-xs font-bold uppercase tracking-wider text-gray-500">
                 {t('owner.requestsTitle')}
               </span>
-              <span className="mt-0.5 block text-3xl font-black text-[#1C2B20]">
+              <span className="mt-0.5 block text-3xl font-black text-gray-900">
                 {requests.loading ? '…' : requests.error ? '—' : pending.length}
               </span>
-              <span className="block truncate text-xs font-medium text-[#718073] mt-0.5">
+              <span className="block truncate text-xs font-medium text-gray-500 mt-0.5">
                 {requests.error
                   ? t('common.unknown')
                   : pending.length > 0
@@ -187,30 +186,30 @@ export function OwnerHomePage() {
               </span>
             </div>
           </div>
-          <ChevronRight className="size-5 text-[#718073] group-hover:text-[#1C2B20] group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
+          <ChevronRight className="size-5 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
         </Link>
 
         <Link
           to="/owner/machines"
-          className="group flex items-center justify-between rounded-2xl border border-[#E8E6DA] bg-white p-5 shadow-xs hover:shadow-md hover:border-[#31572C]/40 transition-all"
+          className="group flex items-center justify-between rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md p-5 shadow-lg hover:shadow-xl hover:border-emerald-500/40 transition-all"
         >
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200/50">
               <Tractor className="size-7" aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs font-bold uppercase tracking-wider text-[#718073]">
+              <span className="block text-xs font-bold uppercase tracking-wider text-gray-500">
                 {t('owner.myMachinesTitle')}
               </span>
-              <span className="mt-0.5 block text-3xl font-black text-[#1C2B20]">
+              <span className="mt-0.5 block text-3xl font-black text-gray-900">
                 {machines.loading ? '…' : machines.error ? '—' : machineList.length}
               </span>
-              <span className="block truncate text-xs font-medium text-[#718073] mt-0.5">
+              <span className="block truncate text-xs font-medium text-gray-500 mt-0.5">
                 {t('owner.myMachinesSubtitle')}
               </span>
             </div>
           </div>
-          <ChevronRight className="size-5 text-[#718073] group-hover:text-[#1C2B20] group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
+          <ChevronRight className="size-5 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
         </Link>
       </div>
 
@@ -229,17 +228,17 @@ export function OwnerHomePage() {
       <section className="pt-2" aria-labelledby="owner-machines-heading">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 id="owner-machines-heading" className="text-xl font-extrabold text-[#1C2B20]">
+            <h2 id="owner-machines-heading" className="text-xl font-extrabold text-white drop-shadow-md">
               {t('owner.myMachinesTitle')}
             </h2>
-            <p className="text-xs font-medium text-[#718073]">
+            <p className="text-xs font-semibold text-emerald-100 drop-shadow-sm">
               {t('owner.myMachinesSubtitle')}
             </p>
           </div>
           {machineList.length > 0 ? (
             <Link
               to="/owner/machines"
-              className="text-xs font-bold text-[#31572C] hover:text-[#1c3818] hover:underline"
+              className="text-xs font-bold text-white bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full hover:bg-black/60 transition-colors shadow-xs"
             >
               {t('common.view')} ({machineList.length})
             </Link>
@@ -247,7 +246,7 @@ export function OwnerHomePage() {
         </div>
 
         {machines.loading ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-[#E8E6DA] bg-white py-12 shadow-xs">
+          <div className="flex items-center justify-center gap-2 rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md py-12 shadow-lg">
             <Spinner className="size-5 text-[#31572C]" />
             <span className="text-sm font-medium text-[#718073]">{t('common.loading')}</span>
           </div>
@@ -261,7 +260,7 @@ export function OwnerHomePage() {
             </div>
           </Alert>
         ) : machineList.length === 0 ? (
-          <div className="rounded-2xl border border-[#E8E6DA] bg-white p-8 text-center shadow-xs">
+          <div className="rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md p-8 text-center shadow-lg">
             <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#F8F8F2] text-[#31572C] mb-4">
               <Tractor className="size-8" />
             </div>
@@ -292,7 +291,7 @@ export function OwnerHomePage() {
               return (
                 <div
                   key={machine.id}
-                  className="rounded-2xl border border-[#E8E6DA] bg-white p-4 sm:p-5 shadow-xs hover:shadow-sm transition-all"
+                  className="rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all"
                 >
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="shrink-0">

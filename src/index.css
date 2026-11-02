@@ -117,7 +117,7 @@
   }
 
   .card-surface {
-    @apply rounded-card border border-cream-200 bg-white;
+    @apply rounded-3xl border border-white/70 bg-white/95 backdrop-blur-md shadow-md;
   }
 
   .text-muted {
