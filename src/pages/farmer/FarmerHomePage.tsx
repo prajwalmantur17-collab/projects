@@ -361,14 +361,17 @@ export function FarmerHomePage() {
   return (
     <div className="space-y-6">
       {/* Hero Banner with Clean Value Props */}
-      <div className="rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
-        <div className="max-w-3xl">
+      <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] lg:block" aria-hidden="true">
+          <img src="/hero/farmer.webp" alt="" className="h-full w-full object-cover object-top [mask-image:linear-gradient(to_right,transparent_0%,#000_40%)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        </div>
+        <div className="relative z-10 max-w-3xl lg:max-w-[58%]">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-xs">
             <Sparkles className="size-3.5" aria-hidden="true" />
             Direct Farmer-to-Owner Rental Platform
           </span>
 
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             {t('farmer.greeting', { name })}
           </h1>
 
