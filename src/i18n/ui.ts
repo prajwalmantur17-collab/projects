@@ -42,6 +42,11 @@ export const uiEn = {
   'ui.selectAll': 'Select All',
   'ui.clearAll': 'Clear All',
   'ui.available': 'Available',
+  'ui.sortNearest': 'Nearest',
+  'ui.sortCheapest': 'Cheapest',
+  'ui.changeSearch': 'Change',
+  'ui.viewList': 'List',
+  'ui.viewMap': 'Map',
 } as const
 
 export const uiKn: Record<keyof typeof uiEn, string> = {
@@ -86,6 +91,11 @@ export const uiKn: Record<keyof typeof uiEn, string> = {
   'ui.selectAll': 'ಎಲ್ಲವನ್ನೂ ಆರಿಸಿ',
   'ui.clearAll': 'ಎಲ್ಲವನ್ನೂ ತೆಗೆಯಿರಿ',
   'ui.available': 'ಲಭ್ಯ',
+  'ui.sortNearest': 'ಹತ್ತಿರದವು',
+  'ui.sortCheapest': 'ಕಡಿಮೆ ಬೆಲೆ',
+  'ui.changeSearch': 'ಬದಲಿಸಿ',
+  'ui.viewList': 'ಪಟ್ಟಿ',
+  'ui.viewMap': 'ನಕ್ಷೆ',
 }
 
 export const uiHi: Record<keyof typeof uiEn, string> = {
@@ -130,6 +140,11 @@ export const uiHi: Record<keyof typeof uiEn, string> = {
   'ui.selectAll': 'सभी चुनें',
   'ui.clearAll': 'सभी हटाएँ',
   'ui.available': 'उपलब्ध',
+  'ui.sortNearest': 'सबसे पास',
+  'ui.sortCheapest': 'सबसे सस्ता',
+  'ui.changeSearch': 'बदलें',
+  'ui.viewList': 'सूची',
+  'ui.viewMap': 'नक्शा',
 }
 
 export const uiTa: Record<keyof typeof uiEn, string> = {
@@ -174,4 +189,9 @@ export const uiTa: Record<keyof typeof uiEn, string> = {
   'ui.selectAll': 'அனைத்தையும் தேர்ந்தெடு',
   'ui.clearAll': 'அனைத்தையும் நீக்கு',
   'ui.available': 'கிடைக்கும்',
+  'ui.sortNearest': 'அருகிலுள்ளவை',
+  'ui.sortCheapest': 'குறைந்த விலை',
+  'ui.changeSearch': 'மாற்று',
+  'ui.viewList': 'பட்டியல்',
+  'ui.viewMap': 'வரைபடம்',
 }

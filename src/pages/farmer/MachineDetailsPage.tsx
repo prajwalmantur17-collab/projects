@@ -292,7 +292,7 @@ export function MachineDetailsPage() {
             {machineStatus && machineStatus.booked_dates.length > 0 ? (
               <div className="mt-6 border-t border-cream-200 pt-5">
                 <h3 className="text-base font-bold">{t('work.bookedDates')}</h3>
-                <p className="mt-1 text-xs text-ink-muted">{t('work.bookedDatesHint')}</p>
+                <p className="mt-1 text-sm text-ink-muted">{t('work.bookedDatesHint')}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {machineStatus.booked_dates.map((date) => (
                     <span
@@ -813,7 +813,7 @@ function BookingForm({
               </div>
               <p className="text-sm text-harvest-950">{t('work.busyBody')}</p>
               {machineStatus.expected_free_at ? (
-                <p className="text-xs font-semibold text-harvest-900">
+                <p className="text-sm font-semibold text-harvest-900">
                   {t('work.expectedFree', {
                     time: formatDateTime(machineStatus.expected_free_at, language),
                   })}
@@ -824,7 +824,7 @@ function BookingForm({
                 <div className="pt-2">
                   {machineStatus.on_waitlist ? (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-leaf-800">
+                      <p className="text-sm font-semibold text-leaf-800">
                         ✓ {t('work.notifyOn')}
                       </p>
                       <Button
@@ -919,7 +919,7 @@ function BookingForm({
             </Button>
           </div>
           {detectedLoc ? (
-            <Alert variant="success" className="py-2 text-xs">
+            <Alert variant="success" className="py-2 text-sm">
               ✓ {t('farmer.locationDetected', {
                 place: detectedLoc.split(',')[0].trim(),
                 district: detectedLoc.split(',')[1]?.trim() || '',
@@ -968,7 +968,7 @@ function BookingForm({
                 ))}
               </Select>
               {crop && isCropKey(crop) ? (
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-leaf-800">
+                <div className="mt-1.5 flex items-center gap-1.5 text-sm font-semibold text-leaf-800">
                   <CropIcon crop={crop} size={18} />
                   <span>{t(`crop.${crop}`)}</span>
                 </div>
@@ -1008,7 +1008,7 @@ function BookingForm({
               <span className="text-lg font-extrabold text-leaf-900">{formatPrice(estimate)}</span>
             </div>
           ) : null}
-          <p className="text-xs leading-relaxed text-ink-muted">{t('farmer.estimateNote')}</p>
+          <p className="text-sm leading-relaxed text-ink-muted">{t('farmer.estimateNote')}</p>
 
           <Button
             type="submit"

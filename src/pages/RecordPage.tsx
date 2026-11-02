@@ -244,7 +244,7 @@ export function RecordPage() {
       {/* Notice if reset is active with restore option */}
       {record?.reset_at ? (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-leaf-200 bg-leaf-50/70 p-3.5 sm:px-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-leaf-900 sm:text-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-leaf-900">
             <RotateCcw className="size-4 shrink-0 text-leaf-700" aria-hidden="true" />
             <span>
               {t('record.resetActive', {
@@ -255,7 +255,7 @@ export function RecordPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs font-bold text-leaf-800 hover:bg-leaf-100"
+            className="text-sm font-bold text-leaf-800 hover:bg-leaf-100"
             icon={<History className="size-3.5 text-leaf-700" aria-hidden="true" />}
             onClick={() => setRestoreConfirmOpen(true)}
           >
@@ -280,7 +280,7 @@ export function RecordPage() {
       >
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            <span className="text-sm font-bold uppercase tracking-wider text-ink-muted">
               {isOwner ? t('record.earned') : t('record.spent')}
             </span>
             <Coins className="size-5 text-harvest-600" aria-hidden="true" />
@@ -292,7 +292,7 @@ export function RecordPage() {
 
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            <span className="text-sm font-bold uppercase tracking-wider text-ink-muted">
               {t('record.acres')}
             </span>
             <LandPlot className="size-5 text-leaf-600" aria-hidden="true" />
@@ -304,7 +304,7 @@ export function RecordPage() {
 
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            <span className="text-sm font-bold uppercase tracking-wider text-ink-muted">
               {t('record.jobs')}
             </span>
             <Briefcase className="size-5 text-leaf-700" aria-hidden="true" />
@@ -318,7 +318,7 @@ export function RecordPage() {
           <>
             <Card className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <span className="text-sm font-bold uppercase tracking-wider text-ink-muted">
                   {t('record.hours')}
                 </span>
                 <Clock className="size-5 text-leaf-600" aria-hidden="true" />
@@ -330,7 +330,7 @@ export function RecordPage() {
 
             <Card className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <span className="text-sm font-bold uppercase tracking-wider text-ink-muted">
                   {t('record.villages')}
                 </span>
                 <MapPin className="size-5 text-leaf-700" aria-hidden="true" />
@@ -345,7 +345,7 @@ export function RecordPage() {
 
       {/* Unpaid jobs warning note */}
       {unpaidJobsCount > 0 ? (
-        <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-harvest-200 bg-harvest-50 p-4 text-xs font-medium leading-relaxed text-harvest-900 sm:text-sm">
+        <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-harvest-200 bg-harvest-50 p-4 text-sm font-medium leading-relaxed text-harvest-900">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-harvest-700" aria-hidden="true" />
           <p>{t('record.unpaidNote', { count: String(unpaidJobsCount) })}</p>
         </div>
@@ -369,7 +369,7 @@ export function RecordPage() {
                 >
                   <div>
                     <p className="font-bold text-ink">{cropName}</p>
-                    <p className="text-xs text-ink-muted">
+                    <p className="text-sm text-ink-muted">
                       {t('record.acresUnit', { acres: formatAcreage(c.acres) })}
                     </p>
                   </div>
@@ -429,14 +429,14 @@ export function RecordPage() {
 
                     <div className="flex items-center gap-2">
                       {job.payment_method && job.amount_paid != null ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-sm font-black text-leaf-800">
                           {formatPrice(job.amount_paid)}
                           <span className="font-normal text-leaf-600">
                             ({job.payment_method === 'upi' ? t('work.upi') : t('work.cash')})
                           </span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-harvest-50 px-3 py-1 text-xs font-bold text-harvest-800">
+                        <span className="inline-flex items-center rounded-full bg-harvest-50 px-3 py-1 text-sm font-bold text-harvest-800">
                           {t('record.unpaidBadge')}
                         </span>
                       )}

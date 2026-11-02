@@ -148,7 +148,7 @@ export function OwnerHomePage() {
             <span className="mt-0.5 block text-2xl font-extrabold">
               {requests.loading ? '…' : requests.error ? '—' : pending.length}
             </span>
-            <span className="block truncate text-xs text-ink-muted">
+            <span className="block truncate text-sm text-ink-muted">
               {requests.error
                 ? t('common.unknown')
                 : pending.length > 0
@@ -173,7 +173,7 @@ export function OwnerHomePage() {
             <span className="mt-0.5 block text-2xl font-extrabold">
               {machines.loading ? '…' : machines.error ? '—' : machineList.length}
             </span>
-            <span className="block truncate text-xs text-ink-muted">
+            <span className="block truncate text-sm text-ink-muted">
               {t('owner.myMachinesSubtitle')}
             </span>
           </span>
@@ -262,7 +262,7 @@ export function OwnerHomePage() {
                           </p>
                         </div>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          className={`rounded-full px-2.5 py-0.5 text-sm font-bold ${
                             machine.is_active
                               ? 'bg-leaf-50 text-leaf-800'
                               : 'bg-clay-50 text-clay-800'
@@ -277,7 +277,7 @@ export function OwnerHomePage() {
                         </span>{' '}
                         <span className="text-ink-muted">{unitLabel}</span>
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-ink-muted">
+                      <p className="mt-0.5 truncate text-sm text-ink-muted">
                         {machine.service_villages.join(', ')}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -370,7 +370,7 @@ export function OwnerHomePage() {
                         name: booking.farmer?.full_name ?? t('owner.farmer'),
                       })}
                     </span>
-                    <span className="block truncate text-xs text-ink-muted">
+                    <span className="block truncate text-sm text-ink-muted">
                       {booking.machine
                         ? t(machineTypeLabelKey(booking.machine.machine_type))
                         : t('common.unknown')}{' '}

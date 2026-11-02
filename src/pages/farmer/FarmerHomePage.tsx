@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronDown,
   LocateFixed,
+  MapPin,
   PhoneCall,
   Radar,
   Radio,
@@ -35,6 +36,8 @@ import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
 import { MachineCard } from '../../components/machine/MachineCard'
+import { MachineCardSkeleton } from '../../components/ui/Skeleton'
+import { CropIcon } from '../../components/crop/CropIcon'
 import { CropPhotoDetector } from '../../components/crop/CropPhotoDetector'
 import { CropPickerModal } from '../../components/crop/CropPickerModal'
 import { CropCard, AnyCropCard } from '../../components/crop/CropCard'
@@ -85,6 +88,9 @@ export function FarmerHomePage() {
   }, [])
   const [snapshot, setSnapshot] = useState<SearchSnapshot | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const searchCardRef = useRef<HTMLDivElement>(null)
+  const [sortBy, setSortBy] = useState<'nearest' | 'cheapest'>('nearest')
+  const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
 
   const hasSearched = results !== null
   const parsedAcreage = parseFloat(acreage) > 0 ? parseFloat(acreage) : null
@@ -164,6 +170,14 @@ export function FarmerHomePage() {
       return 0
     })
   }, [results, geo.coordinates, snapshot, village])
+
+  const displayResults = useMemo(() => {
+    if (!sortedResults) return null
+    if (sortBy === 'cheapest') {
+      return [...sortedResults].sort((a, b) => a.price_per_acre - b.price_per_acre)
+    }
+    return sortedResults
+  }, [sortedResults, sortBy])
 
   const distanceFor = (machine: MachineCardType): number | null => {
     if (!geo.coordinates || machine.latitude === null || machine.longitude === null) return null
@@ -372,7 +386,7 @@ export function FarmerHomePage() {
             alt="South Indian farmer in traditional attire holding golden harvested rice stalks"
             loading="eager"
             decoding="async"
-            className="farmer-hero-mask h-full w-full object-cover object-[center_top] opacity-35 transition-all duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100"
+            className="farmer-hero-mask h-full w-full object-cover object-[center_top] opacity-35 transition-opacity transition-transform duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100"
             onError={(e) => {
               const target = e.currentTarget
               if (!target.src.endsWith('/hero/farmer.webp')) {
@@ -387,7 +401,7 @@ export function FarmerHomePage() {
         {/* Left-Side Content with Subtle Staggered Entrance */}
         <div className="relative z-10 max-w-full md:max-w-[62%] lg:max-w-[58%] xl:max-w-[60%]">
           <div className="motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.16,1,0.3,1)_both]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold text-leaf-100 backdrop-blur-xs">
               <Sparkles className="size-3.5" aria-hidden="true" />
               {t('ui.heroBadge')}
             </span>
@@ -404,46 +418,84 @@ export function FarmerHomePage() {
           <div className="mt-5 hidden sm:grid sm:grid-cols-3 gap-3 motion-safe:animate-[hero-fade-up_700ms_cubic-bezier(0.16,1,0.3,1)_180ms_both]">
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <CheckCircle2 className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">{t('ui.verified')}</span>
+              <span className="text-sm font-medium">{t('ui.verified')}</span>
             </div>
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <PhoneCall className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">{t('ui.directCall')}</span>
+              <span className="text-sm font-medium">{t('ui.directCall')}</span>
             </div>
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <ShieldCheck className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-xs font-medium sm:text-sm">{t('ui.zeroCommission')}</span>
+              <span className="text-sm font-medium">{t('ui.zeroCommission')}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Search Panel */}
-      <Card as="section" aria-labelledby="search-heading" className="p-5 sm:p-7 shadow-soft">
-        <form onSubmit={onSearch} noValidate className="space-y-5">
-          <div className="flex items-center justify-between border-b border-cream-200 pb-3">
-            <div>
-              <h2 id="search-heading" className="text-xl font-extrabold text-ink sm:text-2xl">
-                {t('farmer.findTitle')}
-              </h2>
-              <p className="text-sm text-ink-muted">{t('farmer.findSubtitle')}</p>
-            </div>
-            <VoiceSearchButton onVoiceResult={handleVoiceResult} />
+      {/* Sticky Search Summary Bar (after first search) */}
+      {hasSearched ? (
+        <aside
+          aria-label="Search summary"
+          className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cream-200 bg-white/90 px-4 py-2.5 shadow-soft backdrop-blur-md"
+        >
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="flex items-center gap-1.5 font-bold text-ink">
+              <MapPin className="size-4 text-leaf-600" aria-hidden="true" />
+              <span>{snapshot?.village || village || district || t('ui.nearby')}</span>
+            </span>
+            {snapshot?.crop || crop ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-2.5 py-0.5 text-sm font-semibold text-ink-soft ring-1 ring-cream-300/60">
+                <CropIcon crop={(snapshot?.crop || crop) as CropKey} size={14} />
+                <span>{t(`crop.${snapshot?.crop || crop}` as TranslationKey)}</span>
+              </span>
+            ) : null}
+            {parsedAcreage ? (
+              <span className="text-sm font-medium text-ink-muted">
+                {t('ui.forAcres', { n: parsedAcreage })}
+              </span>
+            ) : null}
           </div>
 
-          {/* Mobile Quick Action: Use Location */}
-          <div className="sm:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => searchCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            {t('ui.changeSearch')}
+          </Button>
+        </aside>
+      ) : null}
+
+      {/* Main Search Panel */}
+      <div ref={searchCardRef}>
+      <Card as="section" aria-labelledby="search-heading" className="p-5 sm:p-7 shadow-soft">
+        <form onSubmit={onSearch} noValidate className="space-y-5">
+          <div className="border-b border-cream-200 pb-3">
+            <h2 id="search-heading" className="text-xl font-extrabold text-ink sm:text-2xl">
+              {t('farmer.findTitle')}
+            </h2>
+            <p className="text-sm text-ink-muted">{t('farmer.findSubtitle')}</p>
+          </div>
+
+          {/* First row: two equal big actions: "Use My Location" (primary, icon) and the existing VoiceSearchButton (labeled) */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Button
               type="button"
-              variant="outline"
-              size="md"
+              variant="primary"
+              size="lg"
               fullWidth
               onClick={() => void locate()}
               loading={geo.loading || geocoding}
-              icon={<LocateFixed className="size-4" aria-hidden="true" />}
+              icon={<LocateFixed className="size-5 shrink-0" aria-hidden="true" />}
+              className="min-h-12 w-full text-base font-bold"
             >
               {geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}
             </Button>
+            <VoiceSearchButton
+              onVoiceResult={handleVoiceResult}
+              className="min-h-12 w-full text-base"
+            />
           </div>
 
           {/* Primary Village Input */}
@@ -474,10 +526,10 @@ export function FarmerHomePage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-bold uppercase tracking-wider text-ink-muted">
-                  {t('farmer.cropLabel')}
+                  {t('farmer.cropLabel')} <span className="font-normal lowercase">({t('farmer.anyCrop')})</span>
                 </p>
                 {crop ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-100 px-2.5 py-0.5 text-xs font-bold text-leaf-900 ring-1 ring-leaf-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-100 px-2.5 py-0.5 text-sm font-bold text-leaf-900 ring-1 ring-leaf-300">
                     <span className="size-1.5 rounded-full bg-leaf-600" />
                     {t(`crop.${crop}` as TranslationKey)}
                     <button
@@ -505,7 +557,7 @@ export function FarmerHomePage() {
                 <button
                   type="button"
                   onClick={() => setCropPickerOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1 text-xs font-semibold text-leaf-800 shadow-2xs hover:bg-cream-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1 text-sm font-semibold text-leaf-800 shadow-2xs hover:bg-cream-50"
                 >
                   <span>{t('ui.allCropsBtn', { n: CROP_KEYS.length })}</span>
                 </button>
@@ -535,7 +587,7 @@ export function FarmerHomePage() {
               <button
                 type="button"
                 onClick={() => setShowAllCrops((prev) => !prev)}
-                className="text-xs font-bold text-leaf-800 hover:text-leaf-950 hover:underline"
+                className="text-sm font-bold text-leaf-800 hover:text-leaf-950 hover:underline"
               >
                 {showAllCrops ? t('ui.showTopCrops') : `${t('ui.showAllCrops')} \u2193`}
               </button>
@@ -560,7 +612,7 @@ export function FarmerHomePage() {
             <button
               type="button"
               onClick={() => setShowFilters((open) => !open)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-leaf-800 hover:text-leaf-950"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-leaf-800 hover:text-leaf-950"
             >
               <SlidersHorizontal className="size-3.5" aria-hidden="true" />
               <span>{showFilters ? t('farmer.hideFilters') : t('farmer.showFilters')}</span>
@@ -613,21 +665,11 @@ export function FarmerHomePage() {
               type="submit"
               size="lg"
               loading={searching}
-              className="sm:flex-1"
+              fullWidth
+              className="min-h-12 text-base font-bold"
               icon={<Search className="size-5" aria-hidden="true" />}
             >
               {searching ? t('common.searching') : t('farmer.searchButton')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => void locate()}
-              loading={geo.loading || geocoding}
-              icon={<LocateFixed className="size-5" aria-hidden="true" />}
-              className="hidden sm:inline-flex"
-            >
-              {geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}
             </Button>
           </div>
 
@@ -644,20 +686,57 @@ export function FarmerHomePage() {
           ) : null}
         </form>
       </Card>
+      </div>
 
-      {/* Map: Only shown when location is active and machines are searched */}
+      {/* Mobile: List / Map Toggle when map is shown */}
       {hasSearched && (geo.coordinates || mapMachines.length > 0) ? (
-        <Card as="section" className="overflow-hidden border-2 border-leaf-100 p-0 shadow-soft">
-          <div className="flex items-center justify-between gap-3 border-b border-cream-200 px-5 py-3">
-            <div>
-              <h2 className="text-lg font-extrabold text-ink">{t('ui.mapTitle')}</h2>
-              <p className="text-sm text-ink-muted">
-                {geo.coordinates ? t('ui.mapSubGps') : t('ui.mapSubTap')}
-              </p>
-            </div>
+        <div className="flex justify-center lg:hidden">
+          <div className="inline-flex rounded-xl bg-cream-200/80 p-1" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'list'}
+              onClick={() => setMobileView('list')}
+              className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${
+                mobileView === 'list'
+                  ? 'bg-white text-leaf-800 shadow-2xs'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              {t('ui.viewList')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'map'}
+              onClick={() => setMobileView('map')}
+              className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${
+                mobileView === 'map'
+                  ? 'bg-white text-leaf-800 shadow-2xs'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              {t('ui.viewMap')}
+            </button>
           </div>
-          <LiveMap me={geo.coordinates} machines={mapMachines} className="h-72 sm:h-96" />
-        </Card>
+        </div>
+      ) : null}
+
+      {/* Map: Stacked on lg+, toggled on mobile */}
+      {hasSearched && (geo.coordinates || mapMachines.length > 0) ? (
+        <div className={mobileView === 'map' ? 'block' : 'hidden lg:block'}>
+          <Card as="section" className="overflow-hidden border-2 border-leaf-100 p-0 shadow-soft">
+            <div className="flex items-center justify-between gap-3 border-b border-cream-200 px-5 py-3">
+              <div>
+                <h2 className="text-lg font-extrabold text-ink">{t('ui.mapTitle')}</h2>
+                <p className="text-sm text-ink-muted">
+                  {geo.coordinates ? t('ui.mapSubGps') : t('ui.mapSubTap')}
+                </p>
+              </div>
+            </div>
+            <LiveMap me={geo.coordinates} machines={mapMachines} className="h-72 sm:h-96" />
+          </Card>
+        </div>
       ) : null}
 
       {/* Results / Scanner Section */}
@@ -665,25 +744,19 @@ export function FarmerHomePage() {
         {searchError ? <Alert variant="warning">{t(searchError)}</Alert> : null}
 
         {searching || geocoding ? (
-          /* Live Scanning State */
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-leaf-300 bg-gradient-to-b from-leaf-50/70 to-white px-4 py-16 text-center shadow-inner">
-            <div className="relative mb-6 flex size-20 items-center justify-center">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-leaf-400 opacity-40" />
-              <span className="relative flex size-16 items-center justify-center rounded-full bg-leaf-700 text-white shadow-lg">
-                <Radar className="size-8 animate-spin" style={{ animationDuration: '3s' }} aria-hidden="true" />
-              </span>
-            </div>
-            <h3 className="text-2xl font-extrabold text-ink">
-              {t('farmer.scanningNearby', {
-                location: snapshot?.village || village || district || t('ui.yourFarmArea'),
-              })}
-            </h3>
-            <p className="mt-2 max-w-md text-sm text-ink-muted">
-              {t('farmer.scanningSubtitle')}
-            </p>
-            <div className="mt-6 flex items-center gap-2 rounded-full border border-leaf-200 bg-white px-4 py-1.5 text-xs font-bold text-leaf-800 shadow-sm">
-              <Radio className="size-3.5 animate-pulse text-leaf-600" />
+          /* Live Scanning State: Skeletons replacing radar block */
+          <div>
+            <div className="mb-4 flex items-center gap-2 rounded-full border border-leaf-200 bg-white px-4 py-1.5 text-sm font-bold text-leaf-800 shadow-sm w-fit">
+              <Radio className="size-3.5 animate-pulse text-leaf-600" aria-hidden="true" />
               <span>{t('ui.scanning')}</span>
+            </div>
+            <div
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              aria-busy="true"
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <MachineCardSkeleton key={i} />
+              ))}
             </div>
           </div>
         ) : hasSearched ? (
@@ -706,41 +779,74 @@ export function FarmerHomePage() {
                 </p>
               </div>
 
-              <Button variant="ghost" size="sm" onClick={clearSearch}>
-                {t('farmer.clearSearch')}
-              </Button>
+              <div className="flex items-center gap-3">
+                {/* Segmented control: Nearest | Cheapest */}
+                <div className="inline-flex rounded-xl bg-cream-200/80 p-1" role="group" aria-label="Sort options">
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('nearest')}
+                    className={`rounded-lg px-3 py-1 text-sm font-bold transition-colors ${
+                      sortBy === 'nearest'
+                        ? 'bg-white text-leaf-800 shadow-2xs'
+                        : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    {t('ui.sortNearest')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('cheapest')}
+                    className={`rounded-lg px-3 py-1 text-sm font-bold transition-colors ${
+                      sortBy === 'cheapest'
+                        ? 'bg-white text-leaf-800 shadow-2xs'
+                        : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    {t('ui.sortCheapest')}
+                  </button>
+                </div>
+
+                <Button variant="ghost" size="sm" onClick={clearSearch}>
+                  {t('farmer.clearSearch')}
+                </Button>
+              </div>
             </div>
 
-            {sortedResults && sortedResults.length > 0 ? (
-              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedResults.map((machine) => (
-                  <MachineCard
-                    key={machine.id}
-                    machine={machine}
-                    distanceKm={distanceFor(machine)}
-                    acreage={parsedAcreage}
-                    selectedCrop={crop}
-                    userLocation={activeUserLocation}
-                    userVillage={snapshot?.village || village}
-                    userDistrict={effectiveDistrict || district}
-                    isBusy={busyMachines.has(machine.id)}
+            {/* List View: Hidden on mobile when Map view is selected, always visible on lg+ */}
+            <div className={mobileView === 'list' ? 'block' : 'hidden lg:block'}>
+              {displayResults && displayResults.length > 0 ? (
+                <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {displayResults.map((machine, idx) => (
+                    <MachineCard
+                      key={machine.id}
+                      index={idx}
+                      machine={machine}
+                      distanceKm={distanceFor(machine)}
+                      acreage={parsedAcreage}
+                      selectedCrop={crop}
+                      userLocation={activeUserLocation}
+                      userVillage={snapshot?.village || village}
+                      userDistrict={effectiveDistrict || district}
+                      isBusy={busyMachines.has(machine.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <EmptyState
+                    icon={Search}
+                    title={t('farmer.noResultsTitle')}
+                    description={t('farmer.noResultsBody')}
+                    action={
+                      <Button variant="outline" onClick={clearSearch}>
+                        {t('farmer.clearSearch')}
+                      </Button>
+                    }
                   />
-                ))}
-              </div>
-            ) : (
-              <div className="mt-6">
-                <EmptyState
-                  icon={Search}
-                  title={t('farmer.noResultsTitle')}
-                  description={t('farmer.noResultsBody')}
-                  action={
-                    <Button variant="outline" onClick={clearSearch}>
-                      {t('farmer.clearSearch')}
-                    </Button>
-                  }
-                />
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+
           </div>
         ) : (
           /* Initial Display: Ready to Scan (NO machines shown before entering details) */
@@ -761,7 +867,7 @@ export function FarmerHomePage() {
                   1
                 </div>
                 <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step1Title')}</h4>
-                <p className="mt-1 text-xs text-ink-muted">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t('ui.step1Body')}
                 </p>
               </div>
@@ -771,7 +877,7 @@ export function FarmerHomePage() {
                   2
                 </div>
                 <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step2Title')}</h4>
-                <p className="mt-1 text-xs text-ink-muted">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t('ui.step2Body')}
                 </p>
               </div>
@@ -781,7 +887,7 @@ export function FarmerHomePage() {
                   3
                 </div>
                 <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step3Title')}</h4>
-                <p className="mt-1 text-xs text-ink-muted">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t('ui.step3Body')}
                 </p>
               </div>

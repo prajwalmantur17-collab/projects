@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { AppHeader } from './AppHeader'
 import { LiveShareManager } from '../map/LiveShareManager'
@@ -7,6 +7,7 @@ import { BottomNav } from './BottomNav'
 
 export function AppShell() {
   const { t } = useI18n()
+  const location = useLocation()
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -20,7 +21,9 @@ export function AppShell() {
       <LiveShareManager />
       <ToastContainer />
       <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-14">
-        <Outlet />
+        <div key={location.pathname} className="hr-route">
+          <Outlet />
+        </div>
       </main>
       <footer className="hidden border-t border-cream-200 px-6 py-6 text-center text-sm text-ink-muted lg:block">
         <p>

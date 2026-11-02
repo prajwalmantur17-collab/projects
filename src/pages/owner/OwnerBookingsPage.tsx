@@ -27,9 +27,10 @@ import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState, Spinner } from '../../components/ui/Feedback'
+import { EmptyState } from '../../components/ui/Feedback'
 import { Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { BookingRowSkeleton } from '../../components/ui/Skeleton'
 
 type Filter = 'pending' | 'confirmed' | 'completed' | 'closed'
 type Decision = Extract<BookingStatus, 'confirmed' | 'rejected'>
@@ -319,7 +320,7 @@ export function OwnerBookingsPage() {
               setActionError(null)
               setClearCompletedConfirmOpen(true)
             }}
-            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+            className="text-sm font-semibold text-clay-700 hover:bg-clay-50"
           >
             {t('work.clearAll')}
           </Button>
@@ -332,7 +333,7 @@ export function OwnerBookingsPage() {
               setActionError(null)
               setClearClosedConfirmOpen(true)
             }}
-            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+            className="text-sm font-semibold text-clay-700 hover:bg-clay-50"
           >
             {t('farmer.clearClosedHistory')}
           </Button>
@@ -340,9 +341,10 @@ export function OwnerBookingsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 rounded-card border border-cream-200 bg-white py-16">
-          <Spinner className="size-5" />
-          <span className="text-sm font-medium text-ink-muted">{t('common.loading')}</span>
+        <div className="space-y-4" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <BookingRowSkeleton key={i} />
+          ))}
         </div>
       ) : error ? (
         <Alert variant="error">
@@ -400,7 +402,7 @@ export function OwnerBookingsPage() {
                           name: booking.farmer?.full_name ?? t('owner.farmer'),
                         })}
                       />
-                      <p className="mt-0.5 text-xs text-ink-muted">
+                      <p className="mt-0.5 text-sm text-ink-muted">
                         {t('farmer.requestedOn', {
                           date: formatDateTime(booking.created_at, language),
                         })}

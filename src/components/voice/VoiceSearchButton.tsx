@@ -81,11 +81,11 @@ export function VoiceSearchButton({
   }
 
   return (
-    <div className="relative inline-flex items-center">
+    <div className="relative flex w-full items-center">
       <button
         type="button"
         onClick={handleStartListening}
-        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all active:scale-95 ${
+        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors transition-transform transition-shadow active:scale-95 ${
           listening
             ? 'animate-pulse bg-red-600 text-white shadow-lift ring-4 ring-red-200'
             : 'border-2 border-leaf-700 bg-leaf-50 text-leaf-900 hover:bg-leaf-100'

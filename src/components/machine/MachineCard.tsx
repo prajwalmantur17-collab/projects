@@ -10,6 +10,7 @@ import { getMachineImageUrl } from '../../services/machines'
 import type { CropKey, MachineCard as MachineCardType } from '../../types'
 import { CropIcon } from '../crop/CropIcon'
 import { MachinePlaceholder } from '../brand/MachinePlaceholder'
+import { PersonChip } from '../booking/PersonChip'
 import { LinkButton } from '../ui/Button'
 import { SpeakButton } from '../voice/SpeakButton'
 
@@ -22,6 +23,7 @@ export function MachineCard({
   userVillage,
   userDistrict,
   isBusy,
+  index = 0,
 }: {
   machine: MachineCardType
   distanceKm?: number | null
@@ -31,6 +33,8 @@ export function MachineCard({
   userVillage?: string | null
   userDistrict?: string | null
   isBusy?: boolean
+  /** Position in the list, used only for the staggered entrance. */
+  index?: number
 }) {
   const { t } = useI18n()
   const [imageFailed, setImageFailed] = useState(false)
@@ -92,7 +96,10 @@ export function MachineCard({
   const villageEqualsDistrict = machineDistrict === machineVillage
 
   return (
-    <article className="card-surface flex flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lift hover:-translate-y-0.5">
+    <article
+      className="card-surface hr-card-in flex flex-col overflow-hidden transition-shadow transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lift hover:-translate-y-0.5"
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+    >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-cream-200">
         {imageUrl ? (
           <img
@@ -108,37 +115,37 @@ export function MachineCard({
 
         {typeof distanceKm === 'number' ? (
           /* Mode A: GPS Distance in Kilometers */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-leaf-800 shadow-soft">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-sm font-bold text-leaf-800 shadow-soft">
             <MapPin className="size-3 text-leaf-600" aria-hidden="true" />
             {t('farmer.kmAway', { distance: formatDistance(distanceKm) })}
           </span>
         ) : isInYourVillage ? (
           /* Mode B - Level 1 (In Your Village - 0 to 5 km) */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-800 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/60">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-800 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/60">
             <CheckCircle2 className="size-3.5 text-leaf-300" aria-hidden="true" />
             {t('farmer.inYourVillage', { village: machine.village })}
           </span>
         ) : isInSameDistrict ? (
           /* Mode B - Level 2 (Same District - ~10 to 40 km) */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/50">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         ) : (
           /* Available in District */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/50">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         )}
 
         {isBusy ? (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-harvest-600 px-2.5 py-1 text-xs font-bold text-white shadow-soft">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-harvest-600 px-2.5 py-1 text-sm font-bold text-white shadow-soft">
             <span className="size-1.5 rounded-full bg-white animate-pulse" aria-hidden="true" />
             {t('work.busyBadge')}
           </span>
         ) : !machine.is_active ? (
-          <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-xs font-bold text-white">
+          <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-sm font-bold text-white">
             {t('farmer.paused')}
           </span>
         ) : null}
@@ -153,27 +160,27 @@ export function MachineCard({
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-xl font-extrabold text-leaf-800">
+            <p className="text-2xl font-extrabold leading-none text-leaf-800">
               {formatPrice(machine.price_per_acre)}
             </p>
-            <p className="text-xs font-medium text-ink-muted">{unitLabel}</p>
+            <p className="mt-1 text-sm font-medium text-ink-muted">{unitLabel}</p>
           </div>
         </div>
 
         {/* Live Estimator for Acreage / Hourly / Daily */}
         {hasAcreage && machine.pricing_unit === 'per_hour' ? (
-          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
+          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">
             <span className="text-leaf-700">{t('ui.hourlyRate')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / hr</span>
             <span className="text-leaf-600"> {t('ui.hoursPerAcre')}</span>
           </div>
         ) : hasAcreage && machine.pricing_unit === 'per_day' ? (
-          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
+          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">
             <span className="text-leaf-700">{t('ui.dailyRate')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / day</span>
           </div>
         ) : estimatedTotal && hasAcreage ? (
-          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-xs font-semibold text-leaf-900">
+          <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">
             <span className="text-leaf-700">{t('ui.estTotal')}: </span>
             <span className="text-sm font-extrabold text-leaf-800">{formatPrice(estimatedTotal)}</span>
             <span className="text-leaf-600"> {t('ui.acresCount', { n: acreage ?? 0 })}</span>
@@ -192,7 +199,7 @@ export function MachineCard({
         </p>
 
         {/* Diesel & Driver status */}
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted">
           <CheckCircle2 className="size-3.5 text-leaf-600" />
           <span>{t('ui.operatorIncluded')}</span>
         </div>
@@ -203,35 +210,44 @@ export function MachineCard({
             {crops.map((crop) => (
               <span
                 key={crop}
-                className="inline-flex items-center gap-1.5 rounded-full bg-cream-100 py-0.5 pl-1 pr-2.5 text-xs font-semibold text-ink-soft ring-1 ring-cream-300/60"
+                className="inline-flex items-center gap-1.5 rounded-full bg-cream-100 py-0.5 pl-1 pr-2.5 text-sm font-semibold text-ink-soft ring-1 ring-cream-300/60"
               >
                 <CropIcon crop={crop as CropKey} size={15} />
                 <span>{t(`crop.${crop}` as TranslationKey)}</span>
               </span>
             ))}
             {extraCrops > 0 ? (
-              <span className="text-xs font-semibold text-ink-muted">+{extraCrops}</span>
+              <span className="text-sm font-semibold text-ink-muted">+{extraCrops}</span>
             ) : null}
           </div>
         ) : null}
 
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium text-ink-muted">
-            {t('farmer.ownerName', { name: machine.owner_name })}
-          </p>
+          {machine.owner_id ? (
+            <PersonChip
+              userId={machine.owner_id}
+              name={machine.owner_name}
+              label={t('farmer.ownerName', { name: machine.owner_name })}
+              className="min-w-0 font-medium text-ink-muted"
+            />
+          ) : (
+            <p className="text-sm font-medium text-ink-muted">
+              {t('farmer.ownerName', { name: machine.owner_name })}
+            </p>
+          )}
           <SpeakButton machine={machine} />
         </div>
 
         {/* Direct Action Buttons - Clean & Non-Redundant */}
         <div className="mt-auto space-y-2 pt-2">
-          <LinkButton to={`/farmer/machines/${machine.id}`} variant="primary" size="sm" fullWidth className="min-h-11 font-bold">
+          <LinkButton to={`/farmer/machines/${machine.id}`} variant="primary" size="sm" fullWidth className="min-h-12 text-base font-bold">
             {t('farmer.bookTitle')}
           </LinkButton>
 
           <div className="grid grid-cols-2 gap-2">
             <a
               href={telHref(machine.phone)}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-xs font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-sm font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
             >
               <Phone className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('farmer.callOwner')}</span>
@@ -241,7 +257,7 @@ export function MachineCard({
               href={whatsappHref(machine.phone, waMessage)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-leaf-700 px-3 text-xs font-bold text-cream-50 transition-colors hover:bg-leaf-800 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-sm font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
             >
               <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('farmer.whatsappOwner')}</span>

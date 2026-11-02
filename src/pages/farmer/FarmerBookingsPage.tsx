@@ -27,8 +27,9 @@ import { Alert } from '../../components/ui/Alert'
 import { Button, LinkButton } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState, Spinner } from '../../components/ui/Feedback'
+import { EmptyState } from '../../components/ui/Feedback'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { BookingRowSkeleton } from '../../components/ui/Skeleton'
 
 type Filter = 'all' | 'active' | 'completed' | 'closed'
 
@@ -233,7 +234,7 @@ export function FarmerBookingsPage() {
               setActionError(null)
               setClearCompletedConfirmOpen(true)
             }}
-            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+            className="text-sm font-semibold text-clay-700 hover:bg-clay-50"
           >
             {t('work.clearAll')}
           </Button>
@@ -246,7 +247,7 @@ export function FarmerBookingsPage() {
               setActionError(null)
               setClearClosedConfirmOpen(true)
             }}
-            className="text-xs font-semibold text-clay-700 hover:bg-clay-50"
+            className="text-sm font-semibold text-clay-700 hover:bg-clay-50"
           >
             {t('farmer.clearClosedHistory')}
           </Button>
@@ -254,9 +255,10 @@ export function FarmerBookingsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 rounded-card border border-cream-200 bg-white py-16">
-          <Spinner className="size-5" />
-          <span className="text-sm font-medium text-ink-muted">{t('common.loading')}</span>
+        <div className="space-y-4" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <BookingRowSkeleton key={i} />
+          ))}
         </div>
       ) : error ? (
         <Alert variant="error">
@@ -310,7 +312,7 @@ export function FarmerBookingsPage() {
                           name={booking.owner.full_name}
                         />
                       ) : null}
-                      <p className="mt-1 text-xs text-ink-muted">
+                      <p className="mt-1 text-sm text-ink-muted">
                         {t('farmer.requestedOn', {
                           date: new Date(booking.created_at).toLocaleDateString('en-IN'),
                         })}
@@ -324,7 +326,7 @@ export function FarmerBookingsPage() {
                         const phase = workPhase(booking)
                         if (phase === 'working') {
                           return (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-harvest-200 bg-harvest-50 px-2.5 py-0.5 text-xs font-bold text-harvest-800">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-harvest-200 bg-harvest-50 px-2.5 py-0.5 text-sm font-bold text-harvest-800">
                               <Play className="size-3" aria-hidden="true" />
                               {t('work.working')}
                             </span>
@@ -332,7 +334,7 @@ export function FarmerBookingsPage() {
                         }
                         if (phase === 'completed') {
                           return (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-leaf-200 bg-leaf-50 px-2.5 py-0.5 text-xs font-bold text-leaf-800">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-leaf-200 bg-leaf-50 px-2.5 py-0.5 text-sm font-bold text-leaf-800">
                               <CheckCircle2 className="size-3" aria-hidden="true" />
                               {t('work.doneBadge')}
                             </span>

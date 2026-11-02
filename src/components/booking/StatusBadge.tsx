@@ -11,7 +11,7 @@ const styles: Record<BookingStatus, string> = {
   pending: 'bg-harvest-50 text-harvest-800 border-harvest-200',
   confirmed: 'bg-leaf-50 text-leaf-800 border-leaf-200',
   rejected: 'bg-clay-50 text-clay-800 border-clay-200',
-  cancelled: 'bg-cream-100 text-ink-soft border-cream-300',
+  cancelled: 'bg-clay-50 text-clay-800 border-clay-200',
 }
 
 const icons = {
