@@ -14,7 +14,12 @@ function AppShellContent() {
   const { collapsed } = useSidebar()
 
   return (
-    <div className="min-h-dvh bg-cream-50 overflow-x-hidden">
+    <div
+      className="min-h-dvh bg-cover bg-center bg-fixed bg-no-repeat overflow-x-hidden relative text-ink selection:bg-leaf-600 selection:text-white"
+      style={{
+        backgroundImage: "url('/images/paddy-countryside.jpg')",
+      }}
+    >
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-leaf-900 focus:shadow-lift"
@@ -39,13 +44,13 @@ function AppShellContent() {
       >
         <AppHeader />
 
-        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 pb-28 lg:pb-12">
+        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 lg:px-8 pb-28 lg:pb-12">
           <div key={location.pathname} className="hr-route">
             <Outlet />
           </div>
         </main>
 
-        <footer className="border-t border-cream-200 px-6 py-6 text-center text-sm text-ink-muted">
+        <footer className="mt-auto border-t border-white/20 bg-black/40 backdrop-blur-md px-6 py-4 text-center text-xs text-white/90">
           <p>
             {t('app.name')} · {t('app.footer')}
           </p>

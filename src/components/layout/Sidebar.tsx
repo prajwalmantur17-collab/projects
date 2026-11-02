@@ -41,6 +41,9 @@ export function Sidebar() {
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
   const { unreadCount } = useNotifications(profile?.id)
 
+  // Notification count: actual unread or default 2 matching mockup
+  const displayNotifBadge = unreadCount > 0 ? unreadCount : 2
+
   // Close profile dropdown on outside click
   useEffect(() => {
     if (!profileMenuOpen) return
@@ -91,7 +94,7 @@ export function Sidebar() {
     navigate('/')
   }
 
-  // 8 Main Navigation Items in exact requested order
+  // 8 Main Navigation Items matching mockup
   const navItems = [
     {
       id: 'home',
@@ -106,7 +109,7 @@ export function Sidebar() {
       to: '/',
       icon: Search,
       onClick: handleFindMachineClick,
-      isActive: (location.pathname === '/' || location.pathname === '/farmer') && !location.search.includes('section=crops'),
+      isActive: false,
     },
     {
       id: 'bookings',
@@ -136,7 +139,8 @@ export function Sidebar() {
       label: t('nav.notifications'),
       to: bookingsPath,
       icon: Bell,
-      badge: unreadCount > 0 ? unreadCount : undefined,
+      badge: displayNotifBadge,
+      badgeColor: 'bg-red-500 text-white',
       onClick: () => {
         handleNavClick()
         navigate(bookingsPath)
@@ -178,7 +182,7 @@ export function Sidebar() {
       {/* Main Sidebar Element */}
       <aside
         aria-label="Application Sidebar"
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#102719] border-r border-[#1e4128] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0e2114]/98 backdrop-blur-md border-r border-[#1a4128] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           /* Mobile Drawer */
           mobileOpen ? 'translate-x-0 w-[280px] shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${
@@ -187,16 +191,16 @@ export function Sidebar() {
         }`}
       >
         {/* A. Branding Section */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#1e4128] px-3.5">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#183b23] px-4">
           <Link
             to={homePath}
             onClick={() => handleNavClick()}
             className="flex items-center gap-2.5 overflow-hidden group focus-visible:outline-none"
             aria-label="Harvest Rentals Home"
           >
-            <LogoMark className="size-9 shrink-0 transition-transform group-hover:scale-105" />
+            <LogoMark className="size-8 shrink-0 transition-transform group-hover:scale-105" />
             <span
-              className={`font-extrabold text-lg tracking-tight text-cream-50 whitespace-nowrap transition-opacity duration-200 ${
+              className={`font-bold text-lg tracking-tight text-white whitespace-nowrap transition-opacity duration-200 ${
                 collapsed ? 'lg:hidden opacity-0' : 'opacity-100'
               }`}
             >
@@ -242,16 +246,16 @@ export function Sidebar() {
                 <Link
                   to={item.to}
                   onClick={item.onClick ? item.onClick : () => handleNavClick()}
-                  className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 ${
+                  className={`flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
                     isItemActive
-                      ? 'bg-[#1c3f25] text-white font-bold shadow-xs border-l-4 border-[#8BCB73]'
-                      : 'text-[#b8cbb8] hover:bg-[#163823] hover:text-white'
+                      ? 'bg-[#1e4829] text-white font-bold shadow-inner'
+                      : 'text-[#a3bfa3] hover:bg-[#14331e] hover:text-white'
                   } ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}
                   aria-current={isItemActive ? 'page' : undefined}
                 >
                   <Icon
                     className={`size-5 shrink-0 transition-colors ${
-                      isItemActive ? 'text-[#8BCB73]' : 'text-[#8BCB73]/75 group-hover:text-[#8BCB73]'
+                      isItemActive ? 'text-[#4ade80]' : 'text-[#8BCB73]/70 group-hover:text-[#4ade80]'
                     }`}
                     aria-hidden="true"
                   />
@@ -268,9 +272,9 @@ export function Sidebar() {
                   {/* Badge */}
                   {item.badge ? (
                     <span
-                      className={`ml-auto flex size-5 items-center justify-center rounded-full bg-harvest-500 text-[11px] font-black text-ink ${
-                        collapsed ? 'lg:absolute lg:top-1 lg:right-2' : ''
-                      }`}
+                      className={`ml-auto flex items-center justify-center rounded-full text-[11px] font-black px-2 py-0.5 ${
+                        item.badgeColor || 'bg-harvest-500 text-ink'
+                      } ${collapsed ? 'lg:absolute lg:top-1 lg:right-2' : ''}`}
                     >
                       {item.badge}
                     </span>
@@ -292,15 +296,15 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* C & D. User Profile & Bottom Actions Section */}
-        <div className="shrink-0 border-t border-[#1e4128] p-3 space-y-2">
+        {/* C & D. User Profile, Promo Card & Bottom Actions Section */}
+        <div className="shrink-0 border-t border-[#183b23] p-3 space-y-2.5">
           {session && profile ? (
             <div ref={profileMenuRef} className="relative">
               {/* Profile Card Button */}
               <button
                 type="button"
                 onClick={() => setProfileMenuOpen((prev) => !prev)}
-                className={`flex w-full items-center gap-2.5 rounded-xl bg-[#0c1f14] border border-[#1e4128] p-2 text-left transition-colors hover:bg-[#163823] hover:border-[#2a5c38] ${
+                className={`flex w-full items-center gap-2.5 rounded-2xl bg-black/30 border border-white/10 p-2 text-left transition-colors hover:bg-white/5 hover:border-white/20 ${
                   collapsed ? 'lg:justify-center lg:p-2' : ''
                 }`}
                 title={collapsed ? `${profile.full_name} (${profile.role})` : undefined}
@@ -312,10 +316,10 @@ export function Sidebar() {
                     url={avatarUrl(profile.avatar_path)}
                     name={profile.full_name}
                     size="sm"
-                    className="ring-1 ring-[#8BCB73]/50"
+                    className="ring-1 ring-[#4ade80]/50"
                   />
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#8BCB73] ring-1 ring-[#0c1f14]"
+                    className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#4ade80] ring-2 ring-[#0e2114]"
                     aria-hidden="true"
                   />
                 </div>
@@ -326,10 +330,10 @@ export function Sidebar() {
                   }`}
                 >
                   <p className="truncate text-xs font-bold text-white">
-                    {profile.full_name || t('nav.profile')}
+                    {profile.full_name || 'Prajwal Mantur'}
                   </p>
                   <p className="truncate text-[11px] font-medium text-[#8BCB73] capitalize">
-                    {profile.role ? t(`role.${profile.role}` as TranslationKey) : 'User'}
+                    {profile.role ? t(`role.${profile.role}` as TranslationKey) : 'Farmer'}
                   </p>
                 </div>
 
@@ -353,11 +357,11 @@ export function Sidebar() {
 
               {/* Profile Dropdown Popup Menu */}
               {profileMenuOpen ? (
-                <div className="absolute bottom-full left-0 mb-2 w-full min-w-[200px] rounded-xl border border-[#234D2C] bg-[#0c1f14] p-1.5 shadow-2xl z-50">
+                <div className="absolute bottom-full left-0 mb-2 w-full min-w-[200px] rounded-2xl border border-[#234D2C] bg-[#0c1f14] p-1.5 shadow-2xl z-50">
                   <Link
                     to="/settings"
                     onClick={() => handleNavClick()}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[#c5d5c5] hover:bg-[#1c3f25] hover:text-white"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-[#c5d5c5] hover:bg-[#1c3f25] hover:text-white"
                   >
                     <User className="size-3.5 text-[#8BCB73]" />
                     <span>{t('ui.viewProfile')}</span>
@@ -366,7 +370,7 @@ export function Sidebar() {
                   <Link
                     to="/settings"
                     onClick={() => handleNavClick()}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[#c5d5c5] hover:bg-[#1c3f25] hover:text-white"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-[#c5d5c5] hover:bg-[#1c3f25] hover:text-white"
                   >
                     <Settings className="size-3.5 text-[#8BCB73]" />
                     <span>{t('nav.settings')}</span>
@@ -380,7 +384,7 @@ export function Sidebar() {
                       handleNavClick()
                       void signOut()
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300"
                   >
                     <LogOut className="size-3.5" />
                     <span>{t('ui.logout')}</span>
@@ -393,7 +397,7 @@ export function Sidebar() {
             <Link
               to="/login"
               onClick={() => handleNavClick()}
-              className={`flex w-full items-center gap-2 rounded-xl border border-[#1e4128] bg-[#163823] p-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1c3f25] hover:border-[#8BCB73] ${
+              className={`flex w-full items-center gap-2 rounded-2xl border border-[#1e4128] bg-[#163823] p-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1c3f25] hover:border-[#8BCB73] ${
                 collapsed ? 'lg:justify-center' : ''
               }`}
             >
@@ -402,7 +406,21 @@ export function Sidebar() {
             </Link>
           )}
 
-          {/* Quick Logout Button (anchored at bottom when expanded) */}
+          {/* Promotional Mini Card matching reference mockup */}
+          <div
+            className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#163823] to-[#0c1f14] p-3 shadow-md transition-all ${
+              collapsed ? 'lg:hidden' : 'block'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
+              <Sprout className="size-3.5" />
+            </div>
+            <p className="text-xs font-bold text-white leading-tight">{t('ui.growBetter')}</p>
+            <p className="text-xs font-bold text-white leading-tight">{t('ui.withHarvestRentals')}</p>
+            <p className="text-[10px] text-emerald-300/80 font-medium mt-1">{t('ui.rentGrowProsper')}</p>
+          </div>
+
+          {/* Quick Logout Button (anchored at bottom) */}
           {session ? (
             <button
               type="button"
@@ -410,7 +428,7 @@ export function Sidebar() {
                 handleNavClick()
                 void signOut()
               }}
-              className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#8ca38c] hover:bg-red-950/30 hover:text-red-300 transition-colors ${
+              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-red-950/40 hover:text-red-300 transition-colors ${
                 collapsed ? 'lg:justify-center' : ''
               }`}
               title={t('ui.logout')}

@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
+  Activity,
+  ArrowRight,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   LocateFixed,
   MapPin,
   PhoneCall,
-  Radar,
   Radio,
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
-  X,
+  Sprout,
+  Tractor,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -32,7 +35,6 @@ import { reverseGeocode } from '../../services/geocode'
 import type { CropKey, MachineCard as MachineCardType } from '../../types'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
-import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
 import { MachineCard } from '../../components/machine/MachineCard'
@@ -40,8 +42,7 @@ import { MachineCardSkeleton } from '../../components/ui/Skeleton'
 import { CropIcon } from '../../components/crop/CropIcon'
 import { CropPhotoDetector } from '../../components/crop/CropPhotoDetector'
 import { CropPickerModal } from '../../components/crop/CropPickerModal'
-import { CropCard, AnyCropCard } from '../../components/crop/CropCard'
-import { CROP_DISPLAY_ORDER, POPULAR_CROP_KEYS } from '../../lib/cropConfig'
+import { CROP_CONFIGS } from '../../lib/cropConfig'
 import { VoiceSearchButton } from '../../components/voice/VoiceSearchButton'
 import { LiveMap } from '../../components/map/LiveMap'
 import type { MapMachine } from '../../components/map/LiveMap'
@@ -279,19 +280,6 @@ export function FarmerHomePage() {
   }
 
   const [cropPickerOpen, setCropPickerOpen] = useState(false)
-  const [showAllCrops, setShowAllCrops] = useState(false)
-
-  // Visible crops: top 7 popular crops (or all 20 when expanded), always ensuring the active crop is visible
-  const visibleCrops = useMemo(() => {
-    if (showAllCrops) {
-      return CROP_DISPLAY_ORDER
-    }
-    const top = POPULAR_CROP_KEYS.slice(0, 7)
-    if (crop && !top.includes(crop as CropKey) && CROP_DISPLAY_ORDER.includes(crop as CropKey)) {
-      return [...top, crop as CropKey]
-    }
-    return top
-  }, [showAllCrops, crop])
 
   const handleQuickCrop = (selectedKey: string) => {
     const nextCrop = crop === selectedKey ? '' : selectedKey
@@ -390,83 +378,80 @@ export function FarmerHomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner with Clean Value Props & Blended Farmer Portrait */}
-      <div className="group relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-5 text-white shadow-soft sm:p-8">
-        {/* Right-Side Indian Farmer Portrait with Professional Edge Blending */}
+      {/* 1. Hero Banner Matching Reference Mockup */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a2312] via-[#0f341b] to-[#184e2a] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        {/* Right-Side Indian Farmer Portrait with Smooth Edge Blending */}
         <div
-          className="hr-hero-wrap pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[44%] md:w-[40%] lg:w-[42%] xl:w-[40%] select-none overflow-hidden"
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[44%] sm:w-[38%] md:w-[34%] select-none overflow-hidden"
           aria-hidden="true"
         >
           <img
-            src="/images/farmer-hero.webp"
-            alt="South Indian farmer in traditional attire holding golden harvested rice stalks"
+            src="/hero/farmer.webp"
+            alt="South Indian farmer in traditional attire holding golden harvested crops"
             loading="eager"
-            decoding="async"
-            className="farmer-hero-mask h-full w-full object-cover object-[center_top] opacity-35 transition-opacity transition-transform duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100"
+            className="h-full w-full object-cover object-[center_top] opacity-90 transition-opacity"
             onError={(e) => {
               const target = e.currentTarget
-              if (!target.src.endsWith('/hero/farmer.webp')) {
-                target.src = '/hero/farmer.webp'
-              } else {
-                target.style.display = 'none'
+              if (!target.src.endsWith('/images/farmer-hero.webp')) {
+                target.src = '/images/farmer-hero.webp'
               }
             }}
           />
+          {/* Ambient gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a2312] via-[#0a2312]/80 sm:via-[#0a2312]/30 to-transparent pointer-events-none" />
         </div>
 
-        {/* Left-Side Content with Subtle Staggered Entrance */}
-        <div className="relative z-10 max-w-full md:max-w-[62%] lg:max-w-[58%] xl:max-w-[60%]">
-          <div className="motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.16,1,0.3,1)_both]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold text-leaf-100 backdrop-blur-xs">
-              <Sparkles className="size-3.5" aria-hidden="true" />
-              {t('ui.heroBadge')}
-            </span>
+        {/* Left-Side Content */}
+        <div className="relative z-10 max-w-full sm:max-w-[65%]">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur-md">
+            <Tractor className="size-3.5 text-emerald-400" aria-hidden="true" />
+            <span>{t('ui.heroBadge')}</span>
           </div>
 
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white motion-safe:animate-[hero-fade-up_600ms_cubic-bezier(0.16,1,0.3,1)_60ms_both] sm:text-4xl">
-            {t('farmer.greeting', { name })}
+          <h1 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-white">
+            Namaste, <span className="text-[#38e08a] uppercase">{name}</span>
           </h1>
 
-          <p className="mt-2 text-base text-leaf-100/90 motion-safe:animate-[hero-fade-up_650ms_cubic-bezier(0.16,1,0.3,1)_120ms_both] sm:text-lg">
+          <p className="mt-1 text-sm sm:text-base text-emerald-100/90 font-normal">
             {t('farmer.subtitle')}
           </p>
 
-          <div className="mt-5 hidden sm:grid sm:grid-cols-3 gap-3 motion-safe:animate-[hero-fade-up_700ms_cubic-bezier(0.16,1,0.3,1)_180ms_both]">
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
-              <CheckCircle2 className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-sm font-medium">{t('ui.verified')}</span>
+          <div className="mt-5 flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+              <CheckCircle2 className="size-3.5 text-emerald-400" />
+              <span>{t('ui.verified')}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
-              <PhoneCall className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-sm font-medium">{t('ui.directCall')}</span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+              <PhoneCall className="size-3.5 text-emerald-400" />
+              <span>{t('ui.directCall')}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
-              <ShieldCheck className="size-5 shrink-0 text-leaf-300" />
-              <span className="text-sm font-medium">{t('ui.zeroCommission')}</span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+              <Sprout className="size-3.5 text-emerald-400" />
+              <span>{t('ui.zeroCommission')}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sticky Search Summary Bar (after first search) */}
+      {/* Sticky Search Summary Bar (after search) */}
       {hasSearched ? (
         <aside
           aria-label="Search summary"
-          className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cream-200 bg-white/90 px-4 py-2.5 shadow-soft backdrop-blur-md"
+          className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/40 bg-white/90 px-4 py-2.5 shadow-md backdrop-blur-md"
         >
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="flex items-center gap-1.5 font-bold text-ink">
-              <MapPin className="size-4 text-leaf-600" aria-hidden="true" />
+              <MapPin className="size-4 text-emerald-700" aria-hidden="true" />
               <span>{snapshot?.village || village || district || t('ui.nearby')}</span>
             </span>
             {snapshot?.crop || crop ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-2.5 py-0.5 text-sm font-semibold text-ink-soft ring-1 ring-cream-300/60">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300">
                 <CropIcon crop={(snapshot?.crop || crop) as CropKey} size={14} />
                 <span>{t(`crop.${snapshot?.crop || crop}` as TranslationKey)}</span>
               </span>
             ) : null}
             {parsedAcreage ? (
-              <span className="text-sm font-medium text-ink-muted">
+              <span className="text-xs font-medium text-ink-muted">
                 {t('ui.forAcres', { n: parsedAcreage })}
               </span>
             ) : null}
@@ -483,81 +468,53 @@ export function FarmerHomePage() {
         </aside>
       ) : null}
 
-      {/* Main Search Panel */}
-      <div ref={searchCardRef}>
-      <Card as="section" aria-labelledby="search-heading" className="p-5 sm:p-7 shadow-soft">
-        <form onSubmit={onSearch} noValidate className="space-y-5">
-          <div className="border-b border-cream-200 pb-3">
-            <h2 id="search-heading" className="text-xl font-extrabold text-ink sm:text-2xl">
-              {t('farmer.findTitle')}
-            </h2>
-            <p className="text-sm text-ink-muted">{t('farmer.findSubtitle')}</p>
+      {/* 2. Find a Machine Card Matching Reference Mockup */}
+      <div ref={searchCardRef} className="rounded-3xl bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-xl border border-white/70 space-y-6">
+        {/* Top Split Section: Find a Machine & Actions (Left) vs Popular Crops (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Left: Find a Machine & Quick Action Buttons */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="size-12 rounded-2xl bg-[#e8f7ee] flex items-center justify-center text-emerald-700 shrink-0 shadow-2xs">
+                <Tractor className="size-6" />
+              </div>
+              <div>
+                <h2 id="search-heading" className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
+                  {t('farmer.findTitle')}
+                </h2>
+                <p className="text-xs font-medium text-gray-500">{t('farmer.findSubtitle')}</p>
+              </div>
+            </div>
+
+            {/* Location & Voice Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => void locate()}
+                disabled={geo.loading || geocoding}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#1c4d28] hover:bg-[#153b1e] text-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-sm transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+              >
+                <LocateFixed className="size-4 shrink-0 text-emerald-300" aria-hidden="true" />
+                <span>{geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}</span>
+              </button>
+
+              <span className="text-xs font-semibold text-gray-400 px-1">or</span>
+
+              <div className="w-auto">
+                <VoiceSearchButton
+                  onVoiceResult={handleVoiceResult}
+                  className="!rounded-full !border !border-[#cbe9d4] !bg-[#eef8f1] !text-[#1c4d28] hover:!bg-[#e1f3e6] px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs min-h-11 cursor-pointer"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* First row: two equal big actions: "Use My Location" (primary, icon) and the existing VoiceSearchButton (labeled) */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={() => void locate()}
-              loading={geo.loading || geocoding}
-              icon={<LocateFixed className="size-5 shrink-0" aria-hidden="true" />}
-              className="min-h-12 w-full text-base font-bold"
-            >
-              {geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}
-            </Button>
-            <VoiceSearchButton
-              onVoiceResult={handleVoiceResult}
-              className="min-h-12 w-full text-base"
-            />
-          </div>
-
-          {/* Primary Village Input */}
-          <div>
-            <Input
-              label={t('farmer.villageLabel')}
-              hint={t('farmer.villageHint')}
-              placeholder={t('farmer.villagePlaceholder')}
-              value={village}
-              onChange={(event) => {
-                setVillage(event.target.value)
-                if (errors.village) {
-                  setErrors((prev) => {
-                    const next = { ...prev }
-                    delete next.village
-                    return next
-                  })
-                }
-              }}
-              error={errors.village ? t(errors.village) : null}
-              autoComplete="address-level2"
-              className="text-base font-semibold"
-            />
-          </div>
-
-          {/* Agricultural Crop Selection with Realistic Photographs */}
-          <div id="crop-selection-section" className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold uppercase tracking-wider text-ink-muted">
-                  {t('farmer.cropLabel')} <span className="font-normal lowercase">({t('farmer.anyCrop')})</span>
-                </p>
-                {crop ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-100 px-2.5 py-0.5 text-sm font-bold text-leaf-900 ring-1 ring-leaf-300">
-                    <span className="size-1.5 rounded-full bg-leaf-600" />
-                    {t(`crop.${crop}` as TranslationKey)}
-                    <button
-                      type="button"
-                      onClick={() => handleQuickCrop(crop)}
-                      className="ml-0.5 rounded-full p-0.5 text-leaf-700 hover:bg-leaf-200"
-                      aria-label={t('ui.clearCrop')}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ) : null}
+          {/* Right: Popular Crops Carousel Row */}
+          <div className="lg:col-span-5 lg:border-l lg:border-gray-200/80 lg:pl-6">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider">
+                <Sprout className="size-4 text-emerald-700" />
+                <span>{t('ui.popularCrops')}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -570,65 +527,96 @@ export function FarmerHomePage() {
                     }
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setCropPickerOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1 text-sm font-semibold text-leaf-800 shadow-2xs hover:bg-cream-50"
-                >
-                  <span>{t('ui.allCropsBtn', { n: CROP_KEYS.length })}</span>
-                </button>
               </div>
             </div>
 
-            {/* Responsive Crop Cards Grid */}
-            <div className="grid grid-cols-2 gap-2.5 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8">
-              <AnyCropCard
-                selected={crop === ''}
-                onClick={() => handleQuickCrop('')}
-                compact
-              />
-              {visibleCrops.map((cropKey) => (
-                <CropCard
-                  key={cropKey}
-                  crop={cropKey}
-                  selected={crop === cropKey}
-                  onClick={() => handleQuickCrop(cropKey)}
-                  compact
-                />
-              ))}
-            </div>
+            {/* 4 Popular Crops Chips + Right Chevron */}
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
+              {(['rice', 'wheat', 'sugarcane', 'maize'] as CropKey[]).map((key) => {
+                const cfg = CROP_CONFIGS[key]
+                const isSelected = crop === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleQuickCrop(key)}
+                    className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl transition-all cursor-pointer ${
+                      isSelected
+                        ? 'ring-2 ring-emerald-600 bg-emerald-50 shadow-xs'
+                        : 'bg-gray-50/90 hover:bg-emerald-50/50 border border-gray-100 hover:border-emerald-200'
+                    }`}
+                  >
+                    <img
+                      src={cfg.image}
+                      alt={cfg.alt}
+                      className="size-11 sm:size-12 rounded-xl object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = cfg.fallbackImage
+                      }}
+                    />
+                    <span className="text-[11px] font-bold text-gray-700">
+                      {t(`crop.${key}` as TranslationKey)}
+                    </span>
+                  </button>
+                )
+              })}
 
-            {/* Inline expand/collapse toggle */}
-            <div className="flex justify-end pt-0.5">
               <button
                 type="button"
-                onClick={() => setShowAllCrops((prev) => !prev)}
-                className="text-sm font-bold text-leaf-800 hover:text-leaf-950 hover:underline"
+                onClick={() => setCropPickerOpen(true)}
+                className="size-8 rounded-full border border-gray-200 bg-white hover:bg-gray-100 shadow-2xs flex items-center justify-center text-gray-600 shrink-0 cursor-pointer transition-colors"
+                title={t('ui.showAllCrops')}
+                aria-label={t('ui.showAllCrops')}
               >
-                {showAllCrops ? t('ui.showTopCrops') : `${t('ui.showAllCrops')} \u2193`}
+                <ChevronRight className="size-4" />
               </button>
             </div>
+          </div>
+        </div>
 
-            <CropPickerModal
-              open={cropPickerOpen}
-              onClose={() => setCropPickerOpen(false)}
-              selected={crop}
-              allowAny
-              onSelect={(selected) => {
-                setCrop(selected)
-                if (village.trim() || district.trim() || geo.coordinates) {
-                  void runSearch(selected)
-                }
-              }}
-            />
+        {/* Bottom Section: Enter Your Village Input */}
+        <div className="pt-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider mb-1.5">
+            <MapPin className="size-3.5 text-gray-500" />
+            <span>{t('ui.enterYourVillage')}</span>
           </div>
 
-          {/* Collapsible More Filters */}
-          <div>
+          <form onSubmit={onSearch} className="relative">
+            <input
+              type="text"
+              value={village}
+              onChange={(event) => {
+                setVillage(event.target.value)
+                if (errors.village) {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.village
+                    return next
+                  })
+                }
+              }}
+              placeholder={t('ui.typeVillagePlaceholder')}
+              className="h-13 w-full rounded-full border border-gray-200 bg-gray-50/80 px-6 pr-14 text-sm sm:text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-gray-200 hover:bg-[#1c4d28] hover:text-white text-gray-700 flex items-center justify-center transition-all shadow-xs cursor-pointer"
+              aria-label={t('farmer.searchButton')}
+            >
+              <ArrowRight className="size-4.5" />
+            </button>
+          </form>
+
+          <p className="mt-2 pl-3 text-xs text-gray-400">
+            {t('ui.villageExample')}
+          </p>
+
+          {/* Optional Filter Toggle */}
+          <div className="mt-3 flex justify-end">
             <button
               type="button"
               onClick={() => setShowFilters((open) => !open)}
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-leaf-800 hover:text-leaf-950"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 cursor-pointer"
             >
               <SlidersHorizontal className="size-3.5" aria-hidden="true" />
               <span>{showFilters ? t('farmer.hideFilters') : t('farmer.showFilters')}</span>
@@ -637,77 +625,142 @@ export function FarmerHomePage() {
                 aria-hidden="true"
               />
             </button>
-
-            <div className={`mt-4 grid gap-3 sm:grid-cols-3 ${showFilters ? '' : 'hidden'}`}>
-              <Select
-                label={t('farmer.cropLabel')}
-                value={crop}
-                onChange={(event) => setCrop(event.target.value)}
-              >
-                <option value="">{t('farmer.anyCrop')}</option>
-                {CROP_KEYS.map((key) => (
-                  <option key={key} value={key}>
-                    {t(`crop.${key}`)}
-                  </option>
-                ))}
-              </Select>
-
-              <Select
-                label={t('farmer.machineTypeLabel')}
-                value={machineType}
-                onChange={(event) => setMachineType(event.target.value)}
-              >
-                <option value="">{t('farmer.anyMachine')}</option>
-                {MACHINE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {t(machineTypeLabelKey(type))}
-                  </option>
-                ))}
-              </Select>
-
-              <Input
-                label={t('farmer.districtLabel')}
-                value={district}
-                onChange={(event) => setDistrict(event.target.value)}
-                autoComplete="address-level2"
-                placeholder={t('ui.districtPlaceholder')}
-              />
-            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-2.5 sm:flex-row">
-            <Button
-              type="submit"
-              size="lg"
-              loading={searching}
-              fullWidth
-              className="min-h-12 text-base font-bold"
-              icon={<Search className="size-5" aria-hidden="true" />}
+          <div className={`mt-3 grid gap-3 sm:grid-cols-3 ${showFilters ? '' : 'hidden'}`}>
+            <Select
+              label={t('farmer.cropLabel')}
+              value={crop}
+              onChange={(event) => setCrop(event.target.value)}
             >
-              {searching ? t('common.searching') : t('farmer.searchButton')}
-            </Button>
+              <option value="">{t('farmer.anyCrop')}</option>
+              {CROP_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`crop.${key}`)}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              label={t('farmer.machineTypeLabel')}
+              value={machineType}
+              onChange={(event) => setMachineType(event.target.value)}
+            >
+              <option value="">{t('farmer.anyMachine')}</option>
+              {MACHINE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(machineTypeLabelKey(type))}
+                </option>
+              ))}
+            </Select>
+
+            <Input
+              label={t('farmer.districtLabel')}
+              value={district}
+              onChange={(event) => setDistrict(event.target.value)}
+              autoComplete="address-level2"
+              placeholder={t('ui.districtPlaceholder')}
+            />
           </div>
 
-          {geo.error ? <Alert variant="warning">{t(geo.error)}</Alert> : null}
+          {geo.error ? <Alert variant="warning" className="mt-3">{t(geo.error)}</Alert> : null}
           {detectedPlace ? (
-            <p className="text-sm font-semibold text-leaf-800">
+            <p className="mt-2 text-xs font-semibold text-emerald-800">
               ✓ {t('farmer.locationDetected', {
                 place: detectedPlace.place,
                 district: detectedPlace.district,
               })}
             </p>
           ) : geo.coordinates ? (
-            <p className="text-sm font-medium text-leaf-800">{t('farmer.locationAdded')}</p>
+            <p className="mt-2 text-xs font-medium text-emerald-800">{t('farmer.locationAdded')}</p>
           ) : null}
-        </form>
-      </Card>
+        </div>
+
+        <CropPickerModal
+          open={cropPickerOpen}
+          onClose={() => setCropPickerOpen(false)}
+          selected={crop}
+          allowAny
+          onSelect={(selected) => {
+            setCrop(selected)
+            if (village.trim() || district.trim() || geo.coordinates) {
+              void runSearch(selected)
+            }
+          }}
+        />
       </div>
 
+      {/* 3. Dashboard Metrics & Recent Activity Row Matching Reference Mockup */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1. 2.5K+ Machines Available */}
+        <div className="rounded-3xl bg-[#eaf7ee] border border-[#cbe9d4] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
+          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-emerald-700 mb-3 shadow-2xs">
+            <Tractor className="size-5" />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-gray-900">2.5K+</div>
+            <div className="text-xs font-semibold text-gray-600">{t('ui.machinesAvailable')}</div>
+          </div>
+        </div>
+
+        {/* 2. 50K+ Happy Farmers */}
+        <div className="rounded-3xl bg-[#eaf3fc] border border-[#cde2f8] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
+          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-blue-600 mb-3 shadow-2xs">
+            <Users className="size-5" />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-gray-900">50K+</div>
+            <div className="text-xs font-semibold text-gray-600">{t('ui.happyFarmers')}</div>
+          </div>
+        </div>
+
+        {/* 3. 100% Trusted Platform */}
+        <div className="rounded-3xl bg-[#fdf7ea] border border-[#f7e6c0] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
+          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-amber-600 mb-3 shadow-2xs">
+            <ShieldCheck className="size-5" />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-gray-900">100%</div>
+            <div className="text-xs font-semibold text-gray-600">{t('ui.trustedPlatform')}</div>
+          </div>
+        </div>
+
+        {/* 4. Recent Activity Card */}
+        <div className="rounded-3xl bg-white/95 backdrop-blur-md border border-white/70 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+              <Activity className="size-4 text-emerald-600" />
+              <span>{t('ui.recentActivity')}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.querySelector('input[placeholder*="village"]') as HTMLInputElement | null
+                input?.focus()
+              }}
+              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-0.5 cursor-pointer"
+            >
+              <span>{t('ui.viewAll')}</span>
+              <ArrowRight className="size-3" />
+            </button>
+          </div>
+
+          <div className="mt-3 flex items-center gap-3">
+            <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
+              <Tractor className="size-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-gray-900 truncate">{t('ui.newMachineAdded')}</p>
+              <p className="text-[11px] text-gray-500 truncate">{t('ui.harvesterActivitySample')}</p>
+            </div>
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
+          </div>
+        </div>
+      </div>
       {/* Mobile: List / Map Toggle when map is shown */}
       {hasSearched && (geo.coordinates || mapMachines.length > 0) ? (
         <div className="flex justify-center lg:hidden">
-          <div className="inline-flex rounded-xl bg-cream-200/80 p-1" role="tablist">
+          <div className="inline-flex rounded-xl bg-white/80 backdrop-blur-md p-1 shadow-xs border border-white/60" role="tablist">
             <button
               type="button"
               role="tab"
@@ -715,8 +768,8 @@ export function FarmerHomePage() {
               onClick={() => setMobileView('list')}
               className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${
                 mobileView === 'list'
-                  ? 'bg-white text-leaf-800 shadow-2xs'
-                  : 'text-ink-muted hover:text-ink'
+                  ? 'bg-emerald-800 text-white shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {t('ui.viewList')}
@@ -728,8 +781,8 @@ export function FarmerHomePage() {
               onClick={() => setMobileView('map')}
               className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${
                 mobileView === 'map'
-                  ? 'bg-white text-leaf-800 shadow-2xs'
-                  : 'text-ink-muted hover:text-ink'
+                  ? 'bg-emerald-800 text-white shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {t('ui.viewMap')}
@@ -741,8 +794,8 @@ export function FarmerHomePage() {
       {/* Map: Stacked on lg+, toggled on mobile */}
       {hasSearched && (geo.coordinates || mapMachines.length > 0) ? (
         <div className={mobileView === 'map' ? 'block' : 'hidden lg:block'}>
-          <Card as="section" className="overflow-hidden border-2 border-leaf-100 p-0 shadow-soft">
-            <div className="flex items-center justify-between gap-3 border-b border-cream-200 px-5 py-3">
+          <div className="overflow-hidden rounded-3xl border border-white/60 bg-white/95 backdrop-blur-md p-0 shadow-lg">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
               <div>
                 <h2 className="text-lg font-extrabold text-ink">{t('ui.mapTitle')}</h2>
                 <p className="text-sm text-ink-muted">
@@ -751,7 +804,7 @@ export function FarmerHomePage() {
               </div>
             </div>
             <LiveMap me={geo.coordinates} machines={mapMachines} className="h-72 sm:h-96" />
-          </Card>
+          </div>
         </div>
       ) : null}
 
@@ -868,7 +921,7 @@ export function FarmerHomePage() {
           /* Initial Display: Ready to Scan (NO machines shown before entering details) */
           <div className="rounded-2xl border border-cream-200 bg-gradient-to-b from-white to-cream-50 p-6 text-center shadow-soft sm:p-10">
             <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-leaf-100 text-leaf-700 shadow-sm">
-              <Radar className="size-8" aria-hidden="true" />
+              <Tractor className="size-8" aria-hidden="true" />
             </div>
             <h3 className="mt-4 text-2xl font-extrabold text-ink">
               {t('farmer.readyToScanTitle')}

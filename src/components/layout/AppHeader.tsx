@@ -41,7 +41,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-cream-200 bg-cream-50/95 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-white/20 bg-white/40 backdrop-blur-md transition-all">
       <div className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
         {/* Left: Sidebar Toggles & Search */}
         <div className="flex flex-1 items-center gap-2 sm:gap-3 max-w-xl">
@@ -49,7 +49,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleMobile}
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-cream-300 bg-white text-ink-muted hover:bg-cream-100 hover:text-ink lg:hidden"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-xs backdrop-blur-md hover:bg-white lg:hidden"
             aria-label="Open sidebar menu"
           >
             <Menu className="size-5" />
@@ -59,38 +59,38 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="hidden size-10 shrink-0 items-center justify-center rounded-xl border border-cream-300 bg-white text-ink-muted hover:bg-cream-100 hover:text-ink lg:flex"
+            className="hidden size-10 shrink-0 items-center justify-center rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-xs backdrop-blur-md hover:bg-white lg:flex transition-colors"
             title={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
             aria-label={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
           >
-            <PanelLeft className="size-5" />
+            <PanelLeft className="size-4.5" />
           </button>
 
-          {/* Top Bar Quick Search Input */}
-          <form onSubmit={handleSearch} className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-ink-muted pointer-events-none" aria-hidden="true" />
+          {/* Top Bar Quick Search Input (Mockup Pill Style) */}
+          <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('ui.searchPlaceholder')}
-              className="h-10 w-full rounded-xl border border-cream-300 bg-white pl-9 pr-8 text-sm font-medium text-ink placeholder:text-ink-muted/70 focus:border-leaf-600 focus:outline-none focus:ring-2 focus:ring-leaf-400/20"
+              className="h-10 w-full rounded-full border border-white/70 bg-white/80 backdrop-blur-md pl-10 pr-9 text-xs sm:text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs transition-all"
             />
             {searchQuery ? (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
                 aria-label="Clear search"
               >
-                <X className="size-4" />
+                <X className="size-3.5" />
               </button>
             ) : null}
           </form>
         </div>
 
         {/* Right: Actions (Language, Notifications, User) */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <LanguageSelector compact />
 
           {session ? <NotificationBell /> : null}
@@ -98,7 +98,7 @@ export function AppHeader() {
           {session && profile ? (
             <Link
               to="/settings"
-              className="flex size-10 items-center justify-center rounded-xl hover:bg-cream-100"
+              className="flex size-10 items-center justify-center rounded-full ring-2 ring-white/90 shadow-xs overflow-hidden hover:opacity-90 transition-opacity"
               aria-label={t('nav.profile')}
               title={profile.full_name}
             >
@@ -107,9 +107,9 @@ export function AppHeader() {
           ) : (
             <Link
               to="/login"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3.5 py-1.5 text-sm font-bold text-ink hover:bg-cream-100"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/60 bg-white/85 px-4 py-1.5 text-xs sm:text-sm font-bold text-gray-800 shadow-xs backdrop-blur-md hover:bg-white"
             >
-              <User className="size-4 text-ink-muted" />
+              <User className="size-4 text-emerald-700" />
               <span>{t('ui.login')}</span>
             </Link>
           )}
