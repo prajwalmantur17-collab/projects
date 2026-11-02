@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import type { Plugin } from 'vite'
+import { loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import speechHandler from './api/speech.ts'
@@ -7,6 +7,10 @@ import speechHandler from './api/speech.ts'
 function devApiSpeechPlugin(): Plugin {
   return {
     name: 'dev-api-speech',
+    config(_config, { mode }) {
+      const env = loadEnv(mode, process.cwd(), '')
+      Object.assign(process.env, env)
+    },
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (req.url && (req.url === '/api/speech' || req.url.startsWith('/api/speech?'))) {

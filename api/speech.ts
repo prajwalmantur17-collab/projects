@@ -20,14 +20,14 @@ export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
 }
 
 /**
- * Standard premade ElevenLabs voices:
- * - Adam (pNInz6obpgDQGcFmaJgB): Free tier compatible multilingual voice (en, hi, kn, ta)
+ * Standard ElevenLabs voice configuration:
+ * - dfsWmmgleAAdssZ0Spld: Voice supporting English, Hindi, Kannada, and Tamil
  */
 export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
-  en: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
-  hi: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
-  kn: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
-  ta: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  en: 'dfsWmmgleAAdssZ0Spld',
+  hi: 'dfsWmmgleAAdssZ0Spld',
+  kn: 'dfsWmmgleAAdssZ0Spld',
+  ta: 'dfsWmmgleAAdssZ0Spld',
 }
 
 export interface SpeechResolution {
@@ -45,20 +45,21 @@ export interface SpeechResolution {
 export function resolveSpeechConfig(language: SupportedLanguage): SpeechResolution {
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim() || null
   const modelId = process.env.ELEVENLABS_MODEL_ID?.trim() || DEFAULT_MODEL_ID
+  const genericVoice = process.env.ELEVENLABS_VOICE_ID?.trim()
 
   let voiceId = ''
   switch (language) {
     case 'en':
-      voiceId = process.env.ELEVENLABS_VOICE_EN?.trim() || DEFAULT_VOICES.en
+      voiceId = process.env.ELEVENLABS_VOICE_EN?.trim() || genericVoice || DEFAULT_VOICES.en
       break
     case 'hi':
-      voiceId = process.env.ELEVENLABS_VOICE_HI?.trim() || DEFAULT_VOICES.hi
+      voiceId = process.env.ELEVENLABS_VOICE_HI?.trim() || genericVoice || DEFAULT_VOICES.hi
       break
     case 'ta':
-      voiceId = process.env.ELEVENLABS_VOICE_TA?.trim() || DEFAULT_VOICES.ta
+      voiceId = process.env.ELEVENLABS_VOICE_TA?.trim() || genericVoice || DEFAULT_VOICES.ta
       break
     case 'kn':
-      voiceId = process.env.ELEVENLABS_VOICE_KN?.trim() || DEFAULT_VOICES.kn
+      voiceId = process.env.ELEVENLABS_VOICE_KN?.trim() || genericVoice || DEFAULT_VOICES.kn
       break
   }
 

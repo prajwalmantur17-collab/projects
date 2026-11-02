@@ -14,6 +14,7 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     process.env = { ...originalEnv }
     delete process.env.ELEVENLABS_API_KEY
     delete process.env.ELEVENLABS_MODEL_ID
+    delete process.env.ELEVENLABS_VOICE_ID
     delete process.env.ELEVENLABS_VOICE_EN
     delete process.env.ELEVENLABS_VOICE_HI
     delete process.env.ELEVENLABS_VOICE_KN
@@ -41,10 +42,10 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
   })
 
   it('resolves correct default voices for English, Hindi, Kannada, and Tamil', () => {
-    expect(DEFAULT_VOICES.en).toBe('pNInz6obpgDQGcFmaJgB') // Adam (Free tier compatible)
-    expect(DEFAULT_VOICES.hi).toBe('pNInz6obpgDQGcFmaJgB') // Adam
-    expect(DEFAULT_VOICES.kn).toBe('pNInz6obpgDQGcFmaJgB') // Adam
-    expect(DEFAULT_VOICES.ta).toBe('pNInz6obpgDQGcFmaJgB') // Adam
+    expect(DEFAULT_VOICES.en).toBe('dfsWmmgleAAdssZ0Spld')
+    expect(DEFAULT_VOICES.hi).toBe('dfsWmmgleAAdssZ0Spld')
+    expect(DEFAULT_VOICES.kn).toBe('dfsWmmgleAAdssZ0Spld')
+    expect(DEFAULT_VOICES.ta).toBe('dfsWmmgleAAdssZ0Spld')
   })
 
   it('detects missing API key when ELEVENLABS_API_KEY is unset', () => {
