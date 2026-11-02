@@ -11,7 +11,7 @@ import {
 } from '../services/notifications'
 import type { AppNotification } from '../types'
 
-export function useNotifications(userId: string | undefined) {
+export function useNotifications(userId: string | undefined, scope = 'default') {
   const [items, setItems] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(Boolean(userId))
   const [error, setError] = useState<TranslationKey | null>(null)
@@ -49,9 +49,9 @@ export function useNotifications(userId: string | undefined) {
     if (!userId) return
     const unsubscribe = subscribeToNotifications(userId, () => {
       void reload()
-    })
+    }, scope)
     return unsubscribe
-  }, [userId, reload])
+  }, [userId, reload, scope])
 
   const markRead = useCallback(
     async (id: string) => {
@@ -92,7 +92,7 @@ export function useNotifications(userId: string | undefined) {
 
   const removeAllNotifications = useCallback(async () => {
     if (!userId) return
-    const currentIds = items.map((n) => n.id)
+    const currentIds = items.map((i) => i.id)
     setItems([])
     try {
       await deleteAllNotifications(userId, currentIds)
@@ -107,10 +107,10 @@ export function useNotifications(userId: string | undefined) {
     loading,
     error,
     unreadCount: items.filter((item) => !item.is_read).length,
-    reload,
     markRead,
     markAllRead,
     removeNotification,
     removeAllNotifications,
+    reload,
   }
 }

@@ -25,7 +25,7 @@ export function NotificationBell() {
     markAllRead,
     removeNotification,
     removeAllNotifications,
-  } = useNotifications(profile?.id)
+  } = useNotifications(profile?.id, 'bell')
 
   useEffect(() => {
     if (!open) return

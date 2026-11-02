@@ -72,6 +72,8 @@ export const uiEn = {
   'ui.enterYourVillage': 'Enter Your Village',
   'ui.villageExample': 'Example: Hubballi, Ranebennur, Karnal',
   'ui.typeVillagePlaceholder': 'Type your village name…',
+  'role.farmer': 'Farmer',
+  'role.owner': 'Machine Owner',
 } as const
 
 export const uiKn: Record<keyof typeof uiEn, string> = {
@@ -146,6 +148,8 @@ export const uiKn: Record<keyof typeof uiEn, string> = {
   'ui.enterYourVillage': 'ನಿಮ್ಮ ಗ್ರಾಮವನ್ನು ನಮೂದಿಸಿ',
   'ui.villageExample': 'ಉದಾಹರಣೆ: ಹುಬ್ಬಳ್ಳಿ, ರಾಣೆಬೆನ್ನೂರು, ಕರ್ನಾಲ್',
   'ui.typeVillagePlaceholder': 'ನಿಮ್ಮ ಗ್ರಾಮದ ಹೆಸರನ್ನು ಬರೆಯಿರಿ…',
+  'role.farmer': 'ರೈತ',
+  'role.owner': 'ಯಂತ್ರ ಮಾಲೀಕ',
 }
 
 export const uiHi: Record<keyof typeof uiEn, string> = {
@@ -220,6 +224,8 @@ export const uiHi: Record<keyof typeof uiEn, string> = {
   'ui.enterYourVillage': 'अपना गाँव दर्ज करें',
   'ui.villageExample': 'उदाहरण: हुबली, राणेबेन्नूर, करनाल',
   'ui.typeVillagePlaceholder': 'अपने गाँव का नाम लिखें…',
+  'role.farmer': 'किसान',
+  'role.owner': 'मशीन मालिक',
 }
 
 export const uiTa: Record<keyof typeof uiEn, string> = {
@@ -294,4 +300,6 @@ export const uiTa: Record<keyof typeof uiEn, string> = {
   'ui.enterYourVillage': 'உங்கள் கிராமத்தை உள்ளிடவும்',
   'ui.villageExample': 'உதாரணம்: ஹுப்பள்ளி, ராணிபென்னூர், கர்னால்',
   'ui.typeVillagePlaceholder': 'உங்கள் கிராமப் பெயரை உள்ளிடுங்கள்…',
+  'role.farmer': 'விவசாயி',
+  'role.owner': 'இயந்திர உரிமையாளர்',
 }

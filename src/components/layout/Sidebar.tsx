@@ -39,7 +39,7 @@ export function Sidebar() {
   const homePath = isOwner ? '/owner' : '/'
   const bookingsPath = isOwner ? '/owner/bookings' : session ? '/farmer/bookings' : '/login'
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
-  const { unreadCount } = useNotifications(profile?.id)
+  const { unreadCount } = useNotifications(profile?.id, 'sidebar')
 
   // Notification count: actual unread or default 2 matching mockup
   const displayNotifBadge = unreadCount > 0 ? unreadCount : 2
