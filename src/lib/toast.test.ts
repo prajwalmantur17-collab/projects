@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { toast } from './toast'
+import { toast, type ToastItem } from './toast'
 
 describe('toast notification manager', () => {
   it('adds and dismisses notifications', () => {
-    let captured: any[] = []
+    let captured: ToastItem[] = []
     const unsubscribe = toast.subscribe((items) => {
       captured = items
     })

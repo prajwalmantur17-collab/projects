@@ -1,9 +1,14 @@
 /**
- * Listening and speaking helpers for the step-by-step voice assistant.
- * Works best in Google Chrome. Listening sends audio to the browser vendor's
- * speech service, so it needs an internet connection.
+ * Listening and speaking helpers for the step-by-step voice assistant
+ * and multilingual machine speech using ElevenLabs Text-to-Speech API
+ * with browser Web Speech API as fallback.
  */
 import type { Language } from '../types'
+import {
+  fetchElevenLabsAudio,
+  playElevenLabsSpeech,
+  stopElevenLabsAudio,
+} from './elevenLabsSpeech'
 
 export const SPEECH_LOCALES: Record<Language, string> = {
   en: 'en-IN',
@@ -51,6 +56,10 @@ function getRecognitionCtor(): RecognitionCtor | null {
 }
 
 export function isListeningSupported(): boolean {
+  return getRecognitionCtor() !== null
+}
+
+export function isSpeechSupported(): boolean {
   return getRecognitionCtor() !== null
 }
 
@@ -166,62 +175,320 @@ export function listenOnce(language: Language, onInterim?: (text: string) => voi
   }
 }
 
-// ---------------------------------------------------------------- speaking
+export interface VoiceListenerOptions {
+  language: Language
+  onResult: (transcript: string) => void
+  onError?: (error: string) => void
+  onEnd?: () => void
+  continuous?: boolean
+}
+
+export function startVoiceListening(options: VoiceListenerOptions): () => void {
+  const Ctor = getRecognitionCtor()
+  if (!Ctor) {
+    options.onError?.('speech-not-supported')
+    return () => {}
+  }
+
+  const rec = new Ctor()
+  rec.lang = SPEECH_LOCALES[options.language]
+  rec.continuous = Boolean(options.continuous)
+  rec.interimResults = false
+  rec.maxAlternatives = 1
+
+  rec.onresult = (event) => {
+    const lastResult = event.results[event.results.length - 1]
+    if (!lastResult || !lastResult.length) return
+    const text = lastResult[0].transcript?.trim()
+    if (text) {
+      options.onResult(text)
+    }
+  }
+
+  rec.onerror = (e) => {
+    options.onError?.(e.error)
+  }
+
+  rec.onend = () => {
+    options.onEnd?.()
+  }
+
+  try {
+    rec.start()
+  } catch (e) {
+    console.warn('SpeechRecognition failed to start:', e)
+    return () => {}
+  }
+
+  return () => {
+    try {
+      rec.onresult = null
+      rec.onerror = null
+      rec.onend = null
+      rec.abort()
+    } catch {
+      // Ignore abort errors
+    }
+  }
+}
+
+// ---------------------------------------------------------------- speaking (ElevenLabs & Web Speech API)
 
 function engine(): SpeechSynthesis | null {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null
   return window.speechSynthesis
 }
 
-function sameLocale(voiceLang: string, locale: string, exact: boolean): boolean {
-  const a = voiceLang.toLowerCase().replace('_', '-')
-  const b = locale.toLowerCase()
-  return exact ? a === b : a.split('-')[0] === b.split('-')[0]
-}
-
-function pickVoice(locale: string): SpeechSynthesisVoice | null {
+/**
+ * Returns available voices asynchronously, listening to the voiceschanged event
+ * if voices have not loaded yet (common in Chrome, Safari, and mobile Android browsers).
+ */
+export function getAvailableVoices(): Promise<SpeechSynthesisVoice[]> {
   const synth = engine()
-  if (!synth) return null
-  const voices = synth.getVoices()
-  return (
-    voices.find((voice) => sameLocale(voice.lang, locale, true)) ??
-    voices.find((voice) => sameLocale(voice.lang, locale, false)) ??
-    null
-  )
+  if (!synth) return Promise.resolve([])
+
+  const current = synth.getVoices()
+  if (current && current.length > 0) {
+    return Promise.resolve(current)
+  }
+
+  const activeSynth: SpeechSynthesis = synth
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => {
+      activeSynth.removeEventListener('voiceschanged', onVoicesChanged)
+      resolve(activeSynth.getVoices())
+    }, 450)
+
+    function onVoicesChanged() {
+      window.clearTimeout(timer)
+      activeSynth.removeEventListener('voiceschanged', onVoicesChanged)
+      resolve(activeSynth.getVoices())
+    }
+
+    activeSynth.addEventListener('voiceschanged', onVoicesChanged)
+  })
 }
 
-/** False when the device has no voice for this language (text is still shown on screen). */
-export function hasVoiceFor(language: Language): boolean {
-  return pickVoice(SPEECH_LOCALES[language]) !== null
+/**
+ * Selects the best matching browser voice for the selected language.
+ * Prefers Indian English for English, and strictly matches Kannada, Hindi, and Tamil voices.
+ * Crucially returns null for non-English languages if no compatible voice is installed,
+ * ensuring the browser NEVER speaks Kannada or Hindi using an English voice.
+ */
+export function pickBestVoice(voices: SpeechSynthesisVoice[], language: Language): SpeechSynthesisVoice | null {
+  const targetLocale = SPEECH_LOCALES[language].toLowerCase()
+
+  // 1. Exact locale match (e.g. en-in, kn-in, hi-in, ta-in)
+  const exact = voices.find((v) => v.lang.toLowerCase() === targetLocale)
+  if (exact) return exact
+
+  // 2. Language prefix match (e.g. kn, hi, ta)
+  const langPrefix = language.toLowerCase()
+  const langMatch = voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix))
+  if (langMatch) return langMatch
+
+  // 3. Name-based heuristics for localized voices
+  if (language === 'kn') {
+    return voices.find((v) => v.name.includes('Kannada') || v.name.includes('ಕನ್ನಡ')) ?? null
+  }
+  if (language === 'hi') {
+    return (
+      voices.find(
+        (v) =>
+          v.name.includes('Hindi') ||
+          v.name.includes('हिन्दी') ||
+          v.name.includes('Kalpana') ||
+          v.name.includes('Hemant'),
+      ) ?? null
+    )
+  }
+  if (language === 'ta') {
+    return voices.find((v) => v.name.includes('Tamil') || v.name.includes('தமிழ்') || v.name.includes('Valluvar')) ?? null
+  }
+
+  // 4. For English: prefer Indian English voice names, otherwise any English voice
+  if (language === 'en') {
+    const indianEnglish = voices.find(
+      (v) =>
+        v.lang.toLowerCase().includes('en-in') ||
+        v.name.toLowerCase().includes('india') ||
+        v.name.includes('Ravi') ||
+        v.name.includes('Heera') ||
+        v.name.includes('Neerja') ||
+        v.name.includes('Prabhat'),
+    )
+    if (indianEnglish) return indianEnglish
+
+    const generalEnglish = voices.find((v) => v.lang.toLowerCase().startsWith('en'))
+    if (generalEnglish) return generalEnglish
+  }
+
+  // Strictly return null for non-English languages if no compatible voice exists.
+  return null
 }
 
-export function cancelSpeech() {
+/**
+ * Localized, farmer-friendly message shown when a device lacks TTS voice data for a language.
+ */
+export function getMissingVoiceMessage(language: Language): string {
+  switch (language) {
+    case 'kn':
+      return 'ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿ ಕನ್ನಡ ಧ್ವನಿ (TTS) ಲಭ್ಯವಿಲ್ಲ. ಸಾಧನದ ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಕನ್ನಡ ಧ್ವನಿಯನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ ಅಥವಾ Google Chrome ಬಳಸಿ.'
+    case 'hi':
+      return 'आपके डिवाइस पर हिंदी आवाज (TTS) उपलब्ध नहीं है। कृपया डिवाइस सेटिंग में हिंदी आवाज सक्षम करें या Google Chrome का उपयोग करें।'
+    case 'ta':
+      return 'உங்கள் சாதனத்தில் தமிழ் குரல் (TTS) கிடைக்கவில்லை. சாதன அமைப்புகளில் தமிழ் குரலைச் சேர்க்கவும் அல்லது Google Chrome ஐப் பயன்படுத்தவும்.'
+    case 'en':
+    default:
+      return 'No English voice found on this device. Please check your browser speech settings.'
+  }
+}
+
+/** Checks whether a matching voice is currently available on the device for this language. */
+export async function hasVoiceFor(language: Language): Promise<boolean> {
+  const voices = await getAvailableVoices()
+  return pickBestVoice(voices, language) !== null
+}
+
+/** Immediately cancels any active browser speech synthesis or ElevenLabs playback. */
+export function cancelSpeech(): void {
+  stopElevenLabsAudio()
   engine()?.cancel()
 }
 
-/** Speaks text aloud. Always resolves, even if the device cannot speak. */
-export function speak(text: string, language: Language): Promise<void> {
-  const synth = engine()
-  if (!synth || !text.trim()) return Promise.resolve()
-  return new Promise<void>((resolve) => {
-    synth.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = SPEECH_LOCALES[language]
-    utterance.rate = 0.9
-    const voice = pickVoice(SPEECH_LOCALES[language])
-    if (voice) utterance.voice = voice
+export type SpeakStatus =
+  | { success: true; provider?: 'elevenlabs' | 'browser' }
+  | { success: false; reason: 'unsupported' | 'no-voice' | 'error' | 'cancelled'; message?: string }
 
+export interface SpeakCallbacks {
+  onGenerating?: () => void
+  onStart?: () => void
+  onEnd?: () => void
+  onError?: (message: string) => void
+}
+
+/**
+ * Fallback Web Speech API synthesis using browser's built-in window.speechSynthesis.
+ */
+export async function speakViaWebSpeech(
+  cleanText: string,
+  language: Language,
+  callbacks?: SpeakCallbacks,
+): Promise<SpeakStatus> {
+  const synth = engine()
+  if (!synth || typeof window.SpeechSynthesisUtterance === 'undefined') {
+    const message = 'Your browser does not support speech synthesis. Please use Google Chrome or Microsoft Edge.'
+    callbacks?.onError?.(message)
+    return { success: false, reason: 'unsupported', message }
+  }
+
+  synth.cancel()
+
+  const voices = await getAvailableVoices()
+  const voice = pickBestVoice(voices, language)
+
+  // Strict check: if Kannada, Hindi, or Tamil has no voice on this device, do not speak gibberish
+  if (!voice && language !== 'en') {
+    const message = getMissingVoiceMessage(language)
+    callbacks?.onError?.(message)
+    return { success: false, reason: 'no-voice', message }
+  }
+
+  return new Promise<SpeakStatus>((resolve) => {
     let finished = false
-    const done = () => {
+    const finish = (result: SpeakStatus) => {
       if (finished) return
       finished = true
-      window.clearTimeout(fallback)
-      resolve()
+      window.clearTimeout(safetyTimeout)
+      callbacks?.onEnd?.()
+      resolve(result)
     }
-    // Some browsers never fire "end"; do not let the conversation hang.
-    const fallback = window.setTimeout(done, Math.max(5000, text.length * 160))
-    utterance.onend = done
-    utterance.onerror = done
+
+    const utterance = new SpeechSynthesisUtterance(cleanText)
+    utterance.lang = SPEECH_LOCALES[language]
+    utterance.rate = 0.92 // Natural, understandable cadence for farmers
+    utterance.pitch = 1.0
+
+    if (voice) {
+      utterance.voice = voice
+    }
+
+    utterance.onstart = () => {
+      callbacks?.onStart?.()
+    }
+
+    utterance.onend = () => {
+      finish({ success: true, provider: 'browser' })
+    }
+
+    utterance.onerror = (e) => {
+      if (e.error === 'canceled' || e.error === 'interrupted') {
+        finish({ success: false, reason: 'cancelled' })
+      } else {
+        console.warn('SpeechSynthesis error:', e)
+        finish({ success: false, reason: 'error', message: 'Speech playback failed.' })
+      }
+    }
+
+    // Safety timeout prevents UI hanging if browser fails to trigger onend
+    const safetyTimeout = window.setTimeout(
+      () => finish({ success: true, provider: 'browser' }),
+      Math.max(6000, cleanText.length * 150),
+    )
+
     synth.speak(utterance)
   })
+}
+
+/**
+ * Speaks translated text aloud in the user's active language.
+ * Primary: Uses ElevenLabs realistic AI speech via serverless API.
+ * Fallback: Automatically falls back to browser's built-in Web Speech API if ElevenLabs is
+ * unconfigured, rate-limited, offline, or if the language is unsupported by the ElevenLabs model.
+ */
+export async function speakAloudWithFeedback(
+  text: string,
+  language: Language,
+  callbacks?: SpeakCallbacks,
+  options?: { disableElevenLabs?: boolean },
+): Promise<SpeakStatus> {
+  const cleanText = text.trim()
+  if (!cleanText) {
+    return { success: true }
+  }
+
+  cancelSpeech()
+
+  // If ElevenLabs is enabled, attempt realistic voice generation first
+  if (!options?.disableElevenLabs) {
+    callbacks?.onGenerating?.()
+    const fetchResult = await fetchElevenLabsAudio(cleanText, language)
+
+    if (fetchResult.ok) {
+      const playResult = await playElevenLabsSpeech(fetchResult.audioUrl, {
+        onStart: callbacks?.onStart,
+        onEnd: callbacks?.onEnd,
+        onError: callbacks?.onError,
+      })
+
+      if (playResult.success) {
+        return { success: true, provider: 'elevenlabs' }
+      }
+    } else if (fetchResult.code === 'cancelled') {
+      return { success: false, reason: 'cancelled' }
+    } else {
+      // Log ElevenLabs fallback reason in development console
+      if (import.meta.env?.DEV) {
+        console.info(`[ElevenLabs] Falling back to Web Speech: ${fetchResult.message} (${fetchResult.code})`)
+      }
+    }
+  }
+
+  // Graceful fallback to browser's Web Speech API
+  return speakViaWebSpeech(cleanText, language, callbacks)
+}
+
+/** Simple speech helper used across the application. Always resolves cleanly. */
+export async function speak(text: string, language: Language): Promise<void> {
+  await speakAloudWithFeedback(text, language)
 }

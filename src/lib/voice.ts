@@ -171,36 +171,13 @@ export function parseSpokenQuery(transcript: string): VoiceQueryResult {
   }
 }
 
+import { cancelSpeech, speakAloudWithFeedback } from './speech'
+
 // Speak aloud via Web Speech Synthesis (TTS)
-export function speakAloud(text: string, lang: Language): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!isSpeechSynthesisSupported()) {
-      resolve()
-      return
-    }
-
-    try {
-      window.speechSynthesis.cancel() // Stop any previous speech
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = getVoiceLocale(lang)
-      utterance.rate = 0.95 // Slightly slower for clarity
-      utterance.pitch = 1.0
-
-      utterance.onend = () => resolve()
-      utterance.onerror = (e) => {
-        console.warn('SpeechSynthesis error:', e)
-        resolve()
-      }
-
-      window.speechSynthesis.speak(utterance)
-    } catch (err) {
-      reject(err)
-    }
-  })
+export async function speakAloud(text: string, lang: Language): Promise<void> {
+  await speakAloudWithFeedback(text, lang)
 }
 
-export function stopSpeaking() {
-  if (isSpeechSynthesisSupported()) {
-    window.speechSynthesis.cancel()
-  }
+export function stopSpeaking(): void {
+  cancelSpeech()
 }

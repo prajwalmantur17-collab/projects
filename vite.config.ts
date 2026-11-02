@@ -1,9 +1,33 @@
 import { defineConfig } from 'vitest/config'
+import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import speechHandler from './api/speech.ts'
+
+function devApiSpeechPlugin(): Plugin {
+  return {
+    name: 'dev-api-speech',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && (req.url === '/api/speech' || req.url.startsWith('/api/speech?'))) {
+          try {
+            await speechHandler(req, res)
+          } catch (err) {
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'internal_dev_error', message: String(err) }))
+            }
+          }
+        } else {
+          next()
+        }
+      })
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), devApiSpeechPlugin()],
   server: {
     port: 5173,
     strictPort: true,
