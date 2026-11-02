@@ -63,8 +63,8 @@ export function deduplicateMachines(list: MachineCard[]): MachineCard[] {
   for (const raw of list) {
     if (!raw || typeof raw !== 'object' || !raw.id) continue
 
-    // Strip out any legacy fake mock machines or deleted machines
-    if (FAKE_IDS.has(raw.id) || isMachineDeleted(raw.id)) continue
+    // Strip out any legacy fake mock machines or deleted/inactive machines
+    if (FAKE_IDS.has(raw.id) || isMachineDeleted(raw.id) || raw.is_active === false) continue
 
     // 1. Deduplicate by unique ID
     if (seenIds.has(raw.id)) continue
@@ -102,7 +102,7 @@ export function deduplicateMachines(list: MachineCard[]): MachineCard[] {
         raw.pricing_unit === 'per_hour' || raw.pricing_unit === 'per_day'
           ? raw.pricing_unit
           : 'per_acre',
-      is_active: raw.is_active !== false,
+      is_active: Boolean(raw.is_active),
       owner_name: raw.owner_name ? String(raw.owner_name) : 'Machine Owner',
     }
 

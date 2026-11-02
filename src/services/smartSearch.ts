@@ -217,6 +217,7 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
       const { data, error } = await supabase
         .from('machine_cards')
         .select('*')
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
       if (!error && Array.isArray(data)) {

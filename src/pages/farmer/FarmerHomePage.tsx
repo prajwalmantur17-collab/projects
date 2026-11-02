@@ -255,7 +255,7 @@ export function FarmerHomePage() {
         machineType: machineType || undefined,
         limit: 48,
       })
-      setResults(found)
+      setResults((found || []).filter((m) => m && m.is_active !== false))
       setSnapshot({
         village: cleanedVillage || cleanedDistrict || t('ui.nearby'),
         crop: activeCrop,

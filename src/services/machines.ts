@@ -105,7 +105,7 @@ export async function searchMachines(params: {
         })
 
         if (!error && Array.isArray(primaryData)) {
-          let list = deduplicateMachines(primaryData as MachineCard[])
+          let list = deduplicateMachines(primaryData as MachineCard[]).filter((m) => m && m.is_active !== false)
 
           // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
           if (cleanVillage && !cleanDistrict && list.length > 0) {
@@ -121,7 +121,7 @@ export async function searchMachines(params: {
                 p_offset: 0,
               })
               if (!distErr && Array.isArray(districtData)) {
-                list = deduplicateMachines([...list, ...(districtData as MachineCard[])])
+                list = deduplicateMachines([...list, ...(districtData as MachineCard[])]).filter((m) => m && m.is_active !== false)
               }
             }
           }
@@ -141,7 +141,7 @@ export async function searchMachines(params: {
 
   // Filter by crop & machine type first
   const baseCandidates = all.filter((m) => {
-    if (!m || !m.is_active) return false
+    if (!m || !m.is_active || isMachineDeleted(m.id)) return false
     const crops = Array.isArray(m.crops) ? m.crops : []
     const mType = (m.machine_type || '').toLowerCase()
 
@@ -506,22 +506,35 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
     void deleteMachineImage(imagePath, effectiveOwner).catch(() => undefined)
   }
 
-  // 3. Remove from Supabase
+  // 3. Immediately deactivate in Supabase so it vanishes from all searches
   if (supabase) {
     try {
-      // Clean up child location & blackout records
-      await supabase.from('machine_locations').delete().eq('machine_id', machineId)
-      await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
-
-      await supabase.from('machines').delete().eq('id', machineId)
-
-      // Also mark is_active and is_available as false
+      // Step A: First deactivate machine (allowed by machines_update_own policy)
       await supabase
         .from('machines')
         .update({ is_active: false, is_available: false })
         .eq('id', machineId)
     } catch (caught) {
-      logError('machine.delete', caught)
+      logError('machine.delete.deactivate', caught)
+    }
+
+    try {
+      // Step B: Blank out locations so view never matches any village
+      await supabase
+        .from('machine_locations')
+        .update({ village: 'deleted', district: 'deleted' })
+        .eq('machine_id', machineId)
+    } catch {
+      // ignore
+    }
+
+    try {
+      // Step C: Attempt hard deletion of locations and machine if no foreign key constraints
+      await supabase.from('machine_locations').delete().eq('machine_id', machineId)
+      await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
+      await supabase.from('machines').delete().eq('id', machineId)
+    } catch {
+      // If historical bookings prevent hard delete, the machine is safely deactivated with is_active = false
     }
   }
 }
