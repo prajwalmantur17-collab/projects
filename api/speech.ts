@@ -1,9 +1,80 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import {
-  MAX_TEXT_LENGTH,
-  resolveSpeechConfig,
-  type SupportedLanguage,
-} from './speechConfig.ts'
+
+export type SupportedLanguage = 'en' | 'hi' | 'kn' | 'ta'
+
+export const MAX_TEXT_LENGTH = 500
+
+export const DEFAULT_MODEL_ID = 'eleven_multilingual_v2'
+
+/**
+ * Known model language support matrix.
+ * Eleven Multilingual v2 supports 29 languages including Hindi (hi), Tamil (ta), and English (en),
+ * but does NOT support Kannada (kn).
+ * Kannada requires newer ElevenLabs models such as Eleven v4 (eleven_v4).
+ */
+export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
+  eleven_multilingual_v2: ['en', 'hi', 'ta'],
+  eleven_turbo_v2_5: ['en', 'hi', 'ta'],
+  eleven_flash_v2_5: ['en', 'hi', 'ta'],
+  eleven_v4: ['en', 'hi', 'kn', 'ta'],
+}
+
+/**
+ * Standard premade ElevenLabs voices:
+ * - Adam (pNInz6obpgDQGcFmaJgB): Free tier compatible multilingual voice (en, hi, ta)
+ */
+export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
+  en: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  hi: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  ta: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  kn: '',                     // Requires custom voice or eleven_v4 compatible voice
+}
+
+export interface SpeechResolution {
+  apiKey: string | null
+  modelId: string
+  voiceId: string
+  isModelLanguageSupported: boolean
+  language: SupportedLanguage
+}
+
+/**
+ * Resolves the active model ID, voice ID, and language capability from environment variables
+ * and defaults.
+ */
+export function resolveSpeechConfig(language: SupportedLanguage): SpeechResolution {
+  const apiKey = process.env.ELEVENLABS_API_KEY?.trim() || null
+  const modelId = process.env.ELEVENLABS_MODEL_ID?.trim() || DEFAULT_MODEL_ID
+
+  let voiceId = ''
+  switch (language) {
+    case 'en':
+      voiceId = process.env.ELEVENLABS_VOICE_EN?.trim() || DEFAULT_VOICES.en
+      break
+    case 'hi':
+      voiceId = process.env.ELEVENLABS_VOICE_HI?.trim() || DEFAULT_VOICES.hi
+      break
+    case 'ta':
+      voiceId = process.env.ELEVENLABS_VOICE_TA?.trim() || DEFAULT_VOICES.ta
+      break
+    case 'kn':
+      voiceId = process.env.ELEVENLABS_VOICE_KN?.trim() || DEFAULT_VOICES.kn
+      break
+  }
+
+  const supportedLanguages = MODEL_SUPPORTED_LANGUAGES[modelId]
+  const isModelLanguageSupported = supportedLanguages
+    ? supportedLanguages.includes(language)
+    : language !== 'kn'
+
+  return {
+    apiKey,
+    modelId,
+    voiceId,
+    isModelLanguageSupported,
+    language,
+  }
+}
 
 interface SpeechRequestBody {
   text?: unknown
@@ -30,16 +101,40 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
-async function readBody(req: IncomingMessage & { body?: unknown }): Promise<SpeechRequestBody | null> {
-  if (req.body && typeof req.body === 'object') {
+async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Promise<SpeechRequestBody | null> {
+  // 1. If framework / Vercel already parsed the JSON body to an object
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
     return req.body as SpeechRequestBody
   }
 
+  // 2. If req.body is a string
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body) as SpeechRequestBody
+    } catch {
+      return null
+    }
+  }
+
+  // 3. If req.body is a Buffer
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      return JSON.parse(req.body.toString('utf8')) as SpeechRequestBody
+    } catch {
+      return null
+    }
+  }
+
+  // 4. If stream has already ended and no body was provided
+  if (req.readableEnded) {
+    return null
+  }
+
+  // 5. Read incoming HTTP data stream
   return new Promise((resolve) => {
     let raw = ''
     req.on('data', (chunk) => {
       raw += chunk
-      // Guard against malicious huge payloads
       if (raw.length > 50_000) {
         req.destroy()
         resolve(null)
@@ -55,6 +150,11 @@ async function readBody(req: IncomingMessage & { body?: unknown }): Promise<Spee
       }
     })
     req.on('error', () => resolve(null))
+
+    // Safety timeout in case stream never emits data or end
+    setTimeout(() => {
+      if (!raw) resolve(null)
+    }, 2000)
   })
 }
 
@@ -67,7 +167,7 @@ function sendJson(res: ServerResponse, status: number, data: Record<string, unkn
 }
 
 /**
- * Vercel Serverless Function / Node HTTP handler for ElevenLabs Text-to-Speech.
+ * Vercel Serverless Function handler for ElevenLabs Text-to-Speech.
  */
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // CORS headers
@@ -100,7 +200,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return
   }
 
-  const body = await readBody(req)
+  const body = await parseRequestBody(req)
   if (!body) {
     sendJson(res, 400, { error: 'invalid_json', message: 'Request body must be valid JSON.' })
     return
