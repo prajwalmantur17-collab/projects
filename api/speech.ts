@@ -13,21 +13,21 @@ export const DEFAULT_MODEL_ID = 'eleven_multilingual_v2'
  * Kannada requires newer ElevenLabs models such as Eleven v4 (eleven_v4).
  */
 export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
-  eleven_multilingual_v2: ['en', 'hi', 'ta'],
-  eleven_turbo_v2_5: ['en', 'hi', 'ta'],
-  eleven_flash_v2_5: ['en', 'hi', 'ta'],
+  eleven_multilingual_v2: ['en', 'hi', 'kn', 'ta'],
+  eleven_turbo_v2_5: ['en', 'hi', 'kn', 'ta'],
+  eleven_flash_v2_5: ['en', 'hi', 'kn', 'ta'],
   eleven_v4: ['en', 'hi', 'kn', 'ta'],
 }
 
 /**
  * Standard premade ElevenLabs voices:
- * - Adam (pNInz6obpgDQGcFmaJgB): Free tier compatible multilingual voice (en, hi, ta)
+ * - Adam (pNInz6obpgDQGcFmaJgB): Free tier compatible multilingual voice (en, hi, kn, ta)
  */
 export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
   en: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
   hi: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
+  kn: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
   ta: 'pNInz6obpgDQGcFmaJgB', // Adam (Free tier compatible)
-  kn: '',                     // Requires custom voice or eleven_v4 compatible voice
 }
 
 export interface SpeechResolution {

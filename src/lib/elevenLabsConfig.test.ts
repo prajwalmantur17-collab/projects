@@ -32,24 +32,19 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(DEFAULT_MODEL_ID).toBe('eleven_multilingual_v2')
   })
 
-  it('verifies eleven_multilingual_v2 supports English, Hindi, and Tamil but NOT Kannada', () => {
+  it('verifies eleven_multilingual_v2 supports English, Hindi, Kannada, and Tamil', () => {
     const v2Languages = MODEL_SUPPORTED_LANGUAGES.eleven_multilingual_v2
     expect(v2Languages).toContain('en')
     expect(v2Languages).toContain('hi')
+    expect(v2Languages).toContain('kn')
     expect(v2Languages).toContain('ta')
-    expect(v2Languages).not.toContain('kn')
   })
 
-  it('verifies eleven_v4 supports Kannada', () => {
-    const v4Languages = MODEL_SUPPORTED_LANGUAGES.eleven_v4
-    expect(v4Languages).toContain('kn')
-  })
-
-  it('resolves correct default voices for English, Hindi, and Tamil', () => {
+  it('resolves correct default voices for English, Hindi, Kannada, and Tamil', () => {
     expect(DEFAULT_VOICES.en).toBe('pNInz6obpgDQGcFmaJgB') // Adam (Free tier compatible)
     expect(DEFAULT_VOICES.hi).toBe('pNInz6obpgDQGcFmaJgB') // Adam
+    expect(DEFAULT_VOICES.kn).toBe('pNInz6obpgDQGcFmaJgB') // Adam
     expect(DEFAULT_VOICES.ta).toBe('pNInz6obpgDQGcFmaJgB') // Adam
-    expect(DEFAULT_VOICES.kn).toBe('')
   })
 
   it('detects missing API key when ELEVENLABS_API_KEY is unset', () => {
@@ -57,17 +52,11 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(config.apiKey).toBeNull()
   })
 
-  it('correctly reports Kannada as unsupported when using default model', () => {
-    const config = resolveSpeechConfig('kn')
-    expect(config.isModelLanguageSupported).toBe(false)
-  })
-
-  it('correctly reports Hindi and English as supported on default model', () => {
-    const enConfig = resolveSpeechConfig('en')
-    expect(enConfig.isModelLanguageSupported).toBe(true)
-
-    const hiConfig = resolveSpeechConfig('hi')
-    expect(hiConfig.isModelLanguageSupported).toBe(true)
+  it('correctly reports all languages as supported on default model', () => {
+    expect(resolveSpeechConfig('en').isModelLanguageSupported).toBe(true)
+    expect(resolveSpeechConfig('hi').isModelLanguageSupported).toBe(true)
+    expect(resolveSpeechConfig('kn').isModelLanguageSupported).toBe(true)
+    expect(resolveSpeechConfig('ta').isModelLanguageSupported).toBe(true)
   })
 
   it('respects model and voice environment variable overrides', () => {
