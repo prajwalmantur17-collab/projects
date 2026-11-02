@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Activity,
   ArrowRight,
@@ -27,7 +28,9 @@ import { normalizeWhitespace } from '../../lib/validation'
 import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
 import { useGeolocation } from '../../hooks/useGeolocation'
-import { searchMachines } from '../../services/machines'
+import { getMachineImageUrl, searchMachines } from '../../services/machines'
+import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/platformStats'
+import type { PlatformStats, LatestActivity } from '../../services/platformStats'
 import { getBusyMachines } from '../../services/workStatus'
 import { deduplicateMachines } from '../../services/store'
 import { updateProfile } from '../../services/profiles'
@@ -57,10 +60,46 @@ interface SearchSnapshot {
   acreage: string
 }
 
+function formatRelativeTime(isoString?: string | null): string {
+  if (!isoString) return ''
+  try {
+    const diffMs = Date.now() - new Date(isoString).getTime()
+    if (Number.isNaN(diffMs)) return ''
+    const diffSec = Math.max(0, Math.floor(diffMs / 1000))
+    if (diffSec < 60) return 'Just now'
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin}m ago`
+    const diffHours = Math.floor(diffMin / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    return new Date(isoString).toLocaleDateString()
+  } catch {
+    return ''
+  }
+}
+
 export function FarmerHomePage() {
   const { profile, refreshProfile } = useAuth()
   const { t, language } = useI18n()
   const geo = useGeolocation()
+
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null)
+  const [latestActivity, setLatestActivity] = useState<LatestActivity | null>(null)
+
+  useEffect(() => {
+    let active = true
+    void fetchPlatformStats().then((data) => {
+      if (active && data) setPlatformStats(data)
+    })
+    void fetchLatestMachineActivity().then((data) => {
+      if (active && data) setLatestActivity(data)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Always start completely blank
   const [village, setVillage] = useState('')
@@ -690,26 +729,30 @@ export function FarmerHomePage() {
         />
       </div>
 
-      {/* 3. Dashboard Metrics & Recent Activity Row Matching Reference Mockup */}
+      {/* 3. Dashboard Metrics & Recent Activity Row with Real Database Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. 2.5K+ Machines Available */}
+        {/* 1. Real Available Machines Count from Database */}
         <div className="rounded-3xl bg-[#eaf7ee] border border-[#cbe9d4] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
           <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-emerald-700 mb-3 shadow-2xs">
             <Tractor className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">2.5K+</div>
+            <div className="text-2xl font-black text-gray-900">
+              {platformStats !== null ? platformStats.available_machines : '—'}
+            </div>
             <div className="text-xs font-semibold text-gray-600">{t('ui.machinesAvailable')}</div>
           </div>
         </div>
 
-        {/* 2. 50K+ Happy Farmers */}
+        {/* 2. Real Registered Farmers / Users Count from Database */}
         <div className="rounded-3xl bg-[#eaf3fc] border border-[#cde2f8] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
           <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-blue-600 mb-3 shadow-2xs">
             <Users className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">50K+</div>
+            <div className="text-2xl font-black text-gray-900">
+              {platformStats !== null ? (platformStats.total_farmers || platformStats.total_users) : '—'}
+            </div>
             <div className="text-xs font-semibold text-gray-600">{t('ui.happyFarmers')}</div>
           </div>
         </div>
@@ -725,7 +768,7 @@ export function FarmerHomePage() {
           </div>
         </div>
 
-        {/* 4. Recent Activity Card */}
+        {/* 4. Recent Activity: Real Latest Machine from Database */}
         <div className="rounded-3xl bg-white/95 backdrop-blur-md border border-white/70 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
@@ -745,16 +788,50 @@ export function FarmerHomePage() {
             </button>
           </div>
 
-          <div className="mt-3 flex items-center gap-3">
-            <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
-              <Tractor className="size-6" />
+          {latestActivity ? (
+            <Link
+              to={`/farmer/machines/${latestActivity.id}`}
+              className="mt-3 flex items-center gap-3 group text-left cursor-pointer"
+            >
+              <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
+                {latestActivity.image_path ? (
+                  <img
+                    src={getMachineImageUrl(latestActivity.image_path) || undefined}
+                    alt={latestActivity.model || 'Machine'}
+                    className="size-full object-cover group-hover:scale-105 transition-transform"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <Tractor className="size-6" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">
+                  {latestActivity.village
+                    ? `${t('ui.newMachineAdded')} · ${latestActivity.village}`
+                    : t('ui.newMachineAdded')}
+                </p>
+                <p className="text-[11px] text-gray-500 truncate">
+                  {latestActivity.model || t(machineTypeLabelKey(latestActivity.machine_type))}
+                  {formatRelativeTime(latestActivity.created_at) ? ` • ${formatRelativeTime(latestActivity.created_at)}` : ''}
+                </p>
+              </div>
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
+            </Link>
+          ) : (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
+                <Tractor className="size-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-900 truncate">{t('ui.newMachineAdded')}</p>
+                <p className="text-[11px] text-gray-500 truncate">{t('ui.scanning')}</p>
+              </div>
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-gray-900 truncate">{t('ui.newMachineAdded')}</p>
-              <p className="text-[11px] text-gray-500 truncate">{t('ui.harvesterActivitySample')}</p>
-            </div>
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
-          </div>
+          )}
         </div>
       </div>
       {/* Mobile: List / Map Toggle when map is shown */}

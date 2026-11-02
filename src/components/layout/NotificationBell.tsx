@@ -62,15 +62,15 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative flex size-11 items-center justify-center rounded-xl text-ink-soft hover:bg-cream-200"
+        className="relative flex size-10 items-center justify-center rounded-full border border-white/60 bg-white/85 text-gray-700 shadow-xs backdrop-blur-md hover:bg-white transition-colors"
         aria-label={t('a11y.notifications')}
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <Bell className="size-5" aria-hidden="true" />
+        <Bell className="size-4.5" aria-hidden="true" />
         {unreadCount > 0 ? (
-          <span className="absolute right-2 top-1.5 flex min-w-4 items-center justify-center rounded-full bg-clay-600 px-1 text-[11px] font-bold leading-4 text-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <span className="absolute top-1.5 right-1.5 flex size-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white">
+            <span className="sr-only">{unreadCount}</span>
           </span>
         ) : null}
       </button>

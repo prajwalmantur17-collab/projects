@@ -17,7 +17,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
-import type { TranslationKey } from '../../i18n'
 import { LogoMark } from '../brand/Logo'
 import { Avatar } from '../ui/Avatar'
 import { avatarUrl } from '../../services/avatars'
@@ -41,8 +40,8 @@ export function Sidebar() {
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
   const { unreadCount } = useNotifications(profile?.id, 'sidebar')
 
-  // Notification count: actual unread or default 2 matching mockup
-  const displayNotifBadge = unreadCount > 0 ? unreadCount : 2
+  // Real unread notification count directly from database; hide badge when 0
+  const displayNotifBadge = unreadCount > 0 ? unreadCount : undefined
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -330,10 +329,10 @@ export function Sidebar() {
                   }`}
                 >
                   <p className="truncate text-xs font-bold text-white">
-                    {profile.full_name || 'Prajwal Mantur'}
+                    {profile.full_name || t('nav.profile')}
                   </p>
                   <p className="truncate text-[11px] font-medium text-[#8BCB73] capitalize">
-                    {profile.role ? t(`role.${profile.role}` as TranslationKey) : 'Farmer'}
+                    {profile.role === 'owner' ? t('role.owner') : t('role.farmer')}
                   </p>
                 </div>
 
