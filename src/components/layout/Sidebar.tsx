@@ -2,17 +2,21 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
+  CalendarClock,
   CalendarDays,
   ChevronDown,
   HelpCircle,
   House,
+  Inbox,
   LogIn,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  PlusCircle,
   Search,
   Settings,
   Sprout,
+  Tractor,
   User,
 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -34,9 +38,8 @@ export function Sidebar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
-  const isOwner = profile?.role === 'owner'
+  const isOwner = profile?.role === 'owner' || location.pathname.startsWith('/owner')
   const homePath = isOwner ? '/owner' : '/'
-  const bookingsPath = isOwner ? '/owner/bookings' : session ? '/farmer/bookings' : '/login'
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
   const { unreadCount } = useNotifications(profile?.id, 'sidebar')
 
@@ -93,14 +96,94 @@ export function Sidebar() {
     navigate('/')
   }
 
-  // 8 Main Navigation Items matching mockup
-  const navItems = [
+  // 1. Owner Navigation (for machine/harvester owners)
+  const ownerNavItems = [
+    {
+      id: 'owner-home',
+      label: t('nav.home'),
+      to: '/owner',
+      icon: House,
+      isActive: location.pathname === '/owner',
+    },
+    {
+      id: 'owner-requests',
+      label: t('nav.requests'),
+      to: '/owner/bookings',
+      icon: Inbox,
+      badge: pendingRequests > 0 ? pendingRequests : undefined,
+      badgeColor: 'bg-amber-500 text-white font-bold',
+      isActive: location.pathname === '/owner/bookings',
+    },
+    {
+      id: 'owner-machines',
+      label: t('nav.machines'),
+      to: '/owner/machines',
+      icon: Tractor,
+      isActive: location.pathname === '/owner/machines',
+    },
+    {
+      id: 'owner-add-machine',
+      label: t('nav.addMachine'),
+      to: '/owner/machines/new',
+      icon: PlusCircle,
+      isActive: location.pathname === '/owner/machines/new',
+    },
+    {
+      id: 'owner-availability',
+      label: t('owner.manageAvailability'),
+      to: '/owner/machines',
+      icon: CalendarClock,
+      isActive: location.pathname.includes('/availability'),
+    },
+    {
+      id: 'owner-profile',
+      label: t('nav.profile'),
+      to: session ? '/settings' : '/login',
+      icon: User,
+      isActive: location.pathname === '/settings' || location.pathname === '/profile',
+    },
+    {
+      id: 'owner-notifications',
+      label: t('nav.notifications'),
+      to: '/owner/bookings',
+      icon: Bell,
+      badge: displayNotifBadge,
+      badgeColor: 'bg-red-500 text-white font-bold',
+      onClick: () => {
+        handleNavClick()
+        navigate('/owner/bookings')
+      },
+      isActive: false,
+    },
+    {
+      id: 'owner-settings',
+      label: t('nav.settings'),
+      to: session ? '/settings' : '/login',
+      icon: Settings,
+      isActive: location.pathname === '/settings',
+    },
+    {
+      id: 'owner-help',
+      label: t('ui.helpSupport'),
+      to: '#help',
+      icon: HelpCircle,
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault()
+        handleNavClick()
+        setHelpModalOpen(true)
+      },
+      isActive: false,
+    },
+  ]
+
+  // 2. Farmer Navigation (for farmers searching & renting machines)
+  const farmerNavItems = [
     {
       id: 'home',
       label: t('nav.home'),
-      to: homePath,
+      to: '/',
       icon: House,
-      isActive: location.pathname === '/' || location.pathname === '/farmer' || location.pathname === '/owner',
+      isActive: location.pathname === '/' || location.pathname === '/farmer',
     },
     {
       id: 'find',
@@ -113,9 +196,8 @@ export function Sidebar() {
     {
       id: 'bookings',
       label: t('nav.bookings'),
-      to: bookingsPath,
+      to: session ? '/farmer/bookings' : '/login',
       icon: CalendarDays,
-      badge: pendingRequests > 0 ? pendingRequests : undefined,
       isActive: location.pathname.includes('/bookings'),
     },
     {
@@ -136,13 +218,13 @@ export function Sidebar() {
     {
       id: 'notifications',
       label: t('nav.notifications'),
-      to: bookingsPath,
+      to: '/farmer/bookings',
       icon: Bell,
       badge: displayNotifBadge,
-      badgeColor: 'bg-red-500 text-white',
+      badgeColor: 'bg-red-500 text-white font-bold',
       onClick: () => {
         handleNavClick()
-        navigate(bookingsPath)
+        navigate('/farmer/bookings')
       },
       isActive: false,
     },
@@ -166,6 +248,8 @@ export function Sidebar() {
       isActive: location.pathname === '/settings',
     },
   ]
+
+  const navItems = isOwner ? ownerNavItems : farmerNavItems
 
   return (
     <>
@@ -247,8 +331,8 @@ export function Sidebar() {
                   onClick={item.onClick ? item.onClick : () => handleNavClick()}
                   className={`flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
                     isItemActive
-                      ? 'bg-[#1e4829] text-white font-bold shadow-inner'
-                      : 'text-[#a3bfa3] hover:bg-[#14331e] hover:text-white'
+                      ? 'bg-[#294C32] text-white font-bold shadow-inner'
+                      : 'text-[#a3bfa3] hover:bg-[#163823] hover:text-white'
                   } ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}
                   aria-current={isItemActive ? 'page' : undefined}
                 >
@@ -411,12 +495,25 @@ export function Sidebar() {
               collapsed ? 'lg:hidden' : 'block'
             }`}
           >
-            <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
-              <Sprout className="size-3.5" />
-            </div>
-            <p className="text-xs font-bold text-white leading-tight">{t('ui.growBetter')}</p>
-            <p className="text-xs font-bold text-white leading-tight">{t('ui.withHarvestRentals')}</p>
-            <p className="text-[10px] text-emerald-300/80 font-medium mt-1">{t('ui.rentGrowProsper')}</p>
+            {isOwner ? (
+              <>
+                <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
+                  <Tractor className="size-3.5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8BCB73]">Partner Dashboard</span>
+                </div>
+                <p className="text-xs font-bold text-white leading-tight">Harvest Partner</p>
+                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">Direct farmer bookings · 0% fee</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
+                  <Sprout className="size-3.5" />
+                </div>
+                <p className="text-xs font-bold text-white leading-tight">{t('ui.growBetter')}</p>
+                <p className="text-xs font-bold text-white leading-tight">{t('ui.withHarvestRentals')}</p>
+                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">{t('ui.rentGrowProsper')}</p>
+              </>
+            )}
           </div>
 
           {/* Quick Logout Button (anchored at bottom) */}

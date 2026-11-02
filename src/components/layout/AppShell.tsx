@@ -12,13 +12,22 @@ function AppShellContent() {
   const { t } = useI18n()
   const location = useLocation()
   const { collapsed } = useSidebar()
+  const isOwnerRoute = location.pathname.startsWith('/owner')
 
   return (
     <div
-      className="min-h-dvh bg-cover bg-center bg-fixed bg-no-repeat overflow-x-hidden relative text-ink selection:bg-leaf-600 selection:text-white"
-      style={{
-        backgroundImage: "url('/images/paddy-countryside.jpg')",
-      }}
+      className={`min-h-dvh overflow-x-hidden relative ${
+        isOwnerRoute
+          ? 'bg-[#F8F8F2] text-[#1C2B20] selection:bg-[#31572C] selection:text-white'
+          : 'bg-cover bg-center bg-fixed bg-no-repeat text-ink selection:bg-leaf-600 selection:text-white'
+      }`}
+      style={
+        isOwnerRoute
+          ? undefined
+          : {
+              backgroundImage: "url('/images/paddy-countryside.jpg')",
+            }
+      }
     >
       <a
         href="#main-content"
@@ -44,13 +53,19 @@ function AppShellContent() {
       >
         <AppHeader />
 
-        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 lg:px-8 pb-28 lg:pb-12">
+        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 lg:px-8 pb-28 lg:pb-12">
           <div key={location.pathname} className="hr-route">
             <Outlet />
           </div>
         </main>
 
-        <footer className="mt-auto border-t border-white/20 bg-black/40 backdrop-blur-md px-6 py-4 text-center text-xs text-white/90">
+        <footer
+          className={`mt-auto px-6 py-4 text-center text-xs backdrop-blur-md ${
+            isOwnerRoute
+              ? 'border-t border-[#E8E6DA] bg-white text-[#718073]'
+              : 'border-t border-white/20 bg-black/40 text-white/90'
+          }`}
+        >
           <p>
             {t('app.name')} · {t('app.footer')}
           </p>
