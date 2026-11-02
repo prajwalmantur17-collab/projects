@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Sprout,
   Tractor,
   Users,
@@ -29,6 +30,7 @@ import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { getMachineImageUrl, searchMachines } from '../../services/machines'
+import { executeSmartSearch } from '../../services/smartSearch'
 import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/platformStats'
 import type { PlatformStats, LatestActivity } from '../../services/platformStats'
 import { getBusyMachines } from '../../services/workStatus'
@@ -127,6 +129,7 @@ export function FarmerHomePage() {
     void getBusyMachines().then((map) => setBusyMachines(map))
   }, [])
   const [snapshot, setSnapshot] = useState<SearchSnapshot | null>(null)
+  const [smartSummary, setSmartSummary] = useState<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const searchCardRef = useRef<HTMLDivElement>(null)
   const [sortBy, setSortBy] = useState<'nearest' | 'cheapest'>('nearest')
@@ -285,18 +288,55 @@ export function FarmerHomePage() {
     }
   }
 
+  const handleSmartSearch = async (rawQuery: string) => {
+    setSearching(true)
+    setSearchError(null)
+    try {
+      const res = await executeSmartSearch(rawQuery)
+      setResults(res.machines)
+      setSmartSummary(res.summary)
+      if (res.detectedLocation) {
+        setVillage(res.detectedLocation)
+      }
+      if (res.detectedCrop) {
+        setCrop(res.detectedCrop)
+      }
+      setSnapshot({
+        village: res.detectedLocation || rawQuery,
+        crop: res.detectedCrop || '',
+        machineType: res.detectedMachineType || '',
+        acreage: '',
+      })
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 150)
+    } catch (caught) {
+      logError('farmer.smartSearch', caught)
+    } finally {
+      setSearching(false)
+    }
+  }
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const qParam = params.get('q')
       if (qParam) {
-        setVillage(qParam)
-        void runSearch(undefined, qParam)
+        void handleSmartSearch(qParam)
       } else if (params.get('section') === 'crops') {
         window.setTimeout(() => {
           document.getElementById('crop-selection-section')?.scrollIntoView({ behavior: 'smooth' })
         }, 200)
       }
+
+      const onSmartSearchEvent = (e: Event) => {
+        const detail = (e as CustomEvent<{ query: string }>).detail
+        if (detail?.query) {
+          void handleSmartSearch(detail.query)
+        }
+      }
+      window.addEventListener('harvest-smart-search', onSmartSearchEvent)
+      return () => window.removeEventListener('harvest-smart-search', onSmartSearchEvent)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -331,6 +371,7 @@ export function FarmerHomePage() {
   const clearSearch = () => {
     setResults(null)
     setSnapshot(null)
+    setSmartSummary(null)
     setSearchError(null)
     setVillage('')
     setDistrict('')
@@ -888,6 +929,30 @@ export function FarmerHomePage() {
       {/* Results / Scanner Section */}
       <section ref={resultsRef} aria-live="polite" className="space-y-5">
         {searchError ? <Alert variant="warning">{t(searchError)}</Alert> : null}
+
+        {smartSummary ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl bg-emerald-50 border border-emerald-200/90 p-4 text-emerald-950 shadow-xs">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-2xs">
+                <Sparkles className="size-5" />
+              </span>
+              <div>
+                <p className="text-base font-black text-emerald-950">{smartSummary}</p>
+                <p className="text-xs font-semibold text-emerald-700">Real verified machines available directly from database</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSmartSummary(null)
+                clearSearch()
+              }}
+              className="rounded-xl border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+            >
+              {t('farmer.clearSearch')}
+            </button>
+          </div>
+        ) : null}
 
         {searching || geocoding ? (
           /* Live Scanning State: Skeletons replacing radar block */
