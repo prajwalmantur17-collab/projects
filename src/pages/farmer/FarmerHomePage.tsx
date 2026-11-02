@@ -364,19 +364,15 @@ export function FarmerHomePage() {
       <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
         {/* Right-Side Indian Farmer Portrait with Professional Edge Blending */}
         <div
-          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[42%] md:w-[38%] lg:w-[38%] xl:w-[36%] select-none overflow-hidden"
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[44%] md:w-[40%] lg:w-[42%] xl:w-[40%] select-none overflow-hidden"
           aria-hidden="true"
         >
-          {/* Subtle multi-layer gradient blending overlay so the left edge naturally melts into the forest-green banner background */}
-          <div className="absolute inset-0 z-10 bg-gradient-to-r from-leaf-800 via-leaf-800/30 to-transparent md:via-transparent" />
-          <div className="absolute inset-0 z-10 bg-gradient-to-t from-leaf-900/50 via-transparent to-leaf-800/20" />
-
           <img
             src="/images/farmer-hero.webp"
             alt="South Indian farmer in traditional attire holding golden harvested rice stalks"
             loading="eager"
             decoding="async"
-            className="h-full w-full object-cover object-top opacity-35 transition-all duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100 [mask-image:linear-gradient(to_right,transparent_0%,black_35%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,black_35%)]"
+            className="farmer-hero-mask h-full w-full object-cover object-[center_top] opacity-35 transition-all duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100"
             onError={(e) => {
               const target = e.currentTarget
               if (!target.src.endsWith('/hero/farmer.webp')) {

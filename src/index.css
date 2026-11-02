@@ -178,6 +178,30 @@
   }
 }
 
+/* Seamless multi-stop gradient mask for hero banner farmer image */
+.farmer-hero-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.03) 12%,
+    rgba(0, 0, 0, 0.18) 26%,
+    rgba(0, 0, 0, 0.48) 44%,
+    rgba(0, 0, 0, 0.82) 64%,
+    rgba(0, 0, 0, 0.96) 80%,
+    #000000 90%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.03) 12%,
+    rgba(0, 0, 0, 0.18) 26%,
+    rgba(0, 0, 0, 0.48) 44%,
+    rgba(0, 0, 0, 0.82) 64%,
+    rgba(0, 0, 0, 0.96) 80%,
+    #000000 90%
+  );
+}
+
 /* Map markers (Leaflet divIcons) */
 .hr-marker {
   background: transparent;
