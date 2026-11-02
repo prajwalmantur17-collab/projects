@@ -155,6 +155,29 @@
   }
 }
 
+/* Hero Banner Farmer & Content entrance animation */
+@keyframes hero-farmer-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hero-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Map markers (Leaflet divIcons) */
 .hr-marker {
   background: transparent;

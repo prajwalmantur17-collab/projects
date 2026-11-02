@@ -360,26 +360,52 @@ export function FarmerHomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner with Clean Value Props */}
+      {/* Hero Banner with Clean Value Props & Blended Farmer Portrait */}
       <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-6 text-white shadow-soft sm:p-8">
-        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] lg:block" aria-hidden="true">
-          <img src="/hero/farmer.webp" alt="" className="h-full w-full object-cover object-top [mask-image:linear-gradient(to_right,transparent_0%,#000_40%)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-        </div>
-        <div className="relative z-10 max-w-3xl lg:max-w-[58%]">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-xs">
-            <Sparkles className="size-3.5" aria-hidden="true" />
-            Direct Farmer-to-Owner Rental Platform
-          </span>
+        {/* Right-Side Indian Farmer Portrait with Professional Edge Blending */}
+        <div
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[46%] sm:w-[42%] md:w-[38%] lg:w-[38%] xl:w-[36%] select-none overflow-hidden"
+          aria-hidden="true"
+        >
+          {/* Subtle multi-layer gradient blending overlay so the left edge naturally melts into the forest-green banner background */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-leaf-800 via-leaf-800/30 to-transparent md:via-transparent" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-leaf-900/50 via-transparent to-leaf-800/20" />
 
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+          <img
+            src="/images/farmer-hero.webp"
+            alt="South Indian farmer in traditional attire holding golden harvested rice stalks"
+            loading="eager"
+            decoding="async"
+            className="h-full w-full object-cover object-top opacity-35 transition-all duration-700 motion-safe:animate-[hero-farmer-in_850ms_cubic-bezier(0.16,1,0.3,1)_forwards] motion-reduce:transform-none motion-reduce:opacity-100 md:opacity-100 [mask-image:linear-gradient(to_right,transparent_0%,black_35%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,black_35%)]"
+            onError={(e) => {
+              const target = e.currentTarget
+              if (!target.src.endsWith('/hero/farmer.webp')) {
+                target.src = '/hero/farmer.webp'
+              } else {
+                target.style.display = 'none'
+              }
+            }}
+          />
+        </div>
+
+        {/* Left-Side Content with Subtle Staggered Entrance */}
+        <div className="relative z-10 max-w-full md:max-w-[62%] lg:max-w-[58%] xl:max-w-[60%]">
+          <div className="motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.16,1,0.3,1)_both]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-xs">
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              Direct Farmer-to-Owner Rental Platform
+            </span>
+          </div>
+
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white motion-safe:animate-[hero-fade-up_600ms_cubic-bezier(0.16,1,0.3,1)_60ms_both] sm:text-4xl">
             {t('farmer.greeting', { name })}
           </h1>
 
-          <p className="mt-2 text-base text-leaf-100/90 sm:text-lg">
+          <p className="mt-2 text-base text-leaf-100/90 motion-safe:animate-[hero-fade-up_650ms_cubic-bezier(0.16,1,0.3,1)_120ms_both] sm:text-lg">
             {t('farmer.subtitle')}
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-2 gap-3 motion-safe:animate-[hero-fade-up_700ms_cubic-bezier(0.16,1,0.3,1)_180ms_both] sm:grid-cols-3">
             <div className="flex items-center gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-xs">
               <CheckCircle2 className="size-5 shrink-0 text-leaf-300" />
               <span className="text-xs font-medium sm:text-sm">Verified Machines</span>
