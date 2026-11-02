@@ -267,6 +267,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(config.voiceId)}?output_format=mp3_44100_128`
 
+    const requestPayload: Record<string, unknown> = {
+      text: trimmedText,
+      model_id: config.modelId,
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+      },
+    }
+
+    // Force language_code for Tamil, Hindi, and English so ElevenLabs speaks in that language
+    // instead of defaulting to English phonetics
+    if (lang === 'ta' || lang === 'hi' || lang === 'en') {
+      requestPayload.language_code = lang
+    }
+
     const response = await fetch(elevenLabsUrl, {
       method: 'POST',
       headers: {
@@ -274,14 +289,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         'Content-Type': 'application/json',
         Accept: 'audio/mpeg',
       },
-      body: JSON.stringify({
-        text: trimmedText,
-        model_id: config.modelId,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-        },
-      }),
+      body: JSON.stringify(requestPayload),
       signal: controller.signal,
     })
 

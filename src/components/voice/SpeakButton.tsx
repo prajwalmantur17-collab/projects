@@ -69,11 +69,11 @@ export function SpeakButton({
     // Formulate natural language speech based on user's active language
     let speechText = ''
     if (language === 'kn') {
-      speechText = `${machine.model || typeLabel}. ${machine.district} ಜಿಲ್ಲೆಯ ${machine.village} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ. ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ. ಬೆಳೆಗಳು: ${cropNames}. ಮಾಲೀಕರು: ${machine.owner_name}. ಫೋನ್ ಸಂಖ್ಯೆ: ${machine.phone.split('').join(' ')}.`
+      speechText = `${typeLabel}: ${machine.model}. ${machine.district} ಜಿಲ್ಲೆಯ ${machine.village} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ. ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ. ಬೆಳೆಗಳು: ${cropNames}. ಮಾಲೀಕರು: ${machine.owner_name}. ಫೋನ್ ಸಂಖ್ಯೆ: ${machine.phone.split('').join(' ')}.`
     } else if (language === 'hi') {
-      speechText = `${machine.model || typeLabel}। ${machine.district} ज़िले के ${machine.village} में उपलब्ध है। किराया ${machine.price_per_acre} रुपये ${hiUnit}। ऑपरेटर और डीजल शामिल है। फसलें: ${cropNames}। मालिक: ${machine.owner_name}। फोन नंबर: ${machine.phone.split('').join(' ')}।`
+      speechText = `${typeLabel}: ${machine.model}। ${machine.district} ज़िले के ${machine.village} में उपलब्ध है। किराया ${machine.price_per_acre} रुपये ${hiUnit}। ऑपरेटर और डीजल शामिल है। फसलें: ${cropNames}। मालिक: ${machine.owner_name}। फोन नंबर: ${machine.phone.split('').join(' ')}।`
     } else if (language === 'ta') {
-      speechText = `${machine.model || typeLabel}. ${machine.district} மாவட்டத்தின் ${machine.village} கிராமத்தில் கிடைக்கிறது. வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது. பயிர்கள்: ${cropNames}. உரிமையாளர்: ${machine.owner_name}. தொலைபேசி எண்: ${machine.phone.split('').join(' ')}.`
+      speechText = `${typeLabel}: ${machine.model}. ${machine.district} மாவட்டத்தின் ${machine.village} கிராமத்தில் கிடைக்கிறது. வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது. பயிர்கள்: ${cropNames}. உரிமையாளர்: ${machine.owner_name}. தொலைபேசி எண்: ${machine.phone.split('').join(' ')}.`
     } else {
       speechText = `${machine.model || typeLabel} available in ${machine.village}, ${machine.district} district. Rental price: ${machine.price_per_acre} rupees ${enUnit}. Operator and diesel included. Suitable for ${cropNames}. Owner: ${machine.owner_name}. Contact number: ${machine.phone.split('').join(' ')}.`
     }
