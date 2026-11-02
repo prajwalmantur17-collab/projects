@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronDown,
   HelpCircle,
+  History,
   House,
   Inbox,
   LogIn,
@@ -137,11 +138,11 @@ export function Sidebar() {
       isActive: location.pathname.includes('/availability'),
     },
     {
-      id: 'owner-profile',
-      label: t('nav.profile'),
-      to: session ? '/settings?tab=profile' : '/login',
-      icon: User,
-      isActive: location.pathname === '/profile' || location.search.includes('tab=profile'),
+      id: 'owner-records',
+      label: t('ui.myRecords'),
+      to: session ? '/record' : '/login',
+      icon: History,
+      isActive: location.pathname === '/record',
     },
     {
       id: 'owner-notifications',
@@ -161,7 +162,7 @@ export function Sidebar() {
       label: t('nav.settings'),
       to: session ? '/settings' : '/login',
       icon: Settings,
-      isActive: location.pathname === '/settings' && !location.search.includes('tab=profile'),
+      isActive: location.pathname === '/settings',
     },
     {
       id: 'owner-help',
@@ -210,11 +211,11 @@ export function Sidebar() {
       isActive: location.search.includes('section=crops'),
     },
     {
-      id: 'profile',
-      label: t('nav.profile'),
-      to: session ? '/settings' : '/login',
-      icon: User,
-      isActive: location.pathname === '/settings' || location.pathname === '/profile',
+      id: 'records',
+      label: t('ui.myRecords'),
+      to: session ? '/record' : '/login',
+      icon: History,
+      isActive: location.pathname === '/record',
     },
     {
       id: 'notifications',
@@ -356,9 +357,9 @@ export function Sidebar() {
                   {/* Badge */}
                   {item.badge ? (
                     <span
-                      className={`ml-auto flex items-center justify-center rounded-full text-[11px] font-black px-2 py-0.5 ${
+                      className={`ml-auto flex size-5 min-w-5 items-center justify-center rounded-full text-[11px] font-black leading-none ${
                         item.badgeColor || 'bg-harvest-500 text-ink'
-                      } ${collapsed ? 'lg:absolute lg:top-1 lg:right-2' : ''}`}
+                      } ${collapsed ? 'lg:absolute lg:top-1.5 lg:right-1.5' : ''}`}
                     >
                       {item.badge}
                     </span>
@@ -504,10 +505,10 @@ export function Sidebar() {
               >
                 <div className="flex items-center gap-1.5 text-[#4ade80] mb-1">
                   <Tractor className="size-3.5" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8BCB73]">Partner Fleet</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8BCB73]">{t('ui.partnerFleet')}</span>
                 </div>
-                <p className="text-xs font-bold text-white leading-tight group-hover:text-[#4ade80] transition-colors">List More Machines</p>
-                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">Direct farmer bookings · 0% fee →</p>
+                <p className="text-xs font-bold text-white leading-tight group-hover:text-[#4ade80] transition-colors">{t('ui.listMoreMachines')}</p>
+                <p className="text-[10px] text-emerald-300/80 font-medium mt-1">{t('ui.directFarmerBookings')}</p>
               </Link>
             ) : (
               <>

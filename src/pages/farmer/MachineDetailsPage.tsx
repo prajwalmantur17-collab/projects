@@ -1010,15 +1010,26 @@ function BookingForm({
           ) : null}
           <p className="text-sm leading-relaxed text-ink-muted">{t('farmer.estimateNote')}</p>
 
-          <Button
-            type="submit"
-            size="lg"
-            fullWidth
-            loading={submitting}
-            disabled={!machine.is_active}
-          >
-            {submitting ? t('farmer.bookingSending') : t('farmer.submitBooking')}
-          </Button>
+          {!session ? (
+            <LinkButton
+              to={`/login?from=/farmer/machines/${machine.id}?book=1`}
+              size="lg"
+              fullWidth
+              variant="primary"
+            >
+              {t('ui.signInToBook')}
+            </LinkButton>
+          ) : (
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              loading={submitting}
+              disabled={!machine.is_active}
+            >
+              {submitting ? t('farmer.bookingSending') : t('farmer.submitBooking')}
+            </Button>
+          )}
         </form>
       </div>
     </Card>

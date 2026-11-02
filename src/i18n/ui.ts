@@ -1,4 +1,4 @@
-// Labels that used to be hard-coded in English. Placeholders ({n}) must match in every language.
+﻿// Labels that used to be hard-coded in English. Placeholders ({n}) must match in every language.
 
 export const uiEn = {
   'ui.heroBadge': 'Direct Farmer-to-Owner Rental Platform',
@@ -74,6 +74,20 @@ export const uiEn = {
   'ui.typeVillagePlaceholder': 'Type your village name…',
   'role.farmer': 'Farmer',
   'role.owner': 'Machine Owner',
+  'ui.signInToBook': 'Sign in as Farmer to Book',
+  'ui.partnerFleet': 'Partner Fleet',
+  'ui.listMoreMachines': 'List More Machines',
+  'ui.directFarmerBookings': 'Direct farmer bookings · 0% fee →',
+  'ui.justNow': 'Just now',
+  'ui.minutesAgo': '{n}m ago',
+  'ui.hoursAgo': '{n}h ago',
+  'ui.yesterday': 'Yesterday',
+  'ui.daysAgo': '{n}d ago',
+  'ui.myRecords': 'My Records',
+  'ui.viewAllResults': 'View all {count} results',
+  'ui.openSidebarMenu': 'Open sidebar menu',
+  'machine.saveSuccess': 'Machine listed successfully',
+  'machine.updateSuccess': 'Machine updated successfully',
 } as const
 
 export const uiKn: Record<keyof typeof uiEn, string> = {
@@ -150,6 +164,20 @@ export const uiKn: Record<keyof typeof uiEn, string> = {
   'ui.typeVillagePlaceholder': 'ನಿಮ್ಮ ಗ್ರಾಮದ ಹೆಸರನ್ನು ಬರೆಯಿರಿ…',
   'role.farmer': 'ರೈತ',
   'role.owner': 'ಯಂತ್ರ ಮಾಲೀಕ',
+  'ui.signInToBook': 'ಬುಕ್ ಮಾಡಲು ರೈತರಾಗಿ ಲಾಗಿನ್ ಆಗಿ',
+  'ui.partnerFleet': 'ಪಾಲುದಾರ ಯಂತ್ರಗಳು',
+  'ui.listMoreMachines': 'ಇನ್ನಷ್ಟು ಯಂತ್ರಗಳನ್ನು ಸೇರಿಸಿ',
+  'ui.directFarmerBookings': 'ರೈತರಿಂದ ನೇರ ಬುಕಿಂಗ್ · 0% ಶುಲ್ಕ →',
+  'ui.justNow': 'ಈಗಷ್ಟೇ',
+  'ui.minutesAgo': '{n}ನಿಮಿಷಗಳ ಹಿಂದೆ',
+  'ui.hoursAgo': '{n}ಗಂಟೆಗಳ ಹಿಂದೆ',
+  'ui.yesterday': 'ನಿನ್ನೆ',
+  'ui.daysAgo': '{n}ದಿನಗಳ ಹಿಂದೆ',
+  'ui.myRecords': 'ನನ್ನ ದಾಖಲೆಗಳು',
+  'ui.viewAllResults': 'ಎಲ್ಲಾ {count} ಫಲಿತಾಂಶಗಳನ್ನು ವೀಕ್ಷಿಸಿ',
+  'ui.openSidebarMenu': 'ಸೈಡ್‌ಬಾರ್ ಮೆನು ತೆರೆಯಿರಿ',
+  'machine.saveSuccess': 'ಯಂತ್ರವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ',
+  'machine.updateSuccess': 'ಯಂತ್ರದ ವಿವರಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ',
 }
 
 export const uiHi: Record<keyof typeof uiEn, string> = {
@@ -226,6 +254,20 @@ export const uiHi: Record<keyof typeof uiEn, string> = {
   'ui.typeVillagePlaceholder': 'अपने गाँव का नाम लिखें…',
   'role.farmer': 'किसान',
   'role.owner': 'मशीन मालिक',
+  'ui.signInToBook': 'बुक करने के लिए किसान के रूप में लॉगिन करें',
+  'ui.partnerFleet': 'पार्टनर फ्लीट',
+  'ui.listMoreMachines': 'और मशीनें जोड़ें',
+  'ui.directFarmerBookings': 'किसानों से सीधी बुकिंग · 0% शुल्क →',
+  'ui.justNow': 'अभी',
+  'ui.minutesAgo': '{n} मिनट पहले',
+  'ui.hoursAgo': '{n} घंटे पहले',
+  'ui.yesterday': 'कल',
+  'ui.daysAgo': '{n} दिन पहले',
+  'ui.myRecords': 'मेरे रिकॉर्ड',
+  'ui.viewAllResults': 'सभी {count} परिणाम देखें',
+  'ui.openSidebarMenu': 'साइडबार मेनू खोलें',
+  'machine.saveSuccess': 'मशीन सफलतापूर्वक सूचीबद्ध की गई',
+  'machine.updateSuccess': 'मशीन विवरण सफलतापूर्वक अपडेट किया गया',
 }
 
 export const uiTa: Record<keyof typeof uiEn, string> = {
@@ -302,4 +344,18 @@ export const uiTa: Record<keyof typeof uiEn, string> = {
   'ui.typeVillagePlaceholder': 'உங்கள் கிராமப் பெயரை உள்ளிடுங்கள்…',
   'role.farmer': 'விவசாயி',
   'role.owner': 'இயந்திர உரிமையாளர்',
+  'ui.signInToBook': 'முன்பதிவு செய்ய விவசாயியாக உள்நுழையவும்',
+  'ui.partnerFleet': 'கூட்டாளி இயந்திரங்கள்',
+  'ui.listMoreMachines': 'மேலும் இயந்திரங்களைச் சேர்க்கவும்',
+  'ui.directFarmerBookings': 'விவசாயிகளிடமிருந்து நேரடி முன்பதிவு · 0% கட்டணம் →',
+  'ui.justNow': 'சற்றுமுன்',
+  'ui.minutesAgo': '{n} நிமிடம் முன்பு',
+  'ui.hoursAgo': '{n} மணி நேரம் முன்பு',
+  'ui.yesterday': 'நேற்று',
+  'ui.daysAgo': '{n} நாட்கள் முன்பு',
+  'ui.myRecords': 'என் பதிவுகள்',
+  'ui.viewAllResults': 'அனைத்து {count} முடிவுகளையும் காண்க',
+  'ui.openSidebarMenu': 'பக்கப்பட்டி மெனுவைத் திறக்கவும்',
+  'machine.saveSuccess': 'இயந்திரம் வெற்றிகரமாக சேர்க்கப்பட்டது',
+  'machine.updateSuccess': 'இயந்திர விவரங்கள் புதுப்பிக்கப்பட்டன',
 }

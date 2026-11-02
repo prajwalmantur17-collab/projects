@@ -62,20 +62,23 @@ interface SearchSnapshot {
   acreage: string
 }
 
-function formatRelativeTime(isoString?: string | null): string {
+function formatRelativeTime(
+  isoString?: string | null,
+  t?: (key: any, params?: Record<string, string | number>) => string
+): string {
   if (!isoString) return ''
   try {
     const diffMs = Date.now() - new Date(isoString).getTime()
     if (Number.isNaN(diffMs)) return ''
     const diffSec = Math.max(0, Math.floor(diffMs / 1000))
-    if (diffSec < 60) return 'Just now'
+    if (diffSec < 60) return t ? t('ui.justNow') : 'Just now'
     const diffMin = Math.floor(diffSec / 60)
-    if (diffMin < 60) return `${diffMin}m ago`
+    if (diffMin < 60) return t ? t('ui.minutesAgo', { n: diffMin }) : `${diffMin}m ago`
     const diffHours = Math.floor(diffMin / 60)
-    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffHours < 24) return t ? t('ui.hoursAgo', { n: diffHours }) : `${diffHours}h ago`
     const diffDays = Math.floor(diffHours / 24)
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffDays === 1) return t ? t('ui.yesterday') : 'Yesterday'
+    if (diffDays < 7) return t ? t('ui.daysAgo', { n: diffDays }) : `${diffDays}d ago`
     return new Date(isoString).toLocaleDateString()
   } catch {
     return ''
@@ -856,7 +859,7 @@ export function FarmerHomePage() {
                 </p>
                 <p className="text-[11px] text-gray-500 truncate">
                   {latestActivity.model || t(machineTypeLabelKey(latestActivity.machine_type))}
-                  {formatRelativeTime(latestActivity.created_at) ? ` • ${formatRelativeTime(latestActivity.created_at)}` : ''}
+                  {formatRelativeTime(latestActivity.created_at, t) ? ` • ${formatRelativeTime(latestActivity.created_at, t)}` : ''}
                 </p>
               </div>
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />

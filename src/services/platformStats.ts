@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { isMachineDeleted } from './store'
 
 export interface PlatformStats {
   total_machines: number
@@ -69,12 +70,14 @@ export async function fetchLatestMachineActivity(): Promise<LatestActivity | nul
   try {
     const { data, error } = await supabase
       .from('machine_cards')
-      .select('id, model, machine_type, village, district, image_path, created_at')
+      .select('id, model, machine_type, village, district, image_path, created_at, is_active')
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(1)
+      .limit(10)
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      return data[0] as LatestActivity
+      const active = data.find((d) => d && d.is_active !== false && !isMachineDeleted(d.id))
+      return (active as LatestActivity) ?? null
     }
   } catch {
     // ignore

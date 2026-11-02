@@ -105,7 +105,9 @@ export async function searchMachines(params: {
         })
 
         if (!error && Array.isArray(primaryData)) {
-          let list = deduplicateMachines(primaryData as MachineCard[]).filter((m) => m && m.is_active !== false)
+          let list = deduplicateMachines(primaryData as MachineCard[]).filter(
+            (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+          )
 
           // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
           if (cleanVillage && !cleanDistrict && list.length > 0) {
@@ -121,7 +123,9 @@ export async function searchMachines(params: {
                 p_offset: 0,
               })
               if (!distErr && Array.isArray(districtData)) {
-                list = deduplicateMachines([...list, ...(districtData as MachineCard[])]).filter((m) => m && m.is_active !== false)
+                list = deduplicateMachines([...list, ...(districtData as MachineCard[])]).filter(
+                  (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+                )
               }
             }
           }
@@ -236,7 +240,7 @@ export async function listOwnerMachines(ownerId: string): Promise<MachineCard[]>
         .eq('owner_id', ownerId)
         .order('created_at', { ascending: false })
       if (!error && Array.isArray(data)) {
-        return deduplicateMachines(data as MachineCard[]).filter((m) => !isMachineDeleted(m.id))
+        return deduplicateMachines(data as MachineCard[], { includeInactive: true }).filter((m) => !isMachineDeleted(m.id))
       }
     } catch {
       // Fall through

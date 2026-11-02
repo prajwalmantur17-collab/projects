@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { deduplicateMachines, getLocalMachines } from './store'
+import { deduplicateMachines, getLocalMachines, isMachineDeleted } from './store'
 import type { CropKey, MachineCard } from '../types'
 
 export interface SmartSearchResult {
@@ -221,7 +221,9 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
         .order('created_at', { ascending: false })
 
       if (!error && Array.isArray(data)) {
-        allMachines = deduplicateMachines(data as MachineCard[])
+        allMachines = deduplicateMachines(data as MachineCard[]).filter(
+          (m) => !isMachineDeleted(m.id) && m.is_active !== false,
+        )
       }
     } catch {
       // Fall through to local store
@@ -229,7 +231,9 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
   }
 
   if (allMachines.length === 0) {
-    allMachines = deduplicateMachines(getLocalMachines())
+    allMachines = deduplicateMachines(getLocalMachines()).filter(
+      (m) => !isMachineDeleted(m.id) && m.is_active !== false,
+    )
   }
 
   // 2. Filter and rank based on parsed query

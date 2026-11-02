@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { AppHeader } from './AppHeader'
@@ -7,6 +8,7 @@ import { SidebarProvider, useSidebar } from './SidebarContext'
 import { LiveShareManager } from '../map/LiveShareManager'
 import { ToastContainer } from '../ui/Toast'
 import { BottomNav } from './BottomNav'
+import { LoadingScreen } from '../ui/Feedback'
 
 function AppShellContent() {
   const { t } = useI18n()
@@ -46,7 +48,9 @@ function AppShellContent() {
 
         <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 lg:px-8 pb-28 lg:pb-12">
           <div key={location.pathname} className="hr-route">
-            <Outlet />
+            <Suspense fallback={<LoadingScreen message={t('app.loading')} />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
 

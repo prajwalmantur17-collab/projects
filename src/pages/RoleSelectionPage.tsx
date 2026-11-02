@@ -1,20 +1,16 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, LogOut, Sprout, Tractor } from 'lucide-react'
+import { ArrowRight, Sprout, Tractor } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
 import { logError, mapErrorToKey } from '../lib/errors'
 import { setUserRole } from '../services/profiles'
 import type { UserRole } from '../types'
-import { LogoLockup } from '../components/brand/Logo'
 import { Alert } from '../components/ui/Alert'
-import { Button } from '../components/ui/Button'
-import { LanguageSelector } from '../components/ui/LanguageSelector'
-
 export function RoleSelectionPage() {
-  const { profile, refreshProfile, signOut } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const { t } = useI18n()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState<UserRole | null>(null)
@@ -44,64 +40,51 @@ export function RoleSelectionPage() {
   const name = profile?.full_name?.trim() || t('role.welcome')
 
   return (
-    <div className="min-h-dvh bg-cream-50">
-      <header className="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <LogoLockup markClassName="size-9" />
-        <div className="flex items-center gap-2">
-          <LanguageSelector compact />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void signOut()}
-            icon={<LogOut className="size-4" aria-hidden="true" />}
-          >
-            <span className="hidden sm:inline">{t('common.logout')}</span>
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.16em] text-leaf-700">
-            {t('role.welcome')}, {name}
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{t('role.title')}</h1>
-          <p className="mt-3 text-base leading-relaxed text-ink-muted">{t('role.subtitle')}</p>
-        </div>
-
-        {error ? (
-          <Alert variant="error" className="mx-auto mt-6 max-w-2xl">
-            {t(error)}
-          </Alert>
-        ) : null}
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-5">
-          <RoleCard
-            icon={<Sprout className="size-10" aria-hidden="true" />}
-            title={t('role.farmerTitle')}
-            description={t('role.farmerDescription')}
-            continueLabel={submitting === 'farmer' ? t('role.selecting') : t('role.continue')}
-            disabled={Boolean(submitting)}
-            loading={submitting === 'farmer'}
-            onClick={() => void choose('farmer')}
-            accent="leaf"
-          />
-          <RoleCard
-            icon={<Tractor className="size-10" aria-hidden="true" />}
-            title={t('role.ownerTitle')}
-            description={t('role.ownerDescription')}
-            continueLabel={submitting === 'owner' ? t('role.selecting') : t('role.continue')}
-            disabled={Boolean(submitting)}
-            loading={submitting === 'owner'}
-            onClick={() => void choose('owner')}
-            accent="harvest"
-          />
-        </div>
-
-        <p className="mx-auto mt-6 max-w-xl text-center text-sm text-ink-muted">
-          {t('role.lockedNote')}
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-100 drop-shadow-sm">
+          {t('role.welcome')}, {name}
         </p>
-      </main>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white drop-shadow-md sm:text-4xl">
+          {t('role.title')}
+        </h1>
+        <p className="mt-3 text-base leading-relaxed text-white/90 drop-shadow-sm">
+          {t('role.subtitle')}
+        </p>
+      </div>
+
+      {error ? (
+        <Alert variant="error" className="mx-auto mt-6 max-w-2xl">
+          {t(error)}
+        </Alert>
+      ) : null}
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-5">
+        <RoleCard
+          icon={<Sprout className="size-10" aria-hidden="true" />}
+          title={t('role.farmerTitle')}
+          description={t('role.farmerDescription')}
+          continueLabel={submitting === 'farmer' ? t('role.selecting') : t('role.continue')}
+          disabled={Boolean(submitting)}
+          loading={submitting === 'farmer'}
+          onClick={() => void choose('farmer')}
+          accent="leaf"
+        />
+        <RoleCard
+          icon={<Tractor className="size-10" aria-hidden="true" />}
+          title={t('role.ownerTitle')}
+          description={t('role.ownerDescription')}
+          continueLabel={submitting === 'owner' ? t('role.selecting') : t('role.continue')}
+          disabled={Boolean(submitting)}
+          loading={submitting === 'owner'}
+          onClick={() => void choose('owner')}
+          accent="harvest"
+        />
+      </div>
+
+      <p className="mx-auto mt-6 max-w-xl text-center text-sm font-medium text-white/80 drop-shadow-xs">
+        {t('role.lockedNote')}
+      </p>
     </div>
   )
 }

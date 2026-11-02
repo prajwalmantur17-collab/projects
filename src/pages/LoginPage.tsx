@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Mail, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
@@ -6,12 +6,9 @@ import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
 import { logError, mapErrorToKey } from '../lib/errors'
 import { isValidEmail, normalizeWhitespace } from '../lib/validation'
-import { LogoLockup } from '../components/brand/Logo'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { LanguageSelector } from '../components/ui/LanguageSelector'
-
 type Mode = 'signin' | 'signup' | 'forgot'
 
 interface FieldErrors {
@@ -93,15 +90,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-cream-50 px-4 py-5 sm:px-6">
-      <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-md flex-col">
-        <header className="flex items-center justify-between gap-3">
-          <LogoLockup markClassName="size-10" />
-          <LanguageSelector />
-        </header>
-
-        <main className="flex flex-1 items-center justify-center py-8">
-          <div className="w-full">
+    <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
             {noticeEmail || resetSentTo ? (
               <div className="card-surface p-6 text-center sm:p-8">
                 <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
@@ -249,10 +239,6 @@ export function LoginPage() {
               </div>
             )}
           </div>
-        </main>
-
-        <p className="pb-2 text-center text-sm text-ink-muted">{t('app.footer')}</p>
-      </div>
     </div>
   )
 }

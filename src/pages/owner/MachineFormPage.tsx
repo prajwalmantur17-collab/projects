@@ -302,7 +302,7 @@ export function MachineFormPage() {
       setImageFile(null)
       setImageRemoved(false)
       setSaved(true)
-      toast.success(machineId ? 'Machine updated successfully' : 'Machine listed successfully')
+      toast.success(t(machineId ? 'machine.updateSuccess' : 'machine.saveSuccess'))
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return { ok: true }
     } catch (caught) {

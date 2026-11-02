@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/AuthProvider'
 import { RequireAuth, RequireRole } from './auth/Guards'
@@ -5,70 +6,71 @@ import { homeForProfile } from './auth/routing'
 import { AppShell } from './components/layout/AppShell'
 import { LoadingScreen } from './components/ui/Feedback'
 import { useI18n } from './i18n'
-import { LoginPage } from './pages/LoginPage'
-import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfileErrorPage } from './pages/ProfileErrorPage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
-import { RecordPage } from './pages/RecordPage'
-import { RoleSelectionPage } from './pages/RoleSelectionPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { SetupRequiredPage } from './pages/SetupRequiredPage'
-import { FarmerBookingsPage } from './pages/farmer/FarmerBookingsPage'
-import { FarmerHomePage } from './pages/farmer/FarmerHomePage'
-import { MachineDetailsPage } from './pages/farmer/MachineDetailsPage'
-import { AvailabilityPage } from './pages/owner/AvailabilityPage'
-import { MachineFormPage } from './pages/owner/MachineFormPage'
-import { OwnerBookingsPage } from './pages/owner/OwnerBookingsPage'
-import { OwnerHomePage } from './pages/owner/OwnerHomePage'
-import { OwnerMachinesPage } from './pages/owner/OwnerMachinesPage'
+
+const FarmerHomePage = lazy(() => import('./pages/farmer/FarmerHomePage').then((m) => ({ default: m.FarmerHomePage })))
+const MachineDetailsPage = lazy(() => import('./pages/farmer/MachineDetailsPage').then((m) => ({ default: m.MachineDetailsPage })))
+const FarmerBookingsPage = lazy(() => import('./pages/farmer/FarmerBookingsPage').then((m) => ({ default: m.FarmerBookingsPage })))
+const OwnerHomePage = lazy(() => import('./pages/owner/OwnerHomePage').then((m) => ({ default: m.OwnerHomePage })))
+const OwnerMachinesPage = lazy(() => import('./pages/owner/OwnerMachinesPage').then((m) => ({ default: m.OwnerMachinesPage })))
+const MachineFormPage = lazy(() => import('./pages/owner/MachineFormPage').then((m) => ({ default: m.MachineFormPage })))
+const AvailabilityPage = lazy(() => import('./pages/owner/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })))
+const OwnerBookingsPage = lazy(() => import('./pages/owner/OwnerBookingsPage').then((m) => ({ default: m.OwnerBookingsPage })))
+const RecordPage = lazy(() => import('./pages/RecordPage').then((m) => ({ default: m.RecordPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const RoleSelectionPage = lazy(() => import('./pages/RoleSelectionPage').then((m) => ({ default: m.RoleSelectionPage })))
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })))
+const SetupRequiredPage = lazy(() => import('./pages/SetupRequiredPage').then((m) => ({ default: m.SetupRequiredPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
 
 export function App() {
   return (
     <BrowserRouter>
       <RecoveryRedirect />
-      <Routes>
-        <Route element={<AppShell />}>
-          {/* Public Farmer & Machine Discovery (Zero Login Required) */}
-          <Route path="/" element={<HomeRouteGate />} />
-          <Route path="/farmer" element={<FarmerHomePage />} />
-          <Route path="/farmer/machines/:machineId" element={<MachineDetailsPage />} />
-          <Route path="/machines/:machineId" element={<MachineDetailsPage />} />
+      <Suspense fallback={<LoadingScreen message="Loading..." />}>
+        <Routes>
+          <Route element={<AppShell />}>
+            {/* Public Farmer & Machine Discovery (Zero Login Required) */}
+            <Route path="/" element={<HomeRouteGate />} />
+            <Route path="/farmer" element={<FarmerHomePage />} />
+            <Route path="/farmer/machines/:machineId" element={<MachineDetailsPage />} />
+            <Route path="/machines/:machineId" element={<MachineDetailsPage />} />
 
-          {/* Quick Machine Listing (Public / Demo / Owner) */}
-          <Route path="/owner/machines/new" element={<MachineFormPage />} />
+            {/* Setup Guide (Accessible whenever needed) */}
+            <Route path="/setup" element={<SetupRequiredPage />} />
 
-          {/* Setup Guide (Accessible whenever needed) */}
-          <Route path="/setup" element={<SetupRequiredPage />} />
-
-          {/* Authentication & Profile Setup */}
-          <Route element={<PublicOnly />}>
-            <Route path="/login" element={<LoginPage />} />
-          </Route>
-
-          <Route element={<RequireAuth />}>
-            <Route path="/select-role" element={<RoleSelectionGate />} />
-            <Route path="/settings" element={<SettingsGate />} />
-            <Route path="/record" element={<RecordGate />} />
-
-            <Route element={<RequireRole role="farmer" />}>
-              <Route path="/farmer/bookings" element={<FarmerBookingsPage />} />
+            {/* Authentication & Profile Setup */}
+            <Route element={<PublicOnly />}>
+              <Route path="/login" element={<LoginPage />} />
             </Route>
 
-            <Route element={<RequireRole role="owner" />}>
-              <Route path="/owner" element={<OwnerHomePage />} />
-              <Route path="/owner/machines" element={<OwnerMachinesPage />} />
-              <Route path="/owner/machines/:machineId/edit" element={<MachineFormPage />} />
-              <Route path="/owner/machines/:machineId/availability" element={<AvailabilityPage />} />
-              <Route path="/owner/bookings" element={<OwnerBookingsPage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/select-role" element={<RoleSelectionGate />} />
+              <Route path="/settings" element={<SettingsGate />} />
+              <Route path="/record" element={<RecordGate />} />
+
+              <Route element={<RequireRole role="farmer" />}>
+                <Route path="/farmer/bookings" element={<FarmerBookingsPage />} />
+              </Route>
+
+              <Route element={<RequireRole role="owner" />}>
+                <Route path="/owner" element={<OwnerHomePage />} />
+                <Route path="/owner/machines" element={<OwnerMachinesPage />} />
+                <Route path="/owner/machines/new" element={<MachineFormPage />} />
+                <Route path="/owner/machines/:machineId/edit" element={<MachineFormPage />} />
+                <Route path="/owner/machines/:machineId/availability" element={<AvailabilityPage />} />
+                <Route path="/owner/bookings" element={<OwnerBookingsPage />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
 
-        {/* Opened from the password-reset email link */}
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+          {/* Opened from the password-reset email link */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

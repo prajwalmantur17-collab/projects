@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Mic, MicOff, Volume2, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
+import { toast } from '../../lib/toast'
 import {
   getVoiceLocale,
   isSpeechRecognitionSupported,
@@ -44,7 +45,7 @@ export function KisanVoiceAssistant({
 
   const startListening = () => {
     if (!isSpeechRecognitionSupported()) {
-      alert(t('voice.notSupported'))
+      toast.error(t('voice.notSupported'))
       return
     }
 
@@ -95,7 +96,7 @@ export function KisanVoiceAssistant({
   return (
     <>
       {/* Floating Action Button for Easy 1-Tap Access */}
-      <div className="fixed bottom-20 right-4 z-40 lg:bottom-6 lg:right-6">
+      <div className="fixed bottom-24 right-4 z-40 lg:bottom-6 lg:right-6">
         <button
           type="button"
           onClick={handleOpen}
@@ -106,7 +107,7 @@ export function KisanVoiceAssistant({
             <Mic className="size-4 text-cream-50 animate-pulse" />
           </span>
           <span className="hidden sm:inline">{t('voice.assistantTitle')}</span>
-          <span className="sm:hidden">🎤 ಧ್ವನಿ ಸಹಾಯಕ</span>
+          <span className="sm:hidden">🎤 {t('voice.assistantTitle')}</span>
         </button>
       </div>
 
