@@ -127,6 +127,25 @@ export async function searchMachines(params: {
             }
           }
 
+          // Nothing in that exact village (e.g. a city area like "Bharathi City"): show machines
+          // from the same district so nearby villages are not missed.
+          if (cleanVillage && cleanDistrict && list.length === 0) {
+            const { data: districtOnlyData, error: dOnlyErr } = await supabase.rpc('search_machines', {
+              p_village: null,
+              p_district: cleanDistrict,
+              p_state: null,
+              p_crop: params.crop || null,
+              p_machine_type: params.machineType || null,
+              p_limit: params.limit ?? 48,
+              p_offset: params.offset ?? 0,
+            })
+            if (!dOnlyErr && Array.isArray(districtOnlyData) && districtOnlyData.length > 0) {
+              list = deduplicateMachines(districtOnlyData as MachineCard[]).filter(
+                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+              )
+            }
+          }
+
           // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
           if (cleanVillage && !cleanDistrict && list.length > 0) {
             const resolvedDistrict = list[0]?.district

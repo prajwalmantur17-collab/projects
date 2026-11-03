@@ -35,12 +35,15 @@ import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/p
 import type { PlatformStats, LatestActivity } from '../../services/platformStats'
 import { getBusyMachines } from '../../services/workStatus'
 import { deduplicateMachines } from '../../services/store'
-import { reverseGeocode } from '../../services/geocode'
-import type { CropKey, MachineCard as MachineCardType } from '../../types'
+import { resolveVillageCoordinates, reverseGeocode } from '../../services/geocode'
+import { searchPlaces } from '../../services/placeSearch'
+import type { PlaceSuggestion } from '../../services/placeSearch'
+import type { Coordinates, CropKey, MachineCard as MachineCardType } from '../../types'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
+import { PlaceAutocomplete } from '../../components/ui/PlaceAutocomplete'
 import { MachineCard } from '../../components/machine/MachineCard'
 import { MachineCardSkeleton } from '../../components/ui/Skeleton'
 import { CropIcon } from '../../components/crop/CropIcon'
@@ -109,6 +112,10 @@ export function FarmerHomePage() {
   const [village, setVillage] = useState('')
   const [district, setDistrict] = useState('')
   const [, setState] = useState('')
+  // The place picked from the suggestion list, with its map position when known.
+  const [picked, setPicked] = useState<{ name: string; coords: Coordinates | null } | null>(null)
+  // "Nearest" is measured from live GPS first, otherwise from the place that was picked.
+  const originCoords: Coordinates | null = geo.coordinates ?? picked?.coords ?? null
   const [crop, setCrop] = useState<string>('')
   const [acreage, setAcreage] = useState<string>('')
   const [machineType, setMachineType] = useState<string>('')
@@ -191,14 +198,14 @@ export function FarmerHomePage() {
 
     return [...deduped].sort((a, b) => {
       // 1. Proximity by GPS distance (closest in km first) if GPS is active
-      if (geo.coordinates) {
+      if (originCoords) {
         const da =
           a.latitude !== null && a.longitude !== null
-            ? distanceKm(geo.coordinates, { latitude: a.latitude, longitude: a.longitude })
+            ? distanceKm(originCoords, { latitude: a.latitude, longitude: a.longitude })
             : Number.POSITIVE_INFINITY
         const db =
           b.latitude !== null && b.longitude !== null
-            ? distanceKm(geo.coordinates, { latitude: b.latitude, longitude: b.longitude })
+            ? distanceKm(originCoords, { latitude: b.latitude, longitude: b.longitude })
             : Number.POSITIVE_INFINITY
         if (da !== db) return da - db
       }
@@ -210,7 +217,7 @@ export function FarmerHomePage() {
 
       return 0
     })
-  }, [results, geo.coordinates, snapshot, village])
+  }, [results, originCoords, snapshot, village])
 
   const displayResults = useMemo(() => {
     if (!sortedResults) return null
@@ -232,8 +239,8 @@ export function FarmerHomePage() {
   }, [sortedResults, sortBy])
 
   const distanceFor = (machine: MachineCardType): number | null => {
-    if (!geo.coordinates || machine.latitude === null || machine.longitude === null) return null
-    return distanceKm(geo.coordinates, {
+    if (!originCoords || machine.latitude === null || machine.longitude === null) return null
+    return distanceKm(originCoords, {
       latitude: machine.latitude,
       longitude: machine.longitude,
     })
@@ -343,13 +350,43 @@ export function FarmerHomePage() {
     void runSearch(result.crop, result.village)
   }
 
+  // Person tapped a place in the suggestion list (Uber / Rapido style).
+  const handlePlaceSelect = (place: PlaceSuggestion) => {
+    setDetectedPlace(null)
+    geo.clear()
+    setVillage(place.village)
+    setDistrict(place.district)
+    setState(place.state.toLowerCase())
+    setPicked({ name: place.village, coords: place.coords })
+    setErrors({})
+    void runSearch(crop, place.village, place.district)
+  }
+
+  const submitTypedSearch = async () => {
+    const typed = normalizeWhitespace(village)
+    // Typed a name but did not pick from the list: use the best matching place
+    // instead of searching the raw text (e.g. "Bengaluru" becomes the real city).
+    if (typed.length >= 2 && !picked && !geo.coordinates && !detectedPlace && !district.trim()) {
+      try {
+        const [top] = await searchPlaces(typed, language)
+        if (top && top.village.toLowerCase().startsWith(typed.toLowerCase())) {
+          handlePlaceSelect(top)
+          return
+        }
+      } catch {
+        // Fall back to searching the typed text.
+      }
+    }
+    void runSearch()
+  }
+
   const onSearch = (event: FormEvent) => {
     event.preventDefault()
     if (!village.trim() && !district.trim() && !crop.trim() && !machineType.trim() && !geo.coordinates) {
       setErrors({ village: 'validation.required' })
       return
     }
-    void runSearch()
+    void submitTypedSearch()
   }
 
   const [cropPickerOpen, setCropPickerOpen] = useState(false)
@@ -375,6 +412,7 @@ export function FarmerHomePage() {
     setMachineType('')
     setErrors({})
     setDetectedPlace(null)
+    setPicked(null)
   }
 
   // Keep detected place synchronized when the user switches interface language
@@ -396,6 +434,7 @@ export function FarmerHomePage() {
   const locate = async () => {
     // Forget every earlier place so an old result can never be reused.
     setDetectedPlace(null)
+    setPicked(null)
     setVillage('')
     setDistrict('')
     setState('')
@@ -657,13 +696,21 @@ export function FarmerHomePage() {
           </div>
 
           <form onSubmit={onSearch} className="relative">
-            <input
-              ref={villageInputRef}
-              type="text"
+            <PlaceAutocomplete
+              inputRef={villageInputRef}
               value={village}
-              onChange={(event) => {
-                const val = event.target.value
+              placeholder={t('ui.typeVillagePlaceholder')}
+              locating={geo.loading || geocoding}
+              onUseCurrentLocation={() => void locate()}
+              onSelect={handlePlaceSelect}
+              onChange={(val) => {
                 setVillage(val)
+                // Typing away from a picked place drops its district and map position.
+                if (picked && val.trim().toLowerCase() !== picked.name.toLowerCase()) {
+                  setPicked(null)
+                  setDistrict('')
+                  setState('')
+                }
                 // If user modifies village away from detected place, clear detected place and stale district
                 if (detectedPlace && val.trim().toLowerCase() !== detectedPlace.place.toLowerCase()) {
                   setDetectedPlace(null)
@@ -679,8 +726,6 @@ export function FarmerHomePage() {
                   })
                 }
               }}
-              placeholder={t('ui.typeVillagePlaceholder')}
-              className="h-13 w-full rounded-full border border-gray-200 bg-gray-50/80 px-6 pr-14 text-sm sm:text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all"
             />
             <button
               type="submit"
@@ -717,6 +762,10 @@ export function FarmerHomePage() {
                   setVillage(loc.name)
                   setDistrict(loc.dist)
                   setState('karnataka')
+                  setPicked({ name: loc.name, coords: null })
+                  void resolveVillageCoordinates(loc.name, loc.dist).then((coords) =>
+                    setPicked((prev) => (prev && prev.name === loc.name ? { ...prev, coords } : prev)),
+                  )
                   void runSearch(crop, loc.name, loc.dist)
                 }}
                 className="rounded-full border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 transition-colors shadow-2xs cursor-pointer"
