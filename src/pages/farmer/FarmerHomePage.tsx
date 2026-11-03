@@ -362,6 +362,28 @@ export function FarmerHomePage() {
     void runSearch(crop, place.village, place.district)
   }
 
+  // Person spoke a place name into the village box: find the real place and search it.
+  const handleVoicePlace = async (guesses: string[]) => {
+    setDetectedPlace(null)
+    setPicked(null)
+    setDistrict('')
+    setState('')
+    // Speech can mishear, so try each guess until one matches a real place.
+    for (const guess of guesses) {
+      try {
+        const [top] = await searchPlaces(guess, language, undefined, originCoords)
+        if (top) {
+          handlePlaceSelect(top)
+          return
+        }
+      } catch {
+        // Try the next guess.
+      }
+    }
+    const typed = normalizeWhitespace(guesses[0] ?? '')
+    if (typed) void runSearch(crop, typed, '')
+  }
+
   const submitTypedSearch = async () => {
     const typed = normalizeWhitespace(village)
     // Typed a name but did not pick from the list: use the best matching place
@@ -702,6 +724,7 @@ export function FarmerHomePage() {
               placeholder={t('ui.typeVillagePlaceholder')}
               locating={geo.loading || geocoding}
               nearTo={originCoords}
+              onVoiceResult={(guesses) => void handleVoicePlace(guesses)}
               onUseCurrentLocation={() => void locate()}
               onSelect={handlePlaceSelect}
               onChange={(val) => {

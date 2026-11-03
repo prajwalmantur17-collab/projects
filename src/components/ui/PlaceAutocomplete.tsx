@@ -1,10 +1,18 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { KeyboardEvent, Ref } from 'react'
-import { Loader2, LocateFixed, MapPin } from 'lucide-react'
+import { Loader2, LocateFixed, MapPin, Mic, MicOff } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { usePlaceSuggestions } from '../../hooks/usePlaceSuggestions'
 import type { PlaceSuggestion } from '../../services/placeSearch'
 import type { Coordinates } from '../../types'
+import { isListeningSupported, listenOnce } from '../../lib/speech'
+import type { ListenHandle } from '../../lib/speech'
+import { parseSpokenQuery } from '../../lib/voice'
+
+/** Turns "hubballi" or "near Hubballi" into a clean place name. */
+function cleanSpoken(text: string): string {
+  return (parseSpokenQuery(text).village ?? text).trim()
+}
 
 interface PlaceAutocompleteProps {
   value: string
@@ -16,6 +24,8 @@ interface PlaceAutocompleteProps {
   locating?: boolean
   /** Rank suggestions closest to this point first (GPS or the last picked place). */
   nearTo?: Coordinates | null
+  /** Called with the best guesses (best first) after the person speaks a place name. */
+  onVoiceResult?: (guesses: string[]) => void
   placeholder?: string
   inputRef?: Ref<HTMLInputElement>
 }
@@ -34,13 +44,45 @@ export function PlaceAutocomplete({
   onUseCurrentLocation,
   locating = false,
   nearTo,
+  onVoiceResult,
   placeholder,
   inputRef,
 }: PlaceAutocompleteProps) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const listId = useId()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [listening, setListening] = useState(false)
+  const [voiceError, setVoiceError] = useState(false)
+  const listenRef = useRef<ListenHandle | null>(null)
+  const voiceSupported = Boolean(onVoiceResult) && isListeningSupported()
+
+  // Stop the microphone if the box disappears while listening.
+  useEffect(() => () => listenRef.current?.cancel(), [])
+
+  const toggleVoice = async () => {
+    if (listening) {
+      listenRef.current?.cancel()
+      return
+    }
+    setVoiceError(false)
+    setOpen(false)
+    const handle = listenOnce(language, (interim) => onChange(cleanSpoken(interim)))
+    listenRef.current = handle
+    setListening(true)
+    const result = await handle.result
+    listenRef.current = null
+    setListening(false)
+    if (result.ok) {
+      const guesses = [...new Set(result.alternatives.map(cleanSpoken).filter(Boolean))]
+      if (guesses.length > 0) {
+        onChange(guesses[0])
+        onVoiceResult?.(guesses)
+      }
+    } else if (result.error !== 'no-speech' && result.error !== 'aborted') {
+      setVoiceError(true)
+    }
+  }
 
   const { suggestions, loading } = usePlaceSuggestions(value, open, nearTo)
 
@@ -109,14 +151,40 @@ export function PlaceAutocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="h-13 w-full rounded-full border border-gray-200 bg-gray-50/80 px-6 pr-24 text-sm sm:text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all"
+        className="h-13 w-full rounded-full border border-gray-200 bg-gray-50/80 px-6 pr-28 text-sm sm:text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all"
       />
 
       {loading ? (
         <Loader2
-          className="pointer-events-none absolute right-16 top-1/2 size-4 -translate-y-1/2 animate-spin text-gray-400"
+          className="pointer-events-none absolute right-[6.5rem] top-1/2 size-4 -translate-y-1/2 animate-spin text-gray-400"
           aria-hidden="true"
         />
+      ) : null}
+
+      {voiceSupported ? (
+        <button
+          type="button"
+          onClick={() => void toggleVoice()}
+          className={`absolute right-14 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full transition-all active:scale-95 sm:size-10 ${
+            listening
+              ? 'animate-pulse bg-red-600 text-white ring-4 ring-red-200'
+              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+          }`}
+          title={listening ? t('voice.listening') : t('voice.tapToSpeak')}
+          aria-label={listening ? t('voice.listening') : t('voice.tapToSpeak')}
+        >
+          {listening ? (
+            <MicOff className="size-4.5" aria-hidden="true" />
+          ) : (
+            <Mic className="size-4.5" aria-hidden="true" />
+          )}
+        </button>
+      ) : null}
+
+      {voiceError ? (
+        <p className="absolute left-4 top-full mt-1 text-xs font-medium text-red-600" role="alert">
+          {t('voice.notSupported')}
+        </p>
       ) : null}
 
       {isOpen ? (
