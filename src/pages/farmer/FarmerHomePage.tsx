@@ -368,7 +368,7 @@ export function FarmerHomePage() {
     // instead of searching the raw text (e.g. "Bengaluru" becomes the real city).
     if (typed.length >= 2 && !picked && !geo.coordinates && !detectedPlace && !district.trim()) {
       try {
-        const [top] = await searchPlaces(typed, language)
+        const [top] = await searchPlaces(typed, language, undefined, originCoords)
         if (top && top.village.toLowerCase().startsWith(typed.toLowerCase())) {
           handlePlaceSelect(top)
           return
@@ -701,6 +701,7 @@ export function FarmerHomePage() {
               value={village}
               placeholder={t('ui.typeVillagePlaceholder')}
               locating={geo.loading || geocoding}
+              nearTo={originCoords}
               onUseCurrentLocation={() => void locate()}
               onSelect={handlePlaceSelect}
               onChange={(val) => {

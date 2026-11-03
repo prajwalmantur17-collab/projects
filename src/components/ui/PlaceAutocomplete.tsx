@@ -4,6 +4,7 @@ import { Loader2, LocateFixed, MapPin } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { usePlaceSuggestions } from '../../hooks/usePlaceSuggestions'
 import type { PlaceSuggestion } from '../../services/placeSearch'
+import type { Coordinates } from '../../types'
 
 interface PlaceAutocompleteProps {
   value: string
@@ -13,6 +14,8 @@ interface PlaceAutocompleteProps {
   /** Called when the person taps "Use my location" in the list. */
   onUseCurrentLocation: () => void
   locating?: boolean
+  /** Rank suggestions closest to this point first (GPS or the last picked place). */
+  nearTo?: Coordinates | null
   placeholder?: string
   inputRef?: Ref<HTMLInputElement>
 }
@@ -30,6 +33,7 @@ export function PlaceAutocomplete({
   onSelect,
   onUseCurrentLocation,
   locating = false,
+  nearTo,
   placeholder,
   inputRef,
 }: PlaceAutocompleteProps) {
@@ -38,7 +42,7 @@ export function PlaceAutocomplete({
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
 
-  const { suggestions, loading } = usePlaceSuggestions(value, open)
+  const { suggestions, loading } = usePlaceSuggestions(value, open, nearTo)
 
   const showLocate = value.trim().length === 0
   const options: Option[] = [

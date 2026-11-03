@@ -200,6 +200,8 @@ function cleanDistrict(raw: string): string {
   if (!raw) return ''
   return raw
     .replace(/\s+(district|taluk|taluka|urban taluku|rural taluku|tahsil|tehsil)$/i, '')
+    // OSM calls the Bengaluru city district "Bengaluru Urban"; machines are listed under "Bengaluru".
+    .replace(/\s+urban$/i, '')
     .trim()
 }
 
@@ -220,7 +222,7 @@ export async function reverseGeocode(
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 6000)
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1&accept-language=${acceptLang}`
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=17&addressdetails=1&accept-language=${acceptLang}`
     const res = await fetch(url, {
       headers: {
         Accept: 'application/json',
@@ -234,16 +236,17 @@ export async function reverseGeocode(
     if (res.ok) {
       const data = await res.json()
       const addr = data.address || {}
-      // Priority order: village > hamlet > town > city > city_district > suburb > neighbourhood > locality > county
+      // Most local name first, so a spot in Bengaluru gives "Bharathi City" / "Kogilu", not just "Bengaluru".
+      // Priority: village > neighbourhood > suburb > hamlet > locality > town > city_district > city > county
       const rawVillage =
         addr.village ||
-        addr.hamlet ||
-        addr.town ||
-        addr.city ||
-        addr.city_district ||
-        addr.suburb ||
         addr.neighbourhood ||
+        addr.suburb ||
+        addr.hamlet ||
         addr.locality ||
+        addr.town ||
+        addr.city_district ||
+        addr.city ||
         addr.county ||
         ''
       const rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
