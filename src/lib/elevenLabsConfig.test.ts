@@ -5,6 +5,7 @@ import {
   MAX_TEXT_LENGTH,
   MODEL_SUPPORTED_LANGUAGES,
   resolveSpeechConfig,
+  isOriginAllowed,
 } from '../../api/speechConfig'
 
 describe('ElevenLabs speech configuration and model capabilities', () => {
@@ -19,6 +20,7 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     delete process.env.ELEVENLABS_VOICE_HI
     delete process.env.ELEVENLABS_VOICE_KN
     delete process.env.ELEVENLABS_VOICE_TA
+    delete process.env.ALLOWED_ORIGINS
   })
 
   afterEach(() => {
@@ -33,12 +35,20 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(DEFAULT_MODEL_ID).toBe('eleven_multilingual_v2')
   })
 
-  it('verifies eleven_multilingual_v2 supports English, Hindi, Kannada, and Tamil', () => {
+  it('verifies eleven_multilingual_v2 supports English, Hindi, and Tamil, but not Kannada', () => {
     const v2Languages = MODEL_SUPPORTED_LANGUAGES.eleven_multilingual_v2
     expect(v2Languages).toContain('en')
     expect(v2Languages).toContain('hi')
-    expect(v2Languages).toContain('kn')
     expect(v2Languages).toContain('ta')
+    expect(v2Languages).not.toContain('kn')
+  })
+
+  it('verifies eleven_v4 supports all languages including Kannada', () => {
+    const v4Languages = MODEL_SUPPORTED_LANGUAGES.eleven_v4
+    expect(v4Languages).toContain('en')
+    expect(v4Languages).toContain('hi')
+    expect(v4Languages).toContain('ta')
+    expect(v4Languages).toContain('kn')
   })
 
   it('resolves correct default voices for English, Hindi, Kannada, and Tamil', () => {
@@ -53,22 +63,21 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(config.apiKey).toBeNull()
   })
 
-  it('correctly reports all languages as supported on default model', () => {
+  it('reports Kannada as unsupported on eleven_multilingual_v2 so client falls back to browser speech', () => {
     expect(resolveSpeechConfig('en').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('hi').isModelLanguageSupported).toBe(true)
-    expect(resolveSpeechConfig('kn').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('ta').isModelLanguageSupported).toBe(true)
+    expect(resolveSpeechConfig('kn').isModelLanguageSupported).toBe(false)
   })
 
-  it('respects model and voice environment variable overrides', () => {
-    process.env.ELEVENLABS_API_KEY = 'test_key_12345'
-    process.env.ELEVENLABS_MODEL_ID = 'eleven_v4'
-    process.env.ELEVENLABS_VOICE_KN = 'custom_kannada_voice_id'
+  it('validates allowed CORS origins against default and env origins', () => {
+    expect(isOriginAllowed('https://harvestrent.vercel.app')).toBe(true)
+    expect(isOriginAllowed('http://localhost:5173')).toBe(true)
+    expect(isOriginAllowed('https://malicious-site.com')).toBe(false)
+    expect(isOriginAllowed(null)).toBe(false)
 
-    const config = resolveSpeechConfig('kn')
-    expect(config.apiKey).toBe('test_key_12345')
-    expect(config.modelId).toBe('eleven_v4')
-    expect(config.voiceId).toBe('custom_kannada_voice_id')
-    expect(config.isModelLanguageSupported).toBe(true)
+    process.env.ALLOWED_ORIGINS = 'https://custom-preview.vercel.app,https://staging.harvestrent.app'
+    expect(isOriginAllowed('https://custom-preview.vercel.app')).toBe(true)
+    expect(isOriginAllowed('https://staging.harvestrent.app')).toBe(true)
   })
 })

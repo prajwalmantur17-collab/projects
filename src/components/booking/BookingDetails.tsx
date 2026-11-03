@@ -11,6 +11,18 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
   const { t, language } = useI18n()
   const phase = workPhase(booking)
   const methodLabel = booking.payment_method === 'upi' ? t('work.upi') : t('work.cash')
+  const unit = booking.pricing_unit ?? 'per_acre'
+  const priceLabel =
+    unit === 'per_hour' ? t('price.perHour') : unit === 'per_day' ? t('price.perDay') : t('price.perAcre')
+  const unitSuffix =
+    unit === 'per_hour' ? t('price.unitHour') : unit === 'per_day' ? t('price.unitDay') : t('price.unitAcre')
+  // Only an acre-based price can be turned into a total up front; hourly/daily totals depend on the work done.
+  const estimatedTotal =
+    unit === 'per_acre'
+      ? formatPrice(booking.price_per_acre * booking.acreage)
+      : booking.amount_paid != null
+        ? formatPrice(booking.amount_paid)
+        : '—'
 
   return (
     <div className="space-y-3">
@@ -37,15 +49,16 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
           </dd>
         </div>
         <div>
-          <dt className="text-ink-muted">{t('booking.price')}</dt>
+          <dt className="text-ink-muted">{priceLabel}</dt>
           <dd className="mt-0.5 font-semibold text-ink">
             {formatPrice(booking.price_per_acre)}
+            <span className="font-normal text-ink-muted"> {unitSuffix}</span>
           </dd>
         </div>
         <div>
           <dt className="text-ink-muted">{t('booking.estimatedTotal')}</dt>
           <dd className="mt-0.5 font-bold text-leaf-800">
-            {formatPrice(booking.price_per_acre * booking.acreage)}
+            {estimatedTotal}
           </dd>
         </div>
       </dl>

@@ -13,6 +13,7 @@ import type { TranslationKey } from '../i18n'
 import { logError, mapErrorToKey } from '../lib/errors'
 import { env } from '../lib/env'
 import { requireSupabase, supabase } from '../lib/supabase'
+import { clearHiddenBookingsForUser } from '../services/bookings'
 import { ensureProfile, getProfile, updateProfile } from '../services/profiles'
 import type { Language, Profile } from '../types'
 
@@ -193,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
+      clearHiddenBookingsForUser()
       const { error } = await requireSupabase().auth.signOut()
       if (error) throw error
     } finally {
@@ -216,7 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLanguageInitializedFor(profile.id)
     if (hasStoredLanguage()) {
       const stored = window.localStorage.getItem('harvest-rentals-language')
-      const storedLanguage = stored === 'kn' || stored === 'hi' || stored === 'en' ? stored : null
+      const storedLanguage =
+        stored === 'kn' || stored === 'hi' || stored === 'en' || stored === 'ta' ? stored : null
       if (storedLanguage && storedLanguage !== profile.preferred_language) {
         void updateProfile(profile.id, { preferred_language: storedLanguage as Language })
           .then(() => refreshProfile())

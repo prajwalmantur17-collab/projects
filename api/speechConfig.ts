@@ -9,4 +9,6 @@ export {
   DEFAULT_VOICES,
   type SpeechResolution,
   resolveSpeechConfig,
+  isOriginAllowed,
+  getClientIp,
 } from './speech.ts'

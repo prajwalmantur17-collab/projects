@@ -1,6 +1,8 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { MapPin } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
+import { useI18n } from '../../i18n'
+import { useSidebar } from '../layout/SidebarContext'
 import { getFarmerBookings, getOwnerBookings, subscribeToBookings } from '../../services/bookings'
 import {
   getShareState,
@@ -23,6 +25,8 @@ const RESYNC_MS = 10 * 60 * 1000
  */
 export function LiveShareManager() {
   const { profile } = useAuth()
+  const { t } = useI18n()
+  const { collapsed } = useSidebar()
   const userId = profile?.id
   const role = profile?.role
   const share = useSyncExternalStore(subscribeShare, getShareState, getShareState)
@@ -38,7 +42,14 @@ export function LiveShareManager() {
         if (cancelled) return
         const wanted = new Set(
           bookings
-            .filter((b) => b.status === 'confirmed' && isInShareWindow(b.service_date))
+            // A finished job keeps status 'confirmed', so completion must be checked too.
+            .filter(
+              (b) =>
+                b.status === 'confirmed' &&
+                !b.completed_at &&
+                !b.cancelled_at &&
+                isInShareWindow(b.service_date),
+            )
             .map((b) => b.id),
         )
         wanted.forEach((id) => startSharing(id, true))
@@ -68,13 +79,15 @@ export function LiveShareManager() {
   return (
     <div
       role="status"
-      className="border-b border-leaf-200 bg-leaf-50 px-4 py-2 text-sm text-leaf-900"
+      className={`hr-tab-content border-b border-leaf-200 bg-leaf-50 px-4 py-2 text-sm text-leaf-900 transition-[padding] duration-300 ${
+        collapsed ? 'lg:pl-[92px]' : 'lg:pl-[276px]'
+      }`}
     >
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 font-semibold">
           <MapPin className="size-4 shrink-0" aria-hidden="true" />
           {sharing
-            ? 'Sharing your live location for your confirmed booking.'
+            ? t('live.sharing')
             : share.error}
         </p>
         {sharing ? (
@@ -83,7 +96,7 @@ export function LiveShareManager() {
             onClick={stopAllSharing}
             className="rounded-lg px-2 py-1 text-sm font-bold text-clay-800 underline hover:bg-clay-50"
           >
-            Stop
+            {t('live.stop')}
           </button>
         ) : null}
       </div>

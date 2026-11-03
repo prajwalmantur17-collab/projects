@@ -17,6 +17,7 @@ const MachineFormPage = lazy(() => import('./pages/owner/MachineFormPage').then(
 const AvailabilityPage = lazy(() => import('./pages/owner/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })))
 const OwnerBookingsPage = lazy(() => import('./pages/owner/OwnerBookingsPage').then((m) => ({ default: m.OwnerBookingsPage })))
 const RecordPage = lazy(() => import('./pages/RecordPage').then((m) => ({ default: m.RecordPage })))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const RoleSelectionPage = lazy(() => import('./pages/RoleSelectionPage').then((m) => ({ default: m.RoleSelectionPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
@@ -24,11 +25,16 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m
 const SetupRequiredPage = lazy(() => import('./pages/SetupRequiredPage').then((m) => ({ default: m.SetupRequiredPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
 
+function AppFallback() {
+  const { t } = useI18n()
+  return <LoadingScreen message={t('app.loading')} />
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <RecoveryRedirect />
-      <Suspense fallback={<LoadingScreen message="Loading..." />}>
+      <Suspense fallback={<AppFallback />}>
         <Routes>
           <Route element={<AppShell />}>
             {/* Public Farmer & Machine Discovery (Zero Login Required) */}
@@ -49,6 +55,7 @@ export function App() {
               <Route path="/select-role" element={<RoleSelectionGate />} />
               <Route path="/settings" element={<SettingsGate />} />
               <Route path="/record" element={<RecordGate />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
 
               <Route element={<RequireRole role="farmer" />}>
                 <Route path="/farmer/bookings" element={<FarmerBookingsPage />} />

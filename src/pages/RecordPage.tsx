@@ -20,6 +20,7 @@ import { Card } from '../components/ui/Card'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { LoadingScreen } from '../components/ui/Feedback'
 import { PageHeader } from '../components/ui/PageHeader'
+import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n'
 import { logError } from '../lib/errors'
@@ -34,10 +35,16 @@ import type { MyRecord, RecordItem } from '../types'
 
 export function RecordPage() {
   const { t, language } = useI18n()
+  const { profile } = useAuth()
+  const userId = profile?.id
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined)
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [record, setRecord] = useState<MyRecord | null>(null)
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getHiddenBookingIds())
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getHiddenBookingIds(profile?.id))
+
+  useEffect(() => {
+    setHiddenIds(getHiddenBookingIds(userId))
+  }, [userId])
   const [deleteTarget, setDeleteTarget] = useState<RecordItem | null>(null)
   const [clearAllOpen, setClearAllOpen] = useState(false)
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
@@ -78,7 +85,7 @@ export function RecordPage() {
     if (!deleteTarget || deleting) return
     setDeleting(true)
     try {
-      await removeBookingFromHistory(deleteTarget.id)
+      await removeBookingFromHistory(deleteTarget.id, userId)
       setHiddenIds((prev) => {
         const next = new Set(prev)
         next.add(deleteTarget.id)
@@ -98,7 +105,7 @@ export function RecordPage() {
     if (ids.length === 0) return
     setDeleting(true)
     try {
-      await clearClosedBookingsFromHistory(ids)
+      await clearClosedBookingsFromHistory(ids, userId)
       setHiddenIds((prev) => {
         const next = new Set(prev)
         ids.forEach((id) => next.add(id))

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useSidebar } from '../layout/SidebarContext'
 import { Mic, MicOff, Volume2, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { toast } from '../../lib/toast'
@@ -20,6 +22,7 @@ export function KisanVoiceAssistant({
   const [isOpen, setIsOpen] = useState(false)
   const [listening, setListening] = useState(false)
   const [transcript, setTranscript] = useState('')
+  const { mobileOpen } = useSidebar()
 
   const handleOpen = () => {
     setIsOpen(true)
@@ -93,10 +96,17 @@ export function KisanVoiceAssistant({
     }
   }
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  // Rendered into <body> so no page transform/animation can make it scroll with the content.
+  return createPortal(
     <>
-      {/* Floating Action Button for Easy 1-Tap Access */}
-      <div className="fixed bottom-24 right-4 z-40 lg:bottom-6 lg:right-6">
+      {/* Floating Action Button for Easy 1-Tap Access (always fixed to the screen) */}
+      <div
+        className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+6rem)] right-4 z-40 transition-opacity duration-200 lg:bottom-6 lg:right-6 ${
+          mobileOpen ? 'pointer-events-none opacity-0' : 'opacity-100'
+        }`}
+      >
         <button
           type="button"
           onClick={handleOpen}
@@ -113,8 +123,8 @@ export function KisanVoiceAssistant({
 
       {/* Accessible Voice Assistant Modal */}
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-lift sm:p-8">
+        <div className="hr-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="hr-modal-dialog relative w-full max-w-md rounded-3xl bg-white p-6 shadow-lift sm:p-8">
             <button
               type="button"
               onClick={handleClose}
@@ -169,6 +179,7 @@ export function KisanVoiceAssistant({
           </div>
         </div>
       ) : null}
-    </>
+    </>,
+    document.body,
   )
 }

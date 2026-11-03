@@ -38,7 +38,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useAsync } from '../../hooks/useAsync'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { reverseGeocode } from '../../services/geocode'
-import { createBooking } from '../../services/bookings'
+import { calculateEstimatedTotal, createBooking } from '../../services/bookings'
 import { getMachineCard, getMachineImageUrl, listBlackoutDates } from '../../services/machines'
 import { getMachineStatus, joinWaitlist, leaveWaitlist } from '../../services/workStatus'
 import type { Booking, CropKey, MachineCard, MachineStatus } from '../../types'
@@ -450,11 +450,11 @@ function BookingForm({
   )
   const cropOptions = machine.crops.length > 0 ? machine.crops : CROP_KEYS
   const estimateValue = parsePositiveNumber(acreage)
-  const isPerAcre = !machine.pricing_unit || machine.pricing_unit === 'per_acre'
-  const estimate =
-    isPerAcre && estimateValue !== null && estimateValue > 0
-      ? estimateValue * machine.price_per_acre
-      : null
+  const estimateResult = calculateEstimatedTotal(
+    machine.price_per_acre,
+    machine.pricing_unit,
+    estimateValue,
+  )
 
   const formUnitLabel =
     machine.pricing_unit === 'per_hour'
@@ -1002,10 +1002,12 @@ function BookingForm({
             rows={3}
           />
 
-          {estimate !== null ? (
+          {estimateResult.total !== null ? (
             <div className="flex items-center justify-between gap-3 rounded-xl bg-leaf-50 px-4 py-3">
               <span className="text-sm font-semibold text-leaf-900">{t('farmer.estimatedTotal')}</span>
-              <span className="text-lg font-extrabold text-leaf-900">{formatPrice(estimate)}</span>
+              <span className="text-lg font-extrabold text-leaf-900">
+                {formatPrice(estimateResult.total)}
+              </span>
             </div>
           ) : null}
           <p className="text-sm leading-relaxed text-ink-muted">{t('farmer.estimateNote')}</p>

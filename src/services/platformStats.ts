@@ -19,16 +19,8 @@ export interface LatestActivity {
   created_at: string
 }
 
-export async function fetchPlatformStats(): Promise<PlatformStats> {
-  if (!supabase) {
-    return {
-      total_machines: 0,
-      available_machines: 0,
-      total_farmers: 0,
-      total_users: 0,
-      confirmed_bookings: 0,
-    }
-  }
+export async function fetchPlatformStats(): Promise<PlatformStats | null> {
+  if (!supabase) return null
 
   try {
     const { data, error } = await supabase.rpc('get_platform_stats')
@@ -40,11 +32,13 @@ export async function fetchPlatformStats(): Promise<PlatformStats> {
   }
 
   try {
-    const { count: machineCount } = await supabase
+    const { count: machineCount, error: countErr } = await supabase
       .from('machines')
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
       .eq('is_available', true)
+
+    if (countErr) return null
 
     return {
       total_machines: machineCount ?? 0,
@@ -54,13 +48,7 @@ export async function fetchPlatformStats(): Promise<PlatformStats> {
       confirmed_bookings: 0,
     }
   } catch {
-    return {
-      total_machines: 0,
-      available_machines: 0,
-      total_farmers: 0,
-      total_users: 0,
-      confirmed_bookings: 0,
-    }
+    return null
   }
 }
 

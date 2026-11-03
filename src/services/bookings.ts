@@ -1,5 +1,5 @@
 import { requireSupabase } from '../lib/supabase'
-import type { Booking, BookingStatus, BookingWithRelations, CreateBookingInput } from '../types'
+import type { Booking, BookingStatus, BookingWithRelations, CreateBookingInput, PricingUnit } from '../types'
 
 const BOOKING_SELECT = `
   *,
@@ -10,13 +10,16 @@ const BOOKING_SELECT = `
   owner:profiles!bookings_owner_id_fkey(full_name)
 `
 
-// The hidden list is saved per browser in localStorage, so removing a booking only hides it for that user on that device.
-const HIDDEN_BOOKINGS_KEY = 'harvest-rentals-hidden-bookings'
+const HIDDEN_BOOKINGS_PREFIX = 'harvest-rentals-hidden-bookings'
 
-export function getHiddenBookingIds(): Set<string> {
+function getHiddenStorageKey(userId?: string): string {
+  return userId ? `${HIDDEN_BOOKINGS_PREFIX}-${userId}` : HIDDEN_BOOKINGS_PREFIX
+}
+
+export function getHiddenBookingIds(userId?: string): Set<string> {
   if (typeof window === 'undefined') return new Set()
   try {
-    const raw = window.localStorage.getItem(HIDDEN_BOOKINGS_KEY)
+    const raw = window.localStorage.getItem(getHiddenStorageKey(userId))
     if (!raw) return new Set()
     const parsed = JSON.parse(raw)
     return new Set(Array.isArray(parsed) ? parsed : [])
@@ -25,30 +28,50 @@ export function getHiddenBookingIds(): Set<string> {
   }
 }
 
-export function hideBookingLocally(id: string): void {
+export function hideBookingLocally(id: string, userId?: string): void {
   if (typeof window === 'undefined') return
   try {
-    const hidden = getHiddenBookingIds()
+    const hidden = getHiddenBookingIds(userId)
     hidden.add(id)
-    window.localStorage.setItem(HIDDEN_BOOKINGS_KEY, JSON.stringify(Array.from(hidden)))
+    window.localStorage.setItem(getHiddenStorageKey(userId), JSON.stringify(Array.from(hidden)))
   } catch {
     // Ignore quota errors
   }
 }
 
-export function hideMultipleBookingsLocally(ids: string[]): void {
+export function hideMultipleBookingsLocally(ids: string[], userId?: string): void {
   if (typeof window === 'undefined') return
   try {
-    const hidden = getHiddenBookingIds()
+    const hidden = getHiddenBookingIds(userId)
     for (const id of ids) hidden.add(id)
-    window.localStorage.setItem(HIDDEN_BOOKINGS_KEY, JSON.stringify(Array.from(hidden)))
+    window.localStorage.setItem(getHiddenStorageKey(userId), JSON.stringify(Array.from(hidden)))
   } catch {
     // Ignore quota errors
   }
 }
 
-export async function removeBookingFromHistory(bookingId: string): Promise<void> {
-  hideBookingLocally(bookingId)
+export function clearHiddenBookingsForUser(userId?: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    if (userId) {
+      window.localStorage.removeItem(getHiddenStorageKey(userId))
+    } else {
+      const keysToRemove: string[] = []
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i)
+        if (k && k.startsWith(HIDDEN_BOOKINGS_PREFIX)) {
+          keysToRemove.push(k)
+        }
+      }
+      keysToRemove.forEach((k) => window.localStorage.removeItem(k))
+    }
+  } catch {
+    // Ignore
+  }
+}
+
+export async function removeBookingFromHistory(bookingId: string, userId?: string): Promise<void> {
+  hideBookingLocally(bookingId, userId)
   try {
     await requireSupabase().from('bookings').delete().eq('id', bookingId)
   } catch {
@@ -56,15 +79,40 @@ export async function removeBookingFromHistory(bookingId: string): Promise<void>
   }
 }
 
-export async function clearClosedBookingsFromHistory(bookingIds: string[]): Promise<void> {
-  hideMultipleBookingsLocally(bookingIds)
+export async function clearClosedBookingsFromHistory(bookingIds: string[], userId?: string): Promise<void> {
+  hideMultipleBookingsLocally(bookingIds, userId)
   try {
     for (const id of bookingIds) {
       await requireSupabase().from('bookings').delete().eq('id', id)
     }
   } catch {
-    // Fallback if RLS restricts table delete
+    // Fallback
   }
+}
+
+/**
+ * Calculates the estimated total according to the machine's pricing unit.
+ * Only per_acre multiplies by acreage; per_hour and per_day return null total with the unit label.
+ */
+export function calculateEstimatedTotal(
+  price: number,
+  unit?: PricingUnit,
+  quantity?: number | null,
+): { total: number | null; unitLabelKey: string; isPerAcre: boolean } {
+  const isPerAcre = !unit || unit === 'per_acre'
+  if (isPerAcre) {
+    if (quantity && quantity > 0) {
+      return {
+        total: Math.round(price * quantity * 100) / 100,
+        unitLabelKey: 'common.perAcre',
+        isPerAcre: true,
+      }
+    }
+    return { total: null, unitLabelKey: 'common.perAcre', isPerAcre: true }
+  }
+
+  const unitLabelKey = unit === 'per_hour' ? 'common.perHour' : 'common.perDay'
+  return { total: null, unitLabelKey, isPerAcre: false }
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
@@ -89,7 +137,7 @@ export async function getFarmerBookings(farmerId: string): Promise<BookingWithRe
     .eq('farmer_id', farmerId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  const hidden = getHiddenBookingIds()
+  const hidden = getHiddenBookingIds(farmerId)
   return ((data ?? []) as BookingWithRelations[]).filter((b) => !hidden.has(b.id))
 }
 
@@ -100,7 +148,7 @@ export async function getOwnerBookings(ownerId: string): Promise<BookingWithRela
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  const hidden = getHiddenBookingIds()
+  const hidden = getHiddenBookingIds(ownerId)
   return ((data ?? []) as BookingWithRelations[]).filter((b) => !hidden.has(b.id))
 }
 

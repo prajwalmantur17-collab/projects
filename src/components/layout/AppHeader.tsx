@@ -107,7 +107,7 @@ export function AppHeader() {
             type="button"
             onClick={toggleMobile}
             className="flex size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:hidden border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white cursor-pointer"
-            aria-label="Open sidebar menu"
+            aria-label={t('ui.openSidebarMenu')}
           >
             <Menu className="size-5" />
           </button>
@@ -138,7 +138,7 @@ export function AppHeader() {
                   setSearchQuery(e.target.value)
                   setDropdownOpen(true)
                 }}
-                placeholder={isOwnerRoute ? 'Search machines, bookings…' : 'Search machines, crops, or village...'}
+                placeholder={isOwnerRoute ? t('ui.searchPlaceholderOwner') : t('ui.searchPlaceholder')}
                 className="h-10 w-full pl-10 pr-9 text-xs sm:text-sm font-medium focus:outline-none transition-all rounded-full border border-white/70 bg-white/85 backdrop-blur-md text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
               />
               {searchQuery ? (
@@ -149,7 +149,7 @@ export function AppHeader() {
                     setSmartResult(null)
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-                  aria-label="Clear search"
+                  aria-label={t('ui.clearSearch')}
                 >
                   <X className="size-3.5" />
                 </button>
@@ -192,7 +192,7 @@ export function AppHeader() {
                   /* 2. Searching state */
                   <div className="flex items-center justify-center gap-2 py-6 text-xs text-gray-500 font-medium">
                     <Spinner className="size-4 text-emerald-600" />
-                    <span>Searching machines & locations…</span>
+                    <span>{t('ui.scanning')}</span>
                   </div>
                 ) : smartResult ? (
                   /* 3. Search Results & Smart AI Answer */
@@ -203,7 +203,7 @@ export function AppHeader() {
                         <Sparkles className="size-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-black truncate">{smartResult.summary}</p>
+                        <p className="text-xs font-black truncate">{smartResult.summaryKey ? t(smartResult.summaryKey, smartResult.summaryParams) : smartResult.summary}</p>
                         <p className="text-[10px] text-emerald-700 font-semibold">
                           {smartResult.count > 0 ? `${smartResult.count} machines available right now` : 'Try checking another location'}
                         </p>
@@ -214,7 +214,7 @@ export function AppHeader() {
                     {smartResult.machines.length > 0 ? (
                       <div className="space-y-1">
                         <p className="px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                          Matching Machines ({smartResult.count})
+                          {t('ui.quickResults')} ({smartResult.count})
                         </p>
                         {smartResult.machines.slice(0, 4).map((m) => {
                           const imgUrl = getMachineImageUrl(m.image_path)
@@ -264,7 +264,7 @@ export function AppHeader() {
                       onClick={() => triggerSearch(searchQuery)}
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-700 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs cursor-pointer"
                     >
-                      <span>View all {smartResult.count} results</span>
+                      <span>{t('ui.viewAllResults', { count: smartResult.count })}</span>
                       <ArrowRight className="size-3.5" />
                     </button>
                   </div>

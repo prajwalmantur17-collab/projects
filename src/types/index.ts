@@ -120,6 +120,8 @@ export interface Booking {
   contact_phone: string
   notes: string | null
   price_per_acre: number
+  /** Unit the price applies to (copied from the machine when the booking was made). */
+  pricing_unit?: PricingUnit
   status: BookingStatus
   owner_note: string | null
   created_at: string

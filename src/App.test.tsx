@@ -5,12 +5,16 @@ import { I18nProvider } from './i18n'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import * as AuthModule from './auth/AuthProvider'
 
+type AuthReturn = ReturnType<typeof AuthModule.useAuth>
+type MockSession = AuthReturn['session']
+type MockProfile = AuthReturn['profile']
+
 describe('Full App Mount Test with Authenticated State', () => {
   it('renders with logged in farmer', () => {
     vi.spyOn(AuthModule, 'useAuth').mockReturnValue({
       configured: true,
       initializing: false,
-      session: { user: { id: 'user-123' } } as any,
+      session: { user: { id: 'user-123' } } as unknown as MockSession,
       profile: {
         id: 'user-123',
         role: 'farmer',
@@ -18,7 +22,7 @@ describe('Full App Mount Test with Authenticated State', () => {
         village: 'Hubballi',
         district: 'Dharwad',
         avatar_path: null,
-      } as any,
+      } as unknown as MockProfile,
       profileLoading: false,
       profileError: null,
       recovering: false,
@@ -47,7 +51,7 @@ describe('Full App Mount Test with Authenticated State', () => {
     vi.spyOn(AuthModule, 'useAuth').mockReturnValue({
       configured: true,
       initializing: false,
-      session: { user: { id: 'owner-123' } } as any,
+      session: { user: { id: 'owner-123' } } as unknown as MockSession,
       profile: {
         id: 'owner-123',
         role: 'owner',
@@ -55,7 +59,7 @@ describe('Full App Mount Test with Authenticated State', () => {
         village: 'Hubballi',
         district: 'Dharwad',
         avatar_path: null,
-      } as any,
+      } as unknown as MockProfile,
       profileLoading: false,
       profileError: null,
       recovering: false,

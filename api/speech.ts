@@ -13,15 +13,15 @@ export const DEFAULT_MODEL_ID = 'eleven_multilingual_v2'
  * Kannada requires newer ElevenLabs models such as Eleven v4 (eleven_v4).
  */
 export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
-  eleven_multilingual_v2: ['en', 'hi', 'kn', 'ta'],
-  eleven_turbo_v2_5: ['en', 'hi', 'kn', 'ta'],
-  eleven_flash_v2_5: ['en', 'hi', 'kn', 'ta'],
+  eleven_multilingual_v2: ['en', 'hi', 'ta'],
+  eleven_turbo_v2_5: ['en', 'hi', 'ta'],
+  eleven_flash_v2_5: ['en', 'hi', 'ta'],
   eleven_v4: ['en', 'hi', 'kn', 'ta'],
 }
 
 /**
  * Standard ElevenLabs voice configuration:
- * - dfsWmmgleAAdssZ0Spld: Voice supporting English, Hindi, Kannada, and Tamil
+ * - dfsWmmgleAAdssZ0Spld: Default voice
  */
 export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
   en: 'dfsWmmgleAAdssZ0Spld',
@@ -77,38 +77,104 @@ export function resolveSpeechConfig(language: SupportedLanguage): SpeechResoluti
   }
 }
 
+/**
+ * CORS Origin Validation:
+ * Uses ALLOWED_ORIGINS env variable (comma-separated), defaulting to production and local dev.
+ */
+export function isOriginAllowed(origin?: string | null): boolean {
+  if (!origin) return false
+  const defaultAllowed = ['https://harvestrent.vercel.app', 'http://localhost:5173']
+  const envAllowed = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : []
+  const allowed = new Set([...defaultAllowed, ...envAllowed])
+  return allowed.has(origin)
+}
+
+/**
+ * Extracts Client IP securely:
+ * Prioritizes x-vercel-forwarded-for and x-real-ip, then takes the LAST trusted hop of x-forwarded-for.
+ */
+export function getClientIp(req: IncomingMessage): string {
+  const vercelFwd = req.headers['x-vercel-forwarded-for']
+  if (typeof vercelFwd === 'string' && vercelFwd.trim()) {
+    return vercelFwd.split(',')[0].trim()
+  }
+
+  const realIp = req.headers['x-real-ip']
+  if (typeof realIp === 'string' && realIp.trim()) {
+    return realIp.trim()
+  }
+
+  const fwdFor = req.headers['x-forwarded-for']
+  if (typeof fwdFor === 'string' && fwdFor.trim()) {
+    const hops = fwdFor.split(',').map((h) => h.trim()).filter(Boolean)
+    if (hops.length > 0) {
+      return hops[hops.length - 1]
+    }
+  }
+
+  return req.socket?.remoteAddress || 'unknown'
+}
+
 interface SpeechRequestBody {
   text?: unknown
   language?: unknown
 }
 
-// In-memory rate limiter: max 20 requests per minute per IP
+// In-memory rate limiter with periodic cleanup: max 20 req/min per IP, max 300 req/min global
 const rateLimitMap = new Map<string, number[]>()
+let globalTimestamps: number[] = []
+let lastCleanup = Date.now()
+const WINDOW_MS = 60_000
+const MAX_PER_IP = 20
+const MAX_GLOBAL_PER_MIN = 300
 
-function checkRateLimit(ip: string): boolean {
+function cleanupOldRateLimits(now: number): void {
+  if (now - lastCleanup < 60_000 && rateLimitMap.size < 500) return
+  lastCleanup = now
+
+  for (const [ip, timestamps] of rateLimitMap.entries()) {
+    const valid = timestamps.filter((time) => now - time < WINDOW_MS)
+    if (valid.length === 0) {
+      rateLimitMap.delete(ip)
+    } else {
+      rateLimitMap.set(ip, valid)
+    }
+  }
+
+  globalTimestamps = globalTimestamps.filter((time) => now - time < WINDOW_MS)
+}
+
+export function checkRateLimit(ip: string): boolean {
   const now = Date.now()
-  const windowMs = 60_000
-  const maxRequests = 20
+  cleanupOldRateLimits(now)
 
+  // 1. Check global rate limit cap
+  globalTimestamps = globalTimestamps.filter((time) => now - time < WINDOW_MS)
+  if (globalTimestamps.length >= MAX_GLOBAL_PER_MIN) {
+    return false
+  }
+
+  // 2. Check per-IP limit
   const timestamps = rateLimitMap.get(ip) || []
-  const validTimestamps = timestamps.filter((time) => now - time < windowMs)
+  const validTimestamps = timestamps.filter((time) => now - time < WINDOW_MS)
 
-  if (validTimestamps.length >= maxRequests) {
+  if (validTimestamps.length >= MAX_PER_IP) {
     return false
   }
 
   validTimestamps.push(now)
   rateLimitMap.set(ip, validTimestamps)
+  globalTimestamps.push(now)
   return true
 }
 
 async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Promise<SpeechRequestBody | null> {
-  // 1. If framework / Vercel already parsed the JSON body to an object
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
     return req.body as SpeechRequestBody
   }
 
-  // 2. If req.body is a string
   if (typeof req.body === 'string') {
     try {
       return JSON.parse(req.body) as SpeechRequestBody
@@ -117,7 +183,6 @@ async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Prom
     }
   }
 
-  // 3. If req.body is a Buffer
   if (Buffer.isBuffer(req.body)) {
     try {
       return JSON.parse(req.body.toString('utf8')) as SpeechRequestBody
@@ -126,12 +191,10 @@ async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Prom
     }
   }
 
-  // 4. If stream has already ended and no body was provided
   if (req.readableEnded) {
     return null
   }
 
-  // 5. Read incoming HTTP data stream
   return new Promise((resolve) => {
     let raw = ''
     req.on('data', (chunk) => {
@@ -152,7 +215,6 @@ async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Prom
     })
     req.on('error', () => resolve(null))
 
-    // Safety timeout in case stream never emits data or end
     setTimeout(() => {
       if (!raw) resolve(null)
     }, 2000)
@@ -171,8 +233,11 @@ function sendJson(res: ServerResponse, status: number, data: Record<string, unkn
  * Vercel Serverless Function handler for ElevenLabs Text-to-Speech.
  */
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  const origin = (req.headers.origin as string) || ''
+  if (isOriginAllowed(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
@@ -187,12 +252,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return
   }
 
-  // Rate limiting check
-  const forwarded = req.headers['x-forwarded-for']
-  const clientIp = typeof forwarded === 'string'
-    ? forwarded.split(',')[0].trim()
-    : req.socket.remoteAddress || 'unknown'
+  // Validate Content-Type
+  const contentType = (req.headers['content-type'] as string) || ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    sendJson(res, 415, {
+      error: 'unsupported_media_type',
+      message: 'Content-Type must be application/json.',
+    })
+    return
+  }
 
+  // Rate limiting check
+  const clientIp = getClientIp(req)
   if (!checkRateLimit(clientIp)) {
     sendJson(res, 429, {
       error: 'rate_limit_exceeded',
@@ -277,8 +348,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       },
     }
 
-    // Force language_code for Tamil, Hindi, and English so ElevenLabs speaks in that language
-    // instead of defaulting to English phonetics
     if (lang === 'ta' || lang === 'hi' || lang === 'en') {
       requestPayload.language_code = lang
     }
@@ -322,7 +391,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           errorDetail = errorJson.detail.message
         }
       } catch {
-        // Fallback to generic message
+        // Fallback
       }
 
       sendJson(res, response.status, {
@@ -338,7 +407,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.writeHead(200, {
       'Content-Type': 'audio/mpeg',
       'Content-Length': audioBuffer.length.toString(),
-      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+      'Cache-Control': 'private, max-age=3600',
       'X-Speech-Provider': 'ElevenLabs',
       'X-Speech-Model': config.modelId,
       'X-Speech-Voice': config.voiceId,

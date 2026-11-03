@@ -6,6 +6,7 @@ import { navTa } from './nav'
 import { photoTa } from './photo'
 import { cropPhotoTa } from './cropPhoto'
 import { uiTa } from './ui'
+import { fixTa } from './fixes'
 import type { TranslationKey } from './en'
 
 export const ta: Record<TranslationKey, string> = {
@@ -17,6 +18,7 @@ export const ta: Record<TranslationKey, string> = {
   ...photoTa,
   ...cropPhotoTa,
   ...uiTa,
+  ...fixTa,
   'app.name': 'ஹார்வெஸ்ட் ரென்டல்ஸ்',
   'app.tagline': 'உங்கள் கிராமத்திற்கு அருகிலுள்ள அறுவடை இயந்திரங்களைக் கண்டுபிடியுங்கள்.',
   'app.description':
@@ -368,7 +370,6 @@ export const ta: Record<TranslationKey, string> = {
   'machine.saveMachine': 'இயந்திரத்தைச் சேமி',
   'machine.saving': 'சேமிக்கப்படுகிறது…',
   'machine.createSuccess': 'இயந்திரம் சேர்க்கப்பட்டது.',
-  'machine.updateSuccess': 'இயந்திரம் சேமிக்கப்பட்டது.',
   'machine.saveError': 'இயந்திரத்தைச் சேமிக்க முடியவில்லை. விவரங்களைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
   'machine.locationsTitle': 'சேவை கிராமங்கள்',
   'machine.primaryBadge': 'முதன்மை கிராமம்',
@@ -492,7 +493,7 @@ export const ta: Record<TranslationKey, string> = {
   'settings.googleNote': 'Google உடன் உள்நுழைந்துள்ளீர்கள்.',
   'settings.languageSaved': 'மொழி விருப்பம் சேமிக்கப்பட்டது.',
   'settings.logoutConfirmTitle': 'வெளியேறவா?',
-  'settings.logoutConfirmBody': 'முன்பதிவுகளை நிர்வகிக்க மீண்டும் Google உடன் உள்நுழைய வேண்டும்.',
+  'settings.logoutConfirmBody': 'முன்பதிவுகளை நிர்வகிக்க நீங்கள் மீண்டும் உள்நுழைய வேண்டும்.',
   'settings.roleFarmerHelp': 'நீங்கள் இயந்திரங்களைத் தேடி முன்பதிவு செய்யலாம்.',
   'settings.roleOwnerHelp': 'நீங்கள் இயந்திரங்களைப் பட்டியலிட்டு கோரிக்கைகளை நிர்வகிக்கலாம்.',
   'settings.noPhoneNote': 'உங்கள் தொலைபேசி எண் முன்பதிவில் உள்ளவர்களுக்கு மட்டுமே காட்டப்படும்.',
@@ -517,7 +518,7 @@ export const ta: Record<TranslationKey, string> = {
   'setup.step2': 'VITE_SUPABASE_URL மற்றும் VITE_SUPABASE_ANON_KEY ஐ அமைக்கவும்.',
   'setup.step3': 'supabase/migrations இல் உள்ள SQL கோப்புகளை உங்கள் Supabase திட்டத்தில் பயன்படுத்துங்கள்.',
   'setup.step4': 'டெவலப்மென்ட் சர்வரை மீண்டும் தொடங்குங்கள்.',
-  'setup.docs': 'Google உள்நுழைவு மற்றும் தரவுத்தள அமைப்புக்கு README.md ஐப் பாருங்கள்.',
+  'setup.docs': 'தரவுத்தளம் மற்றும் மின்னஞ்சல் உள்நுழைவு அமைப்பிற்கு README.md ஐப் பார்க்கவும்.',
   'setup.issue': 'தற்போதைய சிக்கல்: {issue}',
 
   'notFound.title': 'பக்கம் கிடைக்கவில்லை',

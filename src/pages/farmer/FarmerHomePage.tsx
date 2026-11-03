@@ -28,7 +28,7 @@ import { CROP_KEYS, MACHINE_TYPES } from '../../lib/constants'
 import { normalizeWhitespace } from '../../lib/validation'
 import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
-import { useGeolocation } from '../../hooks/useGeolocation'
+import { POOR_ACCURACY_M, useGeolocation } from '../../hooks/useGeolocation'
 import { getMachineImageUrl, searchMachines } from '../../services/machines'
 import { executeSmartSearch } from '../../services/smartSearch'
 import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/platformStats'
@@ -64,7 +64,7 @@ interface SearchSnapshot {
 
 function formatRelativeTime(
   isoString?: string | null,
-  t?: (key: any, params?: Record<string, string | number>) => string
+  t?: (key: TranslationKey, params?: Record<string, string | number>) => string
 ): string {
   if (!isoString) return ''
   try {
@@ -110,12 +110,6 @@ export function FarmerHomePage() {
   const [village, setVillage] = useState('')
   const [district, setDistrict] = useState('')
   const [state, setState] = useState('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('harvest-rentals-last-village')
-    }
-  }, [])
   const [crop, setCrop] = useState<string>('')
   const [acreage, setAcreage] = useState<string>('')
   const [machineType, setMachineType] = useState<string>('')
@@ -124,6 +118,7 @@ export function FarmerHomePage() {
   const [searching, setSearching] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
   const [detectedPlace, setDetectedPlace] = useState<{ place: string; district: string } | null>(null)
+  const [locationWarning, setLocationWarning] = useState(false)
   const [searchError, setSearchError] = useState<TranslationKey | null>(null)
   const [results, setResults] = useState<MachineCardType[] | null>(null)
   const [busyMachines, setBusyMachines] = useState<Map<string, string | null>>(() => new Map())
@@ -135,6 +130,7 @@ export function FarmerHomePage() {
   const [smartSummary, setSmartSummary] = useState<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const searchCardRef = useRef<HTMLDivElement>(null)
+  const villageInputRef = useRef<HTMLInputElement>(null)
   const [sortBy, setSortBy] = useState<'nearest' | 'cheapest'>('nearest')
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
 
@@ -220,7 +216,18 @@ export function FarmerHomePage() {
   const displayResults = useMemo(() => {
     if (!sortedResults) return null
     if (sortBy === 'cheapest') {
-      return [...sortedResults].sort((a, b) => a.price_per_acre - b.price_per_acre)
+      const unitRank = (unit?: string) => {
+        if (!unit || unit === 'per_acre') return 1
+        if (unit === 'per_hour') return 2
+        if (unit === 'per_day') return 3
+        return 4
+      }
+      return [...sortedResults].sort((a, b) => {
+        const rankA = unitRank(a.pricing_unit)
+        const rankB = unitRank(b.pricing_unit)
+        if (rankA !== rankB) return rankA - rankB
+        return a.price_per_acre - b.price_per_acre
+      })
     }
     return sortedResults
   }, [sortedResults, sortBy])
@@ -297,7 +304,7 @@ export function FarmerHomePage() {
     try {
       const res = await executeSmartSearch(rawQuery)
       setResults(res.machines)
-      setSmartSummary(res.summary)
+      setSmartSummary(res.summaryKey ? t(res.summaryKey, res.summaryParams) : res.summary)
       if (res.detectedLocation) {
         setVillage(res.detectedLocation)
       }
@@ -315,14 +322,16 @@ export function FarmerHomePage() {
       }, 150)
     } catch (caught) {
       logError('farmer.smartSearch', caught)
+      const errKey = mapErrorToKey(caught)
+      setSearchError(errKey)
+      toast.error(t(errKey))
     } finally {
       setSearching(false)
     }
   }
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(window.location.search)
       const qParam = params.get('q')
       if (qParam) {
         void handleSmartSearch(qParam)
@@ -340,7 +349,6 @@ export function FarmerHomePage() {
       }
       window.addEventListener('harvest-smart-search', onSmartSearchEvent)
       return () => window.removeEventListener('harvest-smart-search', onSmartSearchEvent)
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -389,52 +397,63 @@ export function FarmerHomePage() {
   // Keep detected place synchronized when the user switches interface language
   useEffect(() => {
     if (geo.coordinates && detectedPlace) {
+      let active = true
       void reverseGeocode(geo.coordinates, language).then((geocoded) => {
-        if (geocoded) {
+        if (active && geocoded) {
           if (geocoded.village) setVillage(geocoded.village)
           if (geocoded.district) setDistrict(geocoded.district)
-          setDetectedPlace({
-            place: geocoded.village,
-            district: geocoded.district,
-          })
         }
       })
+      return () => {
+        active = false
+      }
     }
-  }, [language])
+  }, [geo.coordinates, detectedPlace, language])
 
   const locate = async () => {
+    // Forget every earlier place so an old result can never be reused.
     setDetectedPlace(null)
+    setVillage('')
+    setDistrict('')
+    setState('')
+    setLocationWarning(false)
     setGeocoding(true)
     try {
-      const coords = await geo.request()
-      if (!coords) return
+      const fix = await geo.request()
+      if (!fix) return
+
+      const coords = { latitude: fix.latitude, longitude: fix.longitude }
+
+      // A very coarse fix (Wi-Fi/IP based) would show the wrong area, so ask the
+      // person to check it instead of searching with it.
+      const poor = fix.accuracy > POOR_ACCURACY_M
+      setLocationWarning(poor)
 
       const geocoded = await reverseGeocode(coords, language)
       if (geocoded) {
-        if (geocoded.village) {
-          setVillage(geocoded.village)
-        }
-        if (geocoded.district) {
-          setDistrict(geocoded.district)
-        }
-        if (geocoded.state) {
-          setState(geocoded.state)
-        }
+        setVillage(geocoded.village || '')
+        setDistrict(geocoded.district || '')
+        setState(geocoded.state || '')
         setDetectedPlace({
           place: geocoded.village,
           district: geocoded.district,
         })
 
-        if (profile && !profile.village && geocoded.village) {
+        // Always keep the profile in step with the latest detected place.
+        if (profile && geocoded.village && profile.village !== geocoded.village) {
           void updateProfile(profile.id, {
             village: geocoded.village,
             district: geocoded.district || undefined,
             state: geocoded.state || undefined,
-          }).catch(() => undefined)
+          })
+            .then(() => refreshProfile())
+            .catch((caught: unknown) => logError('farmer.saveLocation', caught))
         }
 
-        // Auto-scan for nearby machines immediately!
-        void runSearch(crop, geocoded.village, geocoded.district, geocoded.state)
+        // Auto-scan only when the position is trustworthy.
+        if (!poor) {
+          void runSearch(crop, geocoded.village, geocoded.district, geocoded.state)
+        }
       }
     } finally {
       setGeocoding(false)
@@ -462,26 +481,27 @@ export function FarmerHomePage() {
   return (
     <div className="space-y-6">
       {/* 1. Hero Banner Matching Reference Mockup */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a2312] via-[#0f341b] to-[#184e2a] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+      <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a2312] via-[#0f341b] to-[#184e2a] p-6 sm:p-8 text-white shadow-xl border border-white/10">
         {/* Right-Side Indian Farmer Portrait with Smooth Edge Blending */}
         <div
-          className="pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[44%] sm:w-[38%] md:w-[34%] select-none overflow-hidden"
+          className="hr-hero-wrap farmer-hero-mask pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[48%] sm:w-[42%] md:w-[38%] select-none overflow-hidden"
           aria-hidden="true"
         >
           <img
             src="/hero/farmer.webp"
-            alt="South Indian farmer in traditional attire holding golden harvested crops"
+            alt=""
             loading="eager"
-            className="h-full w-full object-cover object-[center_top] opacity-90 transition-opacity"
+            className="h-full w-full object-cover object-[center_top]"
             onError={(e) => {
               const target = e.currentTarget
+              target.onerror = null
               if (!target.src.endsWith('/images/farmer-hero.webp')) {
                 target.src = '/images/farmer-hero.webp'
               }
             }}
           />
-          {/* Ambient gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0a2312] via-[#0a2312]/80 sm:via-[#0a2312]/30 to-transparent pointer-events-none" />
+          {/* Edge blending is done with a CSS mask (see .farmer-hero-mask) so no colour strip shows */}
+
         </div>
 
         {/* Left-Side Content */}
@@ -492,7 +512,7 @@ export function FarmerHomePage() {
           </div>
 
           <h1 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-white">
-            Namaste, <span className="text-[#38e08a] uppercase">{name}</span>
+            {t('ui.namaste')} <span className="text-[#38e08a] uppercase">{name}</span>
           </h1>
 
           <p className="mt-1 text-sm sm:text-base text-emerald-100/90 font-normal">
@@ -666,6 +686,7 @@ export function FarmerHomePage() {
 
           <form onSubmit={onSearch} className="relative">
             <input
+              ref={villageInputRef}
               type="text"
               value={village}
               onChange={(event) => {
@@ -683,6 +704,7 @@ export function FarmerHomePage() {
             />
             <button
               type="submit"
+              disabled={searching}
               className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-gray-200 hover:bg-[#1c4d28] hover:text-white text-gray-700 flex items-center justify-center transition-all shadow-xs cursor-pointer"
               aria-label={t('farmer.searchButton')}
             >
@@ -710,7 +732,7 @@ export function FarmerHomePage() {
             </button>
           </div>
 
-          <div className={`mt-3 grid gap-3 sm:grid-cols-3 ${showFilters ? '' : 'hidden'}`}>
+          <div className={`mt-3 grid gap-3 sm:grid-cols-3 ${showFilters ? 'hr-tab-content' : 'hidden'}`}>
             <Select
               label={t('farmer.cropLabel')}
               value={crop}
@@ -747,6 +769,9 @@ export function FarmerHomePage() {
           </div>
 
           {geo.error ? <Alert variant="warning" className="mt-3">{t(geo.error)}</Alert> : null}
+          {locationWarning ? (
+            <Alert variant="warning" className="mt-3">{t('ui.locPoor')}</Alert>
+          ) : null}
           {detectedPlace ? (
             <p className="mt-2 text-xs font-semibold text-emerald-800">
               ✓ {t('farmer.locationDetected', {
@@ -807,8 +832,10 @@ export function FarmerHomePage() {
             <ShieldCheck className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">100%</div>
-            <div className="text-xs font-semibold text-gray-600">{t('ui.trustedPlatform')}</div>
+            <div className="text-2xl font-black text-gray-900">
+              {platformStats !== null ? platformStats.confirmed_bookings : '—'}
+            </div>
+            <div className="text-xs font-semibold text-gray-600">{t('ui.confirmedBookings')}</div>
           </div>
         </div>
 
@@ -822,8 +849,7 @@ export function FarmerHomePage() {
             <button
               type="button"
               onClick={() => {
-                const input = document.querySelector('input[placeholder*="village"]') as HTMLInputElement | null
-                input?.focus()
+                villageInputRef.current?.focus()
               }}
               className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-0.5 cursor-pointer"
             >
@@ -865,15 +891,11 @@ export function FarmerHomePage() {
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
             </Link>
           ) : (
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-3 flex items-center gap-3 py-1 text-xs text-gray-500 font-medium">
               <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
-                <Tractor className="size-6" />
+                <Tractor className="size-6 opacity-60" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-gray-900 truncate">{t('ui.newMachineAdded')}</p>
-                <p className="text-[11px] text-gray-500 truncate">{t('ui.scanning')}</p>
-              </div>
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-label="Live update" />
+              <p className="text-xs text-gray-500 italic">{t('ui.noActivityYet')}</p>
             </div>
           )}
         </div>
@@ -914,7 +936,7 @@ export function FarmerHomePage() {
 
       {/* Map: Stacked on lg+, toggled on mobile */}
       {hasSearched && (geo.coordinates || mapMachines.length > 0) ? (
-        <div className={mobileView === 'map' ? 'block' : 'hidden lg:block'}>
+        <div className={`hr-tab-content ${mobileView === 'map' ? 'block' : 'hidden lg:block'}`}>
           <div className="overflow-hidden rounded-3xl border border-white/60 bg-white/95 backdrop-blur-md p-0 shadow-lg">
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
               <div>
@@ -941,7 +963,6 @@ export function FarmerHomePage() {
               </span>
               <div>
                 <p className="text-base font-black text-emerald-950">{smartSummary}</p>
-                <p className="text-xs font-semibold text-emerald-700">Real verified machines available directly from database</p>
               </div>
             </div>
             <button
@@ -1027,7 +1048,7 @@ export function FarmerHomePage() {
             </div>
 
             {/* List View: Hidden on mobile when Map view is selected, always visible on lg+ */}
-            <div className={mobileView === 'list' ? 'block' : 'hidden lg:block'}>
+            <div className={`hr-tab-content ${mobileView === 'list' ? 'block' : 'hidden lg:block'}`}>
               {displayResults && displayResults.length > 0 ? (
                 <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {displayResults.map((machine, idx) => (

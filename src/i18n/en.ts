@@ -6,6 +6,7 @@ import { navEn } from './nav'
 import { photoEn } from './photo'
 import { cropPhotoEn } from './cropPhoto'
 import { uiEn } from './ui'
+import { fixEn } from './fixes'
 
 export const en = {
   ...authEn,
@@ -16,6 +17,7 @@ export const en = {
   ...photoEn,
   ...cropPhotoEn,
   ...uiEn,
+  ...fixEn,
   'app.name': 'Harvest Rentals',
   'app.tagline': 'Find harvesting machines near your village.',
   'app.description':
@@ -367,7 +369,6 @@ export const en = {
   'machine.saveMachine': 'Save Machine',
   'machine.saving': 'Saving…',
   'machine.createSuccess': 'Machine added.',
-  'machine.updateSuccess': 'Machine saved.',
   'machine.saveError': 'We could not save the machine. Check the details and try again.',
   'machine.locationsTitle': 'Operating Villages',
   'machine.primaryBadge': 'Main village',
@@ -492,7 +493,7 @@ export const en = {
   'settings.googleNote': 'Signed in with Google.',
   'settings.languageSaved': 'Language preference saved.',
   'settings.logoutConfirmTitle': 'Sign out?',
-  'settings.logoutConfirmBody': 'You will need to sign in with Google again to manage your bookings.',
+  'settings.logoutConfirmBody': 'You will need to sign in again to manage your bookings.',
   'settings.roleFarmerHelp': 'You can search and book machines.',
   'settings.roleOwnerHelp': 'You can list machines and manage requests.',
   'settings.noPhoneNote': 'Your phone number is shared only with the people in a booking.',
@@ -517,7 +518,7 @@ export const en = {
   'setup.step2': 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
   'setup.step3': 'Apply the SQL files in supabase/migrations to your Supabase project.',
   'setup.step4': 'Restart the development server.',
-  'setup.docs': 'See README.md for Google sign-in and database setup.',
+  'setup.docs': 'See README.md for database and email login setup.',
   'setup.issue': 'Current issue: {issue}',
 
   'notFound.title': 'Page not found',

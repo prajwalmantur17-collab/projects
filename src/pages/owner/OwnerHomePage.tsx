@@ -63,13 +63,14 @@ export function OwnerHomePage() {
     enabled: Boolean(ownerId),
     fallback: 'owner.requestsError',
   })
+  const { reload: reloadRequests } = requests
 
   useEffect(() => {
     if (!ownerId) return
     return subscribeToBookings(ownerId, 'owner', () => {
-      requests.reload()
+      reloadRequests()
     }, 'owner-home-bookings')
-  }, [ownerId, requests.reload])
+  }, [ownerId, reloadRequests])
 
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => getDeletedMachineIds())
 

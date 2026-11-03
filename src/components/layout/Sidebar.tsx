@@ -1,20 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Bell,
-  CalendarClock,
-  CalendarDays,
   ChevronDown,
-  HelpCircle,
-  History,
-  House,
-  Inbox,
   LogIn,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  PlusCircle,
-  Search,
   Settings,
   Sprout,
   Tractor,
@@ -28,10 +19,42 @@ import { avatarUrl } from '../../services/avatars'
 import { usePendingRequests } from '../../hooks/usePendingRequests'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSidebar } from './SidebarContext'
+import { OWNER_SIDEBAR_NAV, FARMER_SIDEBAR_NAV, type NavItemDef } from './navConfig'
+
+function SidebarNavSkeleton() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-11 animate-pulse rounded-2xl bg-white/5" />
+      ))}
+    </div>
+  )
+}
+
+/** Menu entries that need an account; guests never see them. */
+const GUEST_HIDDEN_IDS = new Set([
+  'farmer-bookings',
+  'farmer-records',
+  'farmer-notifications',
+  'farmer-profile',
+  'farmer-settings',
+])
 
 export function Sidebar() {
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen, setHelpModalOpen } = useSidebar()
-  const { profile, session, signOut } = useAuth()
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
+  )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    setIsDesktop(mq.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  const { profile, session, signOut, initializing } = useAuth()
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -40,7 +63,10 @@ export function Sidebar() {
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
   const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('hr_user_role') : null
-  const isOwner = profile?.role === 'owner' || (!profile && cachedRole === 'owner') || location.pathname.startsWith('/owner')
+  // Only a signed-in user can be an owner; a stale cached role must never show owner menus to a guest.
+  const isOwner =
+    Boolean(session) &&
+    (profile?.role === 'owner' || (!profile && cachedRole === 'owner') || location.pathname.startsWith('/owner'))
   const homePath = isOwner ? '/owner' : '/'
   const pendingRequests = usePendingRequests(isOwner ? profile?.id : undefined)
   const { unreadCount } = useNotifications(profile?.id, 'sidebar')
@@ -59,6 +85,16 @@ export function Sidebar() {
     document.addEventListener('mousedown', onMouseDown)
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [profileMenuOpen])
+
+  // Lock page scroll while the mobile drawer is open
+  useEffect(() => {
+    if (!mobileOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [mobileOpen])
 
   // Close drawer on path change on mobile
   useEffect(() => {
@@ -98,160 +134,53 @@ export function Sidebar() {
     navigate('/')
   }
 
-  // 1. Owner Navigation (for machine/harvester owners)
-  const ownerNavItems = [
-    {
-      id: 'owner-home',
-      label: t('nav.home'),
-      to: '/owner',
-      icon: House,
-      isActive: location.pathname === '/owner',
-    },
-    {
-      id: 'owner-requests',
-      label: t('nav.requests'),
-      to: '/owner/bookings',
-      icon: Inbox,
-      badge: pendingRequests > 0 ? pendingRequests : undefined,
-      badgeColor: 'bg-amber-500 text-white font-bold',
-      isActive: location.pathname === '/owner/bookings',
-    },
-    {
-      id: 'owner-machines',
-      label: t('nav.machines'),
-      to: '/owner/machines',
-      icon: Tractor,
-      isActive: location.pathname === '/owner/machines',
-    },
-    {
-      id: 'owner-add-machine',
-      label: t('nav.addMachine'),
-      to: '/owner/machines/new',
-      icon: PlusCircle,
-      isActive: location.pathname === '/owner/machines/new',
-    },
-    {
-      id: 'owner-availability',
-      label: t('owner.manageAvailability'),
-      to: '/owner/machines',
-      icon: CalendarClock,
-      isActive: location.pathname.includes('/availability'),
-    },
-    {
-      id: 'owner-records',
-      label: t('ui.myRecords'),
-      to: session ? '/record' : '/login',
-      icon: History,
-      isActive: location.pathname === '/record',
-    },
-    {
-      id: 'owner-notifications',
-      label: t('nav.notifications'),
-      to: '/owner/bookings',
-      icon: Bell,
-      badge: displayNotifBadge,
-      badgeColor: 'bg-red-500 text-white font-bold',
-      onClick: () => {
-        handleNavClick()
-        navigate('/owner/bookings')
-      },
-      isActive: false,
-    },
-    {
-      id: 'owner-settings',
-      label: t('nav.settings'),
-      to: session ? '/settings' : '/login',
-      icon: Settings,
-      isActive: location.pathname === '/settings',
-    },
-    {
-      id: 'owner-help',
-      label: t('ui.helpSupport'),
-      to: '#help',
-      icon: HelpCircle,
-      onClick: (e: React.MouseEvent) => {
+  const baseNav: NavItemDef[] = isOwner ? OWNER_SIDEBAR_NAV : FARMER_SIDEBAR_NAV
+  const navDefs: NavItemDef[] = session ? baseNav : baseNav.filter((def) => !GUEST_HIDDEN_IDS.has(def.id))
+
+  const navItems = navDefs.map((def) => {
+    let isActive = false
+    if (def.isCropAction) {
+      isActive = location.search.includes('section=crops')
+    } else if (def.end) {
+      isActive = location.pathname === def.to
+    } else if (def.to.startsWith('/')) {
+      isActive = location.pathname === def.to || (def.to !== '/' && location.pathname.startsWith(def.to))
+    }
+
+    let badge: number | undefined
+    let badgeColor: string | undefined
+    if (def.badgeType === 'pending_requests' && pendingRequests > 0) {
+      badge = pendingRequests
+      badgeColor = 'bg-amber-500 text-white font-bold'
+    } else if (def.badgeType === 'notifications' && displayNotifBadge) {
+      badge = displayNotifBadge
+      badgeColor = 'bg-red-500 text-white font-bold'
+    }
+
+    let onClick: ((e: React.MouseEvent) => void) | undefined
+    if (def.isHelpAction) {
+      onClick = (e: React.MouseEvent) => {
         e.preventDefault()
         handleNavClick()
         setHelpModalOpen(true)
-      },
-      isActive: false,
-    },
-  ]
+      }
+    } else if (def.isCropAction) {
+      onClick = handleMyCropsClick
+    } else if (def.id === 'find') {
+      onClick = handleFindMachineClick
+    }
 
-  // 2. Farmer Navigation (for farmers searching & renting machines)
-  const farmerNavItems = [
-    {
-      id: 'home',
-      label: t('nav.home'),
-      to: '/',
-      icon: House,
-      isActive: location.pathname === '/' || location.pathname === '/farmer',
-    },
-    {
-      id: 'find',
-      label: t('nav.find'),
-      to: '/',
-      icon: Search,
-      onClick: handleFindMachineClick,
-      isActive: false,
-    },
-    {
-      id: 'bookings',
-      label: t('nav.bookings'),
-      to: session ? '/farmer/bookings' : '/login',
-      icon: CalendarDays,
-      isActive: location.pathname.includes('/bookings'),
-    },
-    {
-      id: 'crops',
-      label: t('ui.myCrops'),
-      to: '/?section=crops',
-      icon: Sprout,
-      onClick: handleMyCropsClick,
-      isActive: location.search.includes('section=crops'),
-    },
-    {
-      id: 'records',
-      label: t('ui.myRecords'),
-      to: session ? '/record' : '/login',
-      icon: History,
-      isActive: location.pathname === '/record',
-    },
-    {
-      id: 'notifications',
-      label: t('nav.notifications'),
-      to: '/farmer/bookings',
-      icon: Bell,
-      badge: displayNotifBadge,
-      badgeColor: 'bg-red-500 text-white font-bold',
-      onClick: () => {
-        handleNavClick()
-        navigate('/farmer/bookings')
-      },
-      isActive: false,
-    },
-    {
-      id: 'help',
-      label: t('ui.helpSupport'),
-      to: '#help',
-      icon: HelpCircle,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault()
-        handleNavClick()
-        setHelpModalOpen(true)
-      },
-      isActive: false,
-    },
-    {
-      id: 'settings',
-      label: t('nav.settings'),
-      to: session ? '/settings' : '/login',
-      icon: Settings,
-      isActive: location.pathname === '/settings',
-    },
-  ]
-
-  const navItems = isOwner ? ownerNavItems : farmerNavItems
+    return {
+      id: def.id,
+      label: t(def.labelKey),
+      to: def.to,
+      icon: def.icon,
+      badge,
+      badgeColor,
+      isActive,
+      onClick,
+    }
+  })
 
   return (
     <>
@@ -266,7 +195,9 @@ export function Sidebar() {
 
       {/* Main Sidebar Element */}
       <aside
-        aria-label="Application Sidebar"
+        aria-label={t('a11y.primaryNav')}
+        inert={!isDesktop && !mobileOpen ? true : undefined}
+        aria-hidden={!isDesktop && !mobileOpen ? 'true' : undefined}
         className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0e2114]/98 backdrop-blur-md border-r border-[#1a4128] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           /* Mobile Drawer */
           mobileOpen ? 'translate-x-0 w-[280px] shadow-2xl' : '-translate-x-full lg:translate-x-0'
@@ -281,7 +212,7 @@ export function Sidebar() {
             to={homePath}
             onClick={() => handleNavClick()}
             className="flex items-center gap-2.5 overflow-hidden group focus-visible:outline-none"
-            aria-label="Harvest Rentals Home"
+            aria-label={t('app.name')}
           >
             <LogoMark className="size-8 shrink-0 transition-transform group-hover:scale-105" />
             <span
@@ -311,7 +242,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setMobileOpen(false)}
             className="flex lg:hidden size-8 items-center justify-center rounded-lg text-[#8BCB73] hover:bg-[#163823]"
-            aria-label="Close sidebar"
+            aria-label={t('ui.closeSidebar')}
           >
             <PanelLeftClose className="size-5" />
           </button>
@@ -319,10 +250,11 @@ export function Sidebar() {
 
         {/* B. Main Navigation List */}
         <nav
-          aria-label="Sidebar Navigation"
+          aria-label={t('a11y.primaryNav')}
           className="sidebar-scrollbar flex-1 overflow-y-auto px-3 py-4 space-y-1.5"
         >
-          {navItems.map((item) => {
+          {initializing ? <SidebarNavSkeleton /> : null}
+          {(initializing ? [] : navItems).map((item) => {
             const Icon = item.icon
             const isItemActive = item.isActive
 
@@ -335,7 +267,7 @@ export function Sidebar() {
                     isItemActive
                       ? 'bg-[#294C32] text-white font-bold shadow-inner'
                       : 'text-[#a3bfa3] hover:bg-[#163823] hover:text-white'
-                  } ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}
+                  } ${collapsed ? 'lg:justify-center lg:gap-0 lg:px-0' : ''}`}
                   aria-current={isItemActive ? 'page' : undefined}
                 >
                   <Icon
@@ -347,8 +279,8 @@ export function Sidebar() {
 
                   {/* Label (hidden when collapsed on desktop) */}
                   <span
-                    className={`truncate transition-opacity duration-200 ${
-                      collapsed ? 'lg:hidden' : 'block'
+                    className={`block truncate whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out ${
+                      collapsed ? 'lg:max-w-0 lg:opacity-0' : 'max-w-[200px] opacity-100'
                     }`}
                   >
                     {item.label}
@@ -383,7 +315,9 @@ export function Sidebar() {
 
         {/* C & D. User Profile, Promo Card & Bottom Actions Section */}
         <div className="shrink-0 border-t border-[#183b23] p-3 space-y-2.5">
-          {session && profile ? (
+          {initializing ? (
+            <div className="h-12 animate-pulse rounded-2xl bg-white/5" aria-hidden="true" />
+          ) : session && profile ? (
             <div ref={profileMenuRef} className="relative">
               {/* Profile Card Button */}
               <button
@@ -442,7 +376,7 @@ export function Sidebar() {
 
               {/* Profile Dropdown Popup Menu */}
               {profileMenuOpen ? (
-                <div className="absolute bottom-full left-0 mb-2 w-full min-w-[200px] rounded-2xl border border-[#234D2C] bg-[#0c1f14] p-1.5 shadow-2xl z-50">
+                <div className="hr-tab-content absolute bottom-full left-0 mb-2 w-full min-w-[200px] rounded-2xl border border-[#234D2C] bg-[#0c1f14] p-1.5 shadow-2xl z-50">
                   <Link
                     to="/settings"
                     onClick={() => handleNavClick()}

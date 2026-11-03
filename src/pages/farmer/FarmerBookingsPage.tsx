@@ -116,7 +116,7 @@ export function FarmerBookingsPage() {
     setDeleting(true)
     setActionError(null)
     try {
-      await removeBookingFromHistory(deleteTarget.id)
+      await removeBookingFromHistory(deleteTarget.id, userId)
       setDeleteTarget(null)
       setSuccess('farmer.bookingRemoved')
       reload()

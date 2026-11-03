@@ -143,6 +143,12 @@ export function TrackMachine({
     ? Math.max(0, Math.round((now - new Date(other.updated_at).getTime()) / 1000))
     : null
   const stale = ageSeconds !== null && ageSeconds > STALE_AFTER_SECONDS
+  // Live tracking only counts as connected while BOTH people are sharing fresh positions.
+  const mineAge = mine
+    ? Math.max(0, Math.round((now - new Date(mine.updated_at).getTime()) / 1000))
+    : null
+  const mineFresh = mineAge !== null && mineAge <= STALE_AFTER_SECONDS
+  const bothLive = Boolean(other) && !stale && mineFresh
 
   const km = tracked && me ? distanceKm(tracked, me) : null
   const etaMinutes = km !== null ? Math.max(1, Math.round((km / AVERAGE_SPEED_KMH) * 60)) : null
@@ -164,7 +170,7 @@ export function TrackMachine({
             <p className="font-medium text-ink-muted">
               Could not load the live location. Try again later.
             </p>
-          ) : other && ageSeconds !== null ? (
+          ) : other && ageSeconds !== null && bothLive ? (
             <>
               <p className="font-bold text-ink">
                 {stale
@@ -178,6 +184,14 @@ export function TrackMachine({
                   ? `${formatDistance(km)} km apart · about ${etaMinutes} min (road route) · `
                   : ''}
                 updated {ago(ageSeconds)}
+              </p>
+            </>
+          ) : other && ageSeconds !== null ? (
+            <>
+              <p className="font-bold text-ink">{otherLabel} · not connected</p>
+              <p className="text-ink-muted">
+                Live tracking works only while both of you are sharing. Last seen {ago(ageSeconds)}
+                {mineFresh ? '.' : ' · turn on your location to connect.'}
               </p>
             </>
           ) : tracked ? (

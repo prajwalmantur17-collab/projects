@@ -6,6 +6,7 @@ import { navHi } from './nav'
 import { photoHi } from './photo'
 import { cropPhotoHi } from './cropPhoto'
 import { uiHi } from './ui'
+import { fixHi } from './fixes'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
@@ -17,6 +18,7 @@ export const hi: Record<TranslationKey, string> = {
   ...photoHi,
   ...cropPhotoHi,
   ...uiHi,
+  ...fixHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास हार्वेस्टर मशीनें खोजें।',
   'app.description':
@@ -366,7 +368,6 @@ export const hi: Record<TranslationKey, string> = {
   'machine.saveMachine': 'मशीन सहेजें',
   'machine.saving': 'सहेजा जा रहा है…',
   'machine.createSuccess': 'मशीन जोड़ी गई।',
-  'machine.updateSuccess': 'मशीन सहेजी गई।',
   'machine.saveError': 'मशीन सहेजी नहीं जा सकी। विवरण जाँचें और फिर कोशिश करें।',
   'machine.locationsTitle': 'सेवा वाले गाँव',
   'machine.primaryBadge': 'मुख्य गाँव',
@@ -490,7 +491,7 @@ export const hi: Record<TranslationKey, string> = {
   'settings.googleNote': 'Google से साइन इन किया गया।',
   'settings.languageSaved': 'भाषा की पसंद सहेजी गई।',
   'settings.logoutConfirmTitle': 'साइन आउट करें?',
-  'settings.logoutConfirmBody': 'बुकिंग प्रबंधित करने के लिए आपको फिर Google से साइन इन करना होगा।',
+  'settings.logoutConfirmBody': 'बुकिंग प्रबंधित करने के लिए आपको फिर से साइन इन करना होगा।',
   'settings.roleFarmerHelp': 'आप मशीन खोज और बुक कर सकते हैं।',
   'settings.roleOwnerHelp': 'आप मशीनें सूचीबद्ध कर अनुरोध प्रबंधित कर सकते हैं।',
   'settings.noPhoneNote': 'आपका फ़ोन नंबर केवल बुकिंग से जुड़े लोगों को दिखाया जाता है।',
@@ -515,7 +516,7 @@ export const hi: Record<TranslationKey, string> = {
   'setup.step2': 'VITE_SUPABASE_URL और VITE_SUPABASE_ANON_KEY सेट करें।',
   'setup.step3': 'supabase/migrations की SQL फ़ाइलें अपने Supabase प्रोजेक्ट पर लागू करें।',
   'setup.step4': 'डेवलपमेंट सर्वर फिर से शुरू करें।',
-  'setup.docs': 'Google साइन इन और डेटाबेस सेटअप के लिए README.md देखें।',
+  'setup.docs': 'डेटाबेस और ईमेल लॉगिन सेटअप के लिए README.md देखें।',
   'setup.issue': 'वर्तमान समस्या: {issue}',
 
   'notFound.title': 'पेज नहीं मिला',

@@ -31,4 +31,26 @@ describe('parseNaturalSearchQuery', () => {
     expect(res.model).toBe('swaraj')
     expect(res.machineType).toBe('combine_harvester')
   })
+
+  it('never lets a single crop word like "rice" become a location', () => {
+    const res = parseNaturalSearchQuery('rice')
+    expect(res.crop).toBe('rice')
+    expect(res.location).toBeUndefined()
+  })
+
+  it('correctly parses "harvester in mandya"', () => {
+    const res = parseNaturalSearchQuery('harvester in mandya')
+    expect(res.machineType).toBe('combine_harvester')
+    expect(res.location).toBe('mandya')
+  })
+
+  it('handles empty query / empty village without throwing or producing false location matches', () => {
+    const emptyRes = parseNaturalSearchQuery('')
+    expect(emptyRes.location).toBeUndefined()
+    expect(emptyRes.isNewQuery).toBe(false)
+    expect(emptyRes.isCountQuery).toBe(false)
+
+    const whitespaceRes = parseNaturalSearchQuery('   ')
+    expect(whitespaceRes.location).toBeUndefined()
+  })
 })

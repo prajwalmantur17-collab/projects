@@ -352,7 +352,9 @@
 }
 
 .hr-route {
-  animation: hr-route-in 250ms var(--ease-out-soft) both;
+  /* 'backwards' (not 'both'): no transform is left on the wrapper afterwards, so
+     position:fixed children (voice button, modals) stay fixed to the screen. */
+  animation: hr-route-in 250ms var(--ease-out-soft) backwards;
 }
 
 @keyframes hr-card-in {
@@ -394,4 +396,134 @@
 }
 .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #2b5c39;
+}
+
+
+/* --- Harvest Rentals Micro-Interactions & Fluid Animations (Section F) --- */
+
+/* 1. Segmented toggle & tabs content entrance */
+@keyframes hr-fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hr-tab-content {
+  animation: hr-fade-slide-in 180ms var(--ease-out-soft) backwards;
+}
+
+/* 2. Modal backdrop & dialog animation helpers */
+@keyframes hr-backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hr-dialog-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.hr-modal-backdrop {
+  animation: hr-backdrop-fade 150ms ease-out both;
+}
+
+.hr-modal-dialog {
+  animation: hr-dialog-zoom 200ms var(--ease-out-soft) both;
+}
+
+/* 4. Staggered card entrance */
+.hr-card-stagger {
+  animation: hr-card-in 300ms var(--ease-out-soft) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+
+/* 5. Button active press feedback */
+button:active:not(:disabled),
+a[role="button"]:active:not(:disabled) {
+  scale: 0.97;
+  transition: scale 75ms ease-out;
+}
+
+/* 6. Chips / filter pills transition */
+.hr-chip {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out, color 150ms ease-out;
+}
+
+/* 7. Toast slide in */
+@keyframes hr-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hr-toast {
+  animation: hr-toast-in 200ms var(--ease-out-soft) both;
+}
+
+/* Farmer hero: photo fades smoothly into the card (no hard edge or colour strip) */
+.farmer-hero-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 22%, #000 48%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 22%, #000 48%);
+}
+
+@media (max-width: 639px) {
+  .farmer-hero-mask {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.5) 30%, #000 60%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.5) 30%, #000 60%);
+  }
+}
+
+.hr-hero-wrap img {
+  transform-origin: bottom right;
+  transition: scale 0.8s var(--ease-out-soft), filter 0.8s ease;
+  will-change: scale;
+}
+
+@media (hover: hover) {
+  .group:hover .hr-hero-wrap img {
+    scale: 1.07;
+    filter: saturate(1.08) contrast(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hr-hero-wrap img {
+    transition: none;
+  }
+  .group:hover .hr-hero-wrap img {
+    scale: 1;
+    filter: none;
+  }
+}
+
+/* 8. Global Accessibility: Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

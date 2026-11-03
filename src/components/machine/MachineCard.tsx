@@ -171,13 +171,13 @@ export function MachineCard({
         {hasAcreage && machine.pricing_unit === 'per_hour' ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">
             <span className="text-leaf-700">{t('ui.hourlyRate')}: </span>
-            <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / hr</span>
+            <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} {t('price.unitHour')}</span>
             <span className="text-leaf-600"> {t('ui.hoursPerAcre')}</span>
           </div>
         ) : hasAcreage && machine.pricing_unit === 'per_day' ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">
             <span className="text-leaf-700">{t('ui.dailyRate')}: </span>
-            <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} / day</span>
+            <span className="text-sm font-extrabold text-leaf-800">{formatPrice(machine.price_per_acre)} {t('price.unitDay')}</span>
           </div>
         ) : estimatedTotal && hasAcreage ? (
           <div className="rounded-xl border border-leaf-200 bg-leaf-50/80 px-3 py-2 text-sm font-semibold text-leaf-900">

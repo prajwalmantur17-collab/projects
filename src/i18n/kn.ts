@@ -6,6 +6,7 @@ import { navKn } from './nav'
 import { photoKn } from './photo'
 import { cropPhotoKn } from './cropPhoto'
 import { uiKn } from './ui'
+import { fixKn } from './fixes'
 import type { TranslationKey } from './en'
 
 export const kn: Record<TranslationKey, string> = {
@@ -17,6 +18,7 @@ export const kn: Record<TranslationKey, string> = {
   ...photoKn,
   ...cropPhotoKn,
   ...uiKn,
+  ...fixKn,
   'app.name': 'ಹಾರ್ವೆಸ್ಟ್ ರೆಂಟಲ್ಸ್',
   'app.tagline': 'ನಿಮ್ಮ ಹಳ್ಳಿಯ ಸಮೀಪದಲ್ಲಿ ಕೊಯ್ಲು ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
   'app.description':
@@ -366,7 +368,6 @@ export const kn: Record<TranslationKey, string> = {
   'machine.saveMachine': 'ಯಂತ್ರ ಉಳಿಸಿ',
   'machine.saving': 'ಉಳಿಸಲಾಗುತ್ತಿದೆ…',
   'machine.createSuccess': 'ಯಂತ್ರ ಸೇರಿಸಲಾಗಿದೆ.',
-  'machine.updateSuccess': 'ಯಂತ್ರ ಉಳಿಸಲಾಗಿದೆ.',
   'machine.saveError': 'ಯಂತ್ರ ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ವಿವರಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'machine.locationsTitle': 'ಸೇವಾ ಹಳ್ಳಿಗಳು',
   'machine.primaryBadge': 'ಮುಖ್ಯ ಹಳ್ಳಿ',
@@ -490,7 +491,7 @@ export const kn: Record<TranslationKey, string> = {
   'settings.googleNote': 'Google ನೊಂದಿಗೆ ಸೈನ್ ಇನ್ ಆಗಿದೆ.',
   'settings.languageSaved': 'ಭಾಷೆಯ ಆದ್ಯತೆ ಉಳಿಸಲಾಗಿದೆ.',
   'settings.logoutConfirmTitle': 'ಸೈನ್ ಔಟ್ ಮಾಡುವುದೇ?',
-  'settings.logoutConfirmBody': 'ಬುಕಿಂಗ್ ನಿರ್ವಹಿಸಲು ಮತ್ತೆ Google ನೊಂದಿಗೆ ಸೈನ್ ಇನ್ ಮಾಡಬೇಕು.',
+  'settings.logoutConfirmBody': 'ಬುಕಿಂಗ್ ನಿರ್ವಹಿಸಲು ನೀವು ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಬೇಕಾಗುತ್ತದೆ.',
   'settings.roleFarmerHelp': 'ನೀವು ಯಂತ್ರ ಹುಡುಕಿ ಬುಕ್ ಮಾಡಬಹುದು.',
   'settings.roleOwnerHelp': 'ನೀವು ಯಂತ್ರಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡಿ ವಿನಂತಿಗಳನ್ನು ನಿರ್ವಹಿಸಬಹುದು.',
   'settings.noPhoneNote': 'ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆ ಬುಕಿಂಗ್‌ನಲ್ಲಿ ಭಾಗಿಯಾದವರಿಗೆ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ.',
@@ -515,7 +516,7 @@ export const kn: Record<TranslationKey, string> = {
   'setup.step2': 'VITE_SUPABASE_URL ಮತ್ತು VITE_SUPABASE_ANON_KEY ಗಳನ್ನು ಹೊಂದಿಸಿ.',
   'setup.step3': 'supabase/migrations ನಲ್ಲಿನ SQL ಫೈಲ್‌ಗಳನ್ನು ನಿಮ್ಮ Supabase ಪ್ರಾಜೆಕ್ಟ್‌ಗೆ ಅನ್ವಯಿಸಿ.',
   'setup.step4': 'ಡೆವಲಪ್‌ಮೆಂಟ್ ಸರ್ವರ್ ಮರುಪ್ರಾರಂಭಿಸಿ.',
-  'setup.docs': 'Google ಸೈನ್ ಇನ್ ಮತ್ತು ಡೇಟಾಬೇಸ್ ಸೆಟಪ್‌ಗಾಗಿ README.md ನೋಡಿ.',
+  'setup.docs': 'ಡೇಟಾಬೇಸ್ ಮತ್ತು ಇಮೇಲ್ ಲಾಗಿನ್ ಸೆಟಪ್‌ಗಾಗಿ README.md ನೋಡಿ.',
   'setup.issue': 'ಪ್ರಸ್ತುತ ಸಮಸ್ಯೆ: {issue}',
 
   'notFound.title': 'ಪುಟ ಸಿಗಲಿಲ್ಲ',

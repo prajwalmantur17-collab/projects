@@ -219,8 +219,8 @@ export async function reverseGeocode(
   // 1. Try OpenStreetMap Nominatim with explicit language preference
   try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 4000)
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=${acceptLang}`
+    const timer = setTimeout(() => controller.abort(), 6000)
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1&accept-language=${acceptLang}`
     const res = await fetch(url, {
       headers: {
         Accept: 'application/json',
@@ -234,11 +234,13 @@ export async function reverseGeocode(
     if (res.ok) {
       const data = await res.json()
       const addr = data.address || {}
+      // Most local place first: village > hamlet > suburb > town > city district > city.
       const rawVillage =
         addr.village ||
-        addr.town ||
         addr.hamlet ||
         addr.suburb ||
+        addr.neighbourhood ||
+        addr.town ||
         addr.city_district ||
         addr.city ||
         addr.locality ||

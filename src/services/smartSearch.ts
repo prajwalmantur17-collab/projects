@@ -1,11 +1,14 @@
 import { supabase } from '../lib/supabase'
 import { deduplicateMachines, getLocalMachines, isMachineDeleted } from './store'
 import type { CropKey, MachineCard } from '../types'
+import type { TranslationKey } from '../i18n'
 
 export interface SmartSearchResult {
   rawQuery: string
   intent: 'new_machines' | 'count_query' | 'location_search' | 'crop_search' | 'model_search' | 'general'
   summary: string
+  summaryKey: TranslationKey
+  summaryParams: Record<string, string | number>
   count: number
   machines: MachineCard[]
   detectedLocation?: string
@@ -17,6 +20,7 @@ export interface SmartSearchResult {
 // Common aliases for locations across languages and spellings
 const LOCATION_ALIASES: Record<string, string> = {
   // Vijayapura
+  vijaypura: 'vijaypura',
   vijayapura: 'vijaypura',
   vijayapur: 'vijaypura',
   bijapur: 'vijaypura',
@@ -129,11 +133,11 @@ export function parseNaturalSearchQuery(rawQuery: string): ParsedQuery {
   // 2. Detect Count query intent ("how many", "count", "number of")
   const isCountQuery = /(how many|how much|count|number of|total|quantity|ಎಷ್ಟು|कितने|எத்தனை)/i.test(clean)
 
-  // 3. Detect Machine Type
+  // 3. Detect Machine Type (fixed Kannada regex from Tamil letters to ಕೊಯ್ಲು)
   let machineType: 'combine_harvester' | 'tractor_harvester' | 'tractor' | 'power_tiller' | undefined
   let machineTypeLabel: string | undefined
 
-  if (/(combine|harvester|harvestor|harvesters|हार्वेस्टर|ಹಾರ್ವೆಸ್ಟರ್|ಅறுವடை)/i.test(clean)) {
+  if (/(combine|harvester|harvestor|harvesters|हार्वेस्टर|ಹಾರ್ವೆಸ್ಟರ್|ಕೊಯ್ಲು|அறுவடை)/i.test(clean)) {
     machineType = 'combine_harvester'
     machineTypeLabel = 'Harvester'
   } else if (/(tractor|ಟ್ರ್ಯಾಕ್ಟರ್|ट्रैक्टर)/i.test(clean)) {
@@ -175,16 +179,21 @@ export function parseNaturalSearchQuery(rawQuery: string): ParsedQuery {
     }
   }
 
-  // If no alias matched, strip out known intent keywords to find potential place name
-  if (!location) {
+  // Location fallback: only treat leftover words as a location when NO crop, machine type or model was detected!
+  // Never let a single word like "rice" become a location.
+  if (!location && !crop && !machineType && !model) {
     const stopWords = new Set([
       'how', 'many', 'much', 'harvestor', 'harvester', 'harvesters', 'machine', 'machines',
+      'tractor', 'tractors', 'tiller', 'tillers', 'combine', 'combines',
       'are', 'there', 'in', 'near', 'at', 'for', 'added', 'what', 'the', 'is', 'new',
       'show', 'me', 'find', 'available', 'rent', 'rental', 'of', 'to', 'all', 'any',
-      'latest', 'recent', 'recently', 'please', 'tell', 'give', 'number'
+      'latest', 'recent', 'recently', 'please', 'tell', 'give', 'number',
+      ...Object.keys(CROP_KEYWORDS),
+      ...Object.values(CROP_KEYWORDS),
+      ...MACHINE_MODELS.flatMap((m) => m.split(/\s+/)),
     ])
     const words = clean.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean)
-    const candidates = words.filter((w) => !stopWords.has(w) && !MACHINE_MODELS.includes(w) && !CROP_KEYWORDS[w])
+    const candidates = words.filter((w) => !stopWords.has(w) && w.length >= 2)
     if (candidates.length > 0) {
       location = candidates.join(' ')
       locationDisplay = candidates.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -209,60 +218,90 @@ export function parseNaturalSearchQuery(rawQuery: string): ParsedQuery {
 export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchResult> {
   const parsed = parseNaturalSearchQuery(rawQuery)
 
-  // 1. Fetch machines from Supabase view `machine_cards`
-  let allMachines: MachineCard[] = []
+  let machines: MachineCard[] = []
 
-  if (supabase) {
+  // 1. If location, crop, or machine type is detected, use the optimized search_machines RPC first
+  if (supabase && (parsed.location || parsed.crop || parsed.machineType)) {
+    try {
+      const { data, error } = await supabase.rpc('search_machines', {
+        p_village: parsed.location || null,
+        p_district: null,
+        p_state: null,
+        p_crop: parsed.crop || null,
+        p_machine_type: parsed.machineType || null,
+        p_limit: 48,
+        p_offset: 0,
+      })
+
+      if (!error && Array.isArray(data)) {
+        machines = deduplicateMachines(data as MachineCard[]).filter(
+          (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+        )
+      }
+    } catch {
+      // Fall through to table select
+    }
+  }
+
+  // 2. If no RPC results, or if query is for new/recent machines or model, query machine_cards with limit(48)
+  if (machines.length === 0 && supabase) {
     try {
       const { data, error } = await supabase
         .from('machine_cards')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
+        .limit(48)
 
       if (!error && Array.isArray(data)) {
-        allMachines = deduplicateMachines(data as MachineCard[]).filter(
-          (m) => !isMachineDeleted(m.id) && m.is_active !== false,
+        machines = deduplicateMachines(data as MachineCard[]).filter(
+          (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
         )
       }
     } catch {
-      // Fall through to local store
+      // Fall through to local resilient store
     }
   }
 
-  if (allMachines.length === 0) {
-    allMachines = deduplicateMachines(getLocalMachines()).filter(
-      (m) => !isMachineDeleted(m.id) && m.is_active !== false,
+  // 3. Fallback to local store if Supabase returned nothing or is offline
+  if (machines.length === 0) {
+    machines = deduplicateMachines(getLocalMachines()).filter(
+      (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
     )
   }
 
-  // 2. Filter and rank based on parsed query
-  let filtered = [...allMachines]
+  // 4. Refine and filter based on parsed parameters
+  let filtered = [...machines]
 
   // Filter: New machines query
   if (parsed.isNewQuery && !parsed.location && !parsed.machineType && !parsed.crop && !parsed.model) {
-    // Return all machines sorted by created_at descending (latest first)
     const resultCount = filtered.length
     return {
       rawQuery,
       intent: 'new_machines',
       summary: `Showing ${resultCount} latest machines added to Harvest Rentals`,
+      summaryKey: 'ui.summaryNew',
+      summaryParams: { count: resultCount },
       count: resultCount,
       machines: filtered,
     }
   }
 
-  // Filter by Location if detected
+  // Filter by Location if detected (with proper non-empty string checks)
   if (parsed.location) {
     const locLower = parsed.location.toLowerCase()
     const locMatches = filtered.filter((m) => {
-      const v = (m.village || '').toLowerCase()
-      const d = (m.district || '').toLowerCase()
+      const v = (m.village || '').trim().toLowerCase()
+      const d = (m.district || '').trim().toLowerCase()
       const svs = Array.isArray(m.service_villages)
-        ? m.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+        ? m.service_villages.map((s) => (typeof s === 'string' ? s.trim().toLowerCase() : '')).filter(Boolean)
         : []
 
-      return v.includes(locLower) || d.includes(locLower) || svs.some((s) => s.includes(locLower)) || locLower.includes(v) || locLower.includes(d)
+      const vMatch = Boolean(v && (v.includes(locLower) || locLower.includes(v)))
+      const dMatch = Boolean(d && (d.includes(locLower) || locLower.includes(d)))
+      const svMatch = svs.some((s) => Boolean(s && (s.includes(locLower) || locLower.includes(s))))
+
+      return vMatch || dMatch || svMatch
     })
 
     if (locMatches.length > 0) {
@@ -270,7 +309,7 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
     }
   }
 
-  // Filter by Machine Type if detected (e.g. harvester, tractor)
+  // Filter by Machine Type if detected
   if (parsed.machineType) {
     const typeLower = parsed.machineType.toLowerCase()
     const typeMatches = filtered.filter((m) => {
@@ -286,7 +325,7 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
     }
   }
 
-  // Filter by Model if detected (e.g. swaraj, john deere)
+  // Filter by Model if detected
   if (parsed.model) {
     const modelLower = parsed.model.toLowerCase()
     const modelMatches = filtered.filter((m) => {
@@ -310,9 +349,11 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
     }
   }
 
-  // 3. Construct Smart Natural Language Summary
+  // 5. Construct Smart i18n Summary
   const count = filtered.length
   let summary = ''
+  let summaryKey: TranslationKey = 'ui.summaryGeneralFound'
+  let summaryParams: Record<string, string | number> = { count, query: rawQuery }
   let intent: SmartSearchResult['intent'] = 'general'
 
   if (parsed.isCountQuery || parsed.location) {
@@ -320,27 +361,47 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
     const typeText = parsed.machineTypeLabel || 'Machine'
     const locText = parsed.locationDisplay || parsed.location || 'your area'
     if (count > 0) {
+      summaryKey = 'ui.summaryLocationFound'
+      summaryParams = { count, type: typeText, location: locText }
       summary = `Found ${count} ${typeText}${count > 1 ? 's' : ''} available in ${locText}`
     } else {
+      summaryKey = 'ui.summaryLocationNone'
+      summaryParams = { type: typeText, location: locText }
       summary = `No ${typeText}s currently listed in ${locText}`
     }
   } else if (parsed.isNewQuery) {
     intent = 'new_machines'
+    summaryKey = 'ui.summaryNew'
+    summaryParams = { count }
     summary = `Showing ${count} newly added machines`
   } else if (parsed.crop) {
     intent = 'crop_search'
+    summaryKey = 'ui.summaryCrop'
+    summaryParams = { count, crop: parsed.crop }
     summary = `Found ${count} machines suitable for ${parsed.crop}`
   } else if (parsed.model) {
     intent = 'model_search'
+    summaryKey = 'ui.summaryModel'
+    summaryParams = { count, model: parsed.model }
     summary = `Found ${count} machines matching '${parsed.model}'`
   } else {
-    summary = count > 0 ? `Found ${count} machines matching "${rawQuery}"` : `No machines found matching "${rawQuery}"`
+    if (count > 0) {
+      summaryKey = 'ui.summaryGeneralFound'
+      summaryParams = { count, query: rawQuery }
+      summary = `Found ${count} machines matching "${rawQuery}"`
+    } else {
+      summaryKey = 'ui.summaryGeneralNone'
+      summaryParams = { query: rawQuery }
+      summary = `No machines found matching "${rawQuery}"`
+    }
   }
 
   return {
     rawQuery,
     intent,
     summary,
+    summaryKey,
+    summaryParams,
     count,
     machines: filtered,
     detectedLocation: parsed.locationDisplay || parsed.location,

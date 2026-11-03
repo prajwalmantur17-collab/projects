@@ -79,7 +79,7 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label={t('notif.title')}
-          className="absolute right-0 top-full z-40 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-cream-200 bg-white shadow-lift"
+          className="hr-modal-dialog absolute right-0 top-full z-40 mt-2 w-[min(24rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-card border border-cream-200 bg-white shadow-lift"
         >
           <div className="flex items-center justify-between gap-2 border-b border-cream-200 px-4 py-3">
             <h2 className="text-base font-bold">{t('notif.title')}</h2>

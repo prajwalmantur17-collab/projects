@@ -141,7 +141,7 @@ export function OwnerBookingsPage() {
     setDeleting(true)
     setActionError(null)
     try {
-      await removeBookingFromHistory(deleteTarget.id)
+      await removeBookingFromHistory(deleteTarget.id, ownerId)
       setDeleteTarget(null)
       setSuccess('farmer.bookingRemoved')
       reload()
@@ -161,7 +161,7 @@ export function OwnerBookingsPage() {
       const completedIds = bookings
         .filter((b) => b.status === 'confirmed' && Boolean(b.completed_at))
         .map((b) => b.id)
-      await clearClosedBookingsFromHistory(completedIds)
+      await clearClosedBookingsFromHistory(completedIds, ownerId)
       setClearCompletedConfirmOpen(false)
       setSuccess('farmer.historyCleared')
       reload()
@@ -181,7 +181,7 @@ export function OwnerBookingsPage() {
       const closedIds = bookings
         .filter((b) => b.status === 'rejected' || b.status === 'cancelled')
         .map((b) => b.id)
-      await clearClosedBookingsFromHistory(closedIds)
+      await clearClosedBookingsFromHistory(closedIds, ownerId)
       setClearClosedConfirmOpen(false)
       setSuccess('farmer.historyCleared')
       reload()
