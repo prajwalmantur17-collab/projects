@@ -109,6 +109,24 @@ export async function searchMachines(params: {
             (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
           )
 
+          // If village was searched with a stale/unmatching district and found nothing, retry with village alone
+          if (cleanVillage && cleanDistrict && list.length === 0) {
+            const { data: villageOnlyData, error: vErr } = await supabase.rpc('search_machines', {
+              p_village: cleanVillage,
+              p_district: null,
+              p_state: null,
+              p_crop: params.crop || null,
+              p_machine_type: params.machineType || null,
+              p_limit: params.limit ?? 48,
+              p_offset: params.offset ?? 0,
+            })
+            if (!vErr && Array.isArray(villageOnlyData) && villageOnlyData.length > 0) {
+              list = deduplicateMachines(villageOnlyData as MachineCard[]).filter(
+                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+              )
+            }
+          }
+
           // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
           if (cleanVillage && !cleanDistrict && list.length > 0) {
             const resolvedDistrict = list[0]?.district
@@ -127,6 +145,24 @@ export async function searchMachines(params: {
                   (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
                 )
               }
+            }
+          }
+
+          // If no machines found in this specific locality, broaden to state/all verified machines
+          if (list.length === 0) {
+            const { data: allData, error: allErr } = await supabase.rpc('search_machines', {
+              p_village: null,
+              p_district: null,
+              p_state: null,
+              p_crop: params.crop || null,
+              p_machine_type: params.machineType || null,
+              p_limit: params.limit ?? 48,
+              p_offset: 0,
+            })
+            if (!allErr && Array.isArray(allData)) {
+              list = deduplicateMachines(allData as MachineCard[]).filter(
+                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+              )
             }
           }
 

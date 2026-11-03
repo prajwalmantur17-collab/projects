@@ -35,7 +35,6 @@ import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/p
 import type { PlatformStats, LatestActivity } from '../../services/platformStats'
 import { getBusyMachines } from '../../services/workStatus'
 import { deduplicateMachines } from '../../services/store'
-import { updateProfile } from '../../services/profiles'
 import { reverseGeocode } from '../../services/geocode'
 import type { CropKey, MachineCard as MachineCardType } from '../../types'
 import { Alert } from '../../components/ui/Alert'
@@ -86,7 +85,7 @@ function formatRelativeTime(
 }
 
 export function FarmerHomePage() {
-  const { profile, refreshProfile } = useAuth()
+  const { profile } = useAuth()
   const { t, language } = useI18n()
   const geo = useGeolocation()
 
@@ -109,7 +108,7 @@ export function FarmerHomePage() {
   // Always start completely blank
   const [village, setVillage] = useState('')
   const [district, setDistrict] = useState('')
-  const [state, setState] = useState('')
+  const [, setState] = useState('')
   const [crop, setCrop] = useState<string>('')
   const [acreage, setAcreage] = useState<string>('')
   const [machineType, setMachineType] = useState<string>('')
@@ -244,17 +243,14 @@ export function FarmerHomePage() {
     overrideCrop?: string,
     overrideVillage?: string,
     overrideDistrict?: string,
-    overrideState?: string,
   ) => {
     setErrors({})
     setSearchError(null)
     setSearching(true)
     const targetVillage = overrideVillage !== undefined ? overrideVillage : village
     const targetDistrict = overrideDistrict !== undefined ? overrideDistrict : district
-    const targetState = overrideState !== undefined ? overrideState : state
     const cleanedVillage = normalizeWhitespace(targetVillage)
     const cleanedDistrict = normalizeWhitespace(targetDistrict)
-    const cleanedState = normalizeWhitespace(targetState)
     const activeCrop = overrideCrop !== undefined ? overrideCrop : crop
 
     try {
@@ -275,19 +271,6 @@ export function FarmerHomePage() {
       window.setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 60)
-
-      if (profile && cleanedVillage && profile.village !== cleanedVillage) {
-        try {
-          await updateProfile(profile.id, {
-            village: cleanedVillage,
-            district: cleanedDistrict || undefined,
-            state: cleanedState || undefined,
-          })
-          await refreshProfile()
-        } catch (caught) {
-          logError('farmer.saveVillage', caught)
-        }
-      }
     } catch (caught) {
       logError('farmer.search', caught)
       const key = mapErrorToKey(caught, 'farmer.searchError')
@@ -439,20 +422,9 @@ export function FarmerHomePage() {
           district: geocoded.district,
         })
 
-        // Always keep the profile in step with the latest detected place.
-        if (profile && geocoded.village && profile.village !== geocoded.village) {
-          void updateProfile(profile.id, {
-            village: geocoded.village,
-            district: geocoded.district || undefined,
-            state: geocoded.state || undefined,
-          })
-            .then(() => refreshProfile())
-            .catch((caught: unknown) => logError('farmer.saveLocation', caught))
-        }
-
         // Auto-scan only when the position is trustworthy.
         if (!poor) {
-          void runSearch(crop, geocoded.village, geocoded.district, geocoded.state)
+          void runSearch(crop, geocoded.village, geocoded.district)
         }
       }
     } finally {
@@ -690,7 +662,15 @@ export function FarmerHomePage() {
               type="text"
               value={village}
               onChange={(event) => {
-                setVillage(event.target.value)
+                const val = event.target.value
+                setVillage(val)
+                // If user modifies village away from detected place, clear detected place and stale district
+                if (detectedPlace && val.trim().toLowerCase() !== detectedPlace.place.toLowerCase()) {
+                  setDetectedPlace(null)
+                  setDistrict('')
+                  setState('')
+                  geo.clear()
+                }
                 if (errors.village) {
                   setErrors((prev) => {
                     const next = { ...prev }
@@ -715,6 +695,36 @@ export function FarmerHomePage() {
           <p className="mt-2 pl-3 text-xs text-gray-400">
             {t('ui.villageExample')}
           </p>
+
+          {/* Quick select agricultural hubs */}
+          <div className="mt-2 pl-1 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mr-1">
+              Popular:
+            </span>
+            {[
+              { name: 'Vijayapura', dist: 'vijaypura' },
+              { name: 'Toravi', dist: 'vijaypura' },
+              { name: 'Tikota', dist: 'vijaypura' },
+              { name: 'ANINAPUR', dist: 'vijaypura' },
+              { name: 'Hubballi', dist: 'dharwad' },
+              { name: 'Mandya', dist: 'mandya' },
+            ].map((loc) => (
+              <button
+                key={loc.name}
+                type="button"
+                onClick={() => {
+                  setDetectedPlace(null)
+                  setVillage(loc.name)
+                  setDistrict(loc.dist)
+                  setState('karnataka')
+                  void runSearch(crop, loc.name, loc.dist)
+                }}
+                className="rounded-full border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 transition-colors shadow-2xs cursor-pointer"
+              >
+                {loc.name}
+              </button>
+            ))}
+          </div>
 
           {/* Optional Filter Toggle */}
           <div className="mt-3 flex justify-end">
@@ -773,12 +783,31 @@ export function FarmerHomePage() {
             <Alert variant="warning" className="mt-3">{t('ui.locPoor')}</Alert>
           ) : null}
           {detectedPlace ? (
-            <p className="mt-2 text-xs font-semibold text-emerald-800">
-              ✓ {t('farmer.locationDetected', {
-                place: detectedPlace.place,
-                district: detectedPlace.district,
-              })}
-            </p>
+            <div className="mt-2 flex items-center justify-between text-xs font-semibold text-emerald-800 bg-emerald-50/80 px-3 py-1.5 rounded-xl border border-emerald-200/60">
+              <span className="flex items-center gap-1.5 truncate">
+                <span>✓</span>
+                <span>
+                  {t('farmer.locationDetected', {
+                    place: detectedPlace.place,
+                    district: detectedPlace.district,
+                  })}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetectedPlace(null)
+                  setVillage('')
+                  setDistrict('')
+                  setState('')
+                  geo.clear()
+                  villageInputRef.current?.focus()
+                }}
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-950 underline shrink-0 ml-2 cursor-pointer"
+              >
+                {t('ui.clearSearch')}
+              </button>
+            </div>
           ) : geo.coordinates ? (
             <p className="mt-2 text-xs font-medium text-emerald-800">{t('farmer.locationAdded')}</p>
           ) : null}

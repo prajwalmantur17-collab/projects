@@ -234,15 +234,15 @@ export async function reverseGeocode(
     if (res.ok) {
       const data = await res.json()
       const addr = data.address || {}
-      // Most local place first: village > hamlet > suburb > town > city district > city.
+      // Priority order: village > hamlet > town > city > city_district > suburb > neighbourhood > locality > county
       const rawVillage =
         addr.village ||
         addr.hamlet ||
+        addr.town ||
+        addr.city ||
+        addr.city_district ||
         addr.suburb ||
         addr.neighbourhood ||
-        addr.town ||
-        addr.city_district ||
-        addr.city ||
         addr.locality ||
         addr.county ||
         ''
