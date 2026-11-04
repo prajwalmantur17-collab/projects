@@ -35,12 +35,12 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(DEFAULT_MODEL_ID).toBe('eleven_multilingual_v2')
   })
 
-  it('verifies eleven_multilingual_v2 supports English, Hindi, and Tamil, but not Kannada', () => {
+  it('verifies eleven_multilingual_v2 supports English, Hindi, Kannada, and Tamil', () => {
     const v2Languages = MODEL_SUPPORTED_LANGUAGES.eleven_multilingual_v2
     expect(v2Languages).toContain('en')
     expect(v2Languages).toContain('hi')
     expect(v2Languages).toContain('ta')
-    expect(v2Languages).not.toContain('kn')
+    expect(v2Languages).toContain('kn')
   })
 
   it('verifies eleven_v4 supports all languages including Kannada', () => {
@@ -63,11 +63,11 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(config.apiKey).toBeNull()
   })
 
-  it('reports Kannada as unsupported on eleven_multilingual_v2 so client falls back to browser speech', () => {
+  it('reports Kannada as supported on eleven_multilingual_v2', () => {
     expect(resolveSpeechConfig('en').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('hi').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('ta').isModelLanguageSupported).toBe(true)
-    expect(resolveSpeechConfig('kn').isModelLanguageSupported).toBe(false)
+    expect(resolveSpeechConfig('kn').isModelLanguageSupported).toBe(true)
   })
 
   it('validates allowed CORS origins against default and env origins', () => {

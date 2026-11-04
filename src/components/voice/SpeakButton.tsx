@@ -68,15 +68,34 @@ export function SpeakButton({
         : 'per acre'
 
     // Formulate natural language speech based on user's active language
+    const safeModel = machine.model || typeLabel
+    const safeVillage = machine.village || ''
+    const safeDistrict = machine.district || ''
+    const safeOwner = machine.owner_name || ''
+    const phoneDigits = (machine.phone || '').replace(/\D/g, '')
+    const phoneSpoken = phoneDigits ? phoneDigits.split('').join(' ') : ''
+
     let speechText = ''
     if (language === 'kn') {
-      speechText = `${typeLabel}: ${machine.model}. ${machine.district} ಜಿಲ್ಲೆಯ ${machine.village} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ. ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ. ಬೆಳೆಗಳು: ${cropNames}. ಮಾಲೀಕರು: ${machine.owner_name}. ಫೋನ್ ಸಂಖ್ಯೆ: ${machine.phone.split('').join(' ')}.`
+      const locText = safeDistrict && safeVillage ? `${safeDistrict} ಜಿಲ್ಲೆಯ ${safeVillage} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ.` : safeVillage ? `${safeVillage} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ.` : 'ಲಭ್ಯವಿದೆ.'
+      const ownerText = safeOwner ? ` ಮಾಲೀಕರು: ${safeOwner}.` : ''
+      const phoneText = phoneSpoken ? ` ಫೋನ್ ಸಂಖ್ಯೆ: ${phoneSpoken}.` : ''
+      speechText = `${typeLabel}: ${safeModel}. ${locText} ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ.${cropNames ? ` ಬೆಳೆಗಳು: ${cropNames}.` : ''}${ownerText}${phoneText}`
     } else if (language === 'hi') {
-      speechText = `${typeLabel}: ${machine.model}। ${machine.district} ज़िले के ${machine.village} में उपलब्ध है। किराया ${machine.price_per_acre} रुपये ${hiUnit}। ऑपरेटर और डीजल शामिल है। फसलें: ${cropNames}। मालिक: ${machine.owner_name}। फोन नंबर: ${machine.phone.split('').join(' ')}।`
+      const locText = safeDistrict && safeVillage ? `${safeDistrict} ज़िले के ${safeVillage} में उपलब्ध है।` : safeVillage ? `${safeVillage} में उपलब्ध है।` : 'उपलब्ध है।'
+      const ownerText = safeOwner ? ` मालिक: ${safeOwner}।` : ''
+      const phoneText = phoneSpoken ? ` फोन नंबर: ${phoneSpoken}।` : ''
+      speechText = `${typeLabel}: ${safeModel}। ${locText} किराया ${machine.price_per_acre} रुपये ${hiUnit}। ऑपरेटर और डीजल शामिल है।${cropNames ? ` फसलें: ${cropNames}।` : ''}${ownerText}${phoneText}`
     } else if (language === 'ta') {
-      speechText = `${typeLabel}: ${machine.model}. ${machine.district} மாவட்டத்தின் ${machine.village} கிராமத்தில் கிடைக்கிறது. வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது. பயிர்கள்: ${cropNames}. உரிமையாளர்: ${machine.owner_name}. தொலைபேசி எண்: ${machine.phone.split('').join(' ')}.`
+      const locText = safeDistrict && safeVillage ? `${safeDistrict} மாவட்டத்தின் ${safeVillage} கிராமத்தில் கிடைக்கிறது.` : safeVillage ? `${safeVillage} கிராமத்தில் கிடைக்கிறது.` : 'கிடைக்கிறது.'
+      const ownerText = safeOwner ? ` உரிமையாளர்: ${safeOwner}.` : ''
+      const phoneText = phoneSpoken ? ` தொலைபேசி எண்: ${phoneSpoken}.` : ''
+      speechText = `${typeLabel}: ${safeModel}. ${locText} வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது.${cropNames ? ` பயிர்கள்: ${cropNames}.` : ''}${ownerText}${phoneText}`
     } else {
-      speechText = `${machine.model || typeLabel} available in ${machine.village}, ${machine.district} district. Rental price: ${machine.price_per_acre} rupees ${enUnit}. Operator and diesel included. Suitable for ${cropNames}. Owner: ${machine.owner_name}. Contact number: ${machine.phone.split('').join(' ')}.`
+      const locText = safeVillage ? `available in ${safeVillage}${safeDistrict ? `, ${safeDistrict} district` : ''}.` : 'available for rent.'
+      const ownerText = safeOwner ? ` Owner: ${safeOwner}.` : ''
+      const phoneText = phoneSpoken ? ` Contact number: ${phoneSpoken}.` : ''
+      speechText = `${safeModel} ${locText} Rental price: ${machine.price_per_acre} rupees ${enUnit}. Operator and diesel included.${cropNames ? ` Suitable for ${cropNames}.` : ''}${ownerText}${phoneText}`
     }
 
     try {

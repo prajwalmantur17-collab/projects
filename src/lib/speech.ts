@@ -276,34 +276,62 @@ export function getAvailableVoices(): Promise<SpeechSynthesisVoice[]> {
  * ensuring the browser NEVER speaks Kannada or Hindi using an English voice.
  */
 export function pickBestVoice(voices: SpeechSynthesisVoice[], language: Language): SpeechSynthesisVoice | null {
-  const targetLocale = SPEECH_LOCALES[language].toLowerCase()
+  const targetLocale = SPEECH_LOCALES[language].toLowerCase().replace('_', '-')
+  const langPrefix = language.toLowerCase()
 
   // 1. Exact locale match (e.g. en-in, kn-in, hi-in, ta-in)
-  const exact = voices.find((v) => v.lang.toLowerCase() === targetLocale)
+  const exact = voices.find((v) => {
+    const l = v.lang.toLowerCase().replace('_', '-')
+    return l === targetLocale || l === langPrefix
+  })
   if (exact) return exact
 
   // 2. Language prefix match (e.g. kn, hi, ta)
-  const langPrefix = language.toLowerCase()
-  const langMatch = voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix))
+  const langMatch = voices.find((v) => {
+    const l = v.lang.toLowerCase().replace('_', '-')
+    return l.startsWith(`${langPrefix}-`) || l.startsWith(`${langPrefix}_`) || l === langPrefix
+  })
   if (langMatch) return langMatch
 
   // 3. Name-based heuristics for localized voices
   if (language === 'kn') {
-    return voices.find((v) => v.name.includes('Kannada') || v.name.includes('ಕನ್ನಡ')) ?? null
+    return (
+      voices.find((v) => {
+        const nameLower = v.name.toLowerCase()
+        const langLower = v.lang.toLowerCase()
+        return (
+          nameLower.includes('kannada') ||
+          v.name.includes('ಕನ್ನಡ') ||
+          langLower.includes('kn-in') ||
+          langLower.includes('kn_in')
+        )
+      }) ?? null
+    )
   }
   if (language === 'hi') {
     return (
-      voices.find(
-        (v) =>
-          v.name.includes('Hindi') ||
+      voices.find((v) => {
+        const nameLower = v.name.toLowerCase()
+        return (
+          nameLower.includes('hindi') ||
           v.name.includes('हिन्दी') ||
           v.name.includes('Kalpana') ||
-          v.name.includes('Hemant'),
-      ) ?? null
+          v.name.includes('Hemant')
+        )
+      }) ?? null
     )
   }
   if (language === 'ta') {
-    return voices.find((v) => v.name.includes('Tamil') || v.name.includes('தமிழ்') || v.name.includes('Valluvar')) ?? null
+    return (
+      voices.find((v) => {
+        const nameLower = v.name.toLowerCase()
+        return (
+          nameLower.includes('tamil') ||
+          v.name.includes('தமிழ்') ||
+          v.name.includes('Valluvar')
+        )
+      }) ?? null
+    )
   }
 
   // 4. For English: prefer Indian English voice names, otherwise any English voice
