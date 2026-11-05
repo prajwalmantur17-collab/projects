@@ -189,6 +189,22 @@ export async function searchMachines(params: {
             return list
           }
         }
+      } else {
+        // Broad search across all active machines when no location is specified
+        const { data: allData, error: allErr } = await supabase.rpc('search_machines', {
+          p_village: null,
+          p_district: null,
+          p_state: null,
+          p_crop: params.crop || null,
+          p_machine_type: params.machineType || null,
+          p_limit: params.limit ?? 48,
+          p_offset: params.offset ?? 0,
+        })
+        if (!allErr && Array.isArray(allData) && allData.length > 0) {
+          return deduplicateMachines(allData as MachineCard[]).filter(
+            (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+          )
+        }
       }
     } catch {
       // Fall through to local fallback
@@ -526,10 +542,10 @@ export async function setMachineImagePath(
 export async function setMachineActive(machineId: string, isActive: boolean): Promise<void> {
   updateLocalMachine(machineId, { is_active: isActive })
   if (supabase) {
-    try {
-      await supabase.from('machines').update({ is_active: isActive }).eq('id', machineId)
-    } catch {
-      // Fall through
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)
+    if (isUuid) {
+      const { error } = await supabase.from('machines').update({ is_active: isActive }).eq('id', machineId)
+      if (error) logError('machine.setMachineActive', error)
     }
   }
 }
@@ -547,35 +563,36 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
     void deleteMachineImage(imagePath, effectiveOwner).catch(() => undefined)
   }
 
-  // 3. Immediately deactivate in Supabase so it vanishes from all searches
+  // 3. Immediately delete / deactivate in Supabase so it vanishes from all searches
   if (supabase) {
-    try {
-      // Step A: First deactivate machine (allowed by machines_update_own policy)
-      await supabase
-        .from('machines')
-        .update({ is_active: false, is_available: false })
-        .eq('id', machineId)
-    } catch (caught) {
-      logError('machine.delete.deactivate', caught)
-    }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)
+    if (isUuid) {
+      // Step A: Invoke the dedicated delete_machine RPC (cancels pending bookings,
+      // marks is_active=false, removes machine_locations, and hard-deletes if no foreign keys)
+      const { error: rpcError } = await supabase.rpc('delete_machine', {
+        p_machine_id: machineId,
+      })
 
-    try {
-      // Step B: Blank out locations so view never matches any village
-      await supabase
-        .from('machine_locations')
-        .update({ village: 'deleted', district: 'deleted' })
-        .eq('machine_id', machineId)
-    } catch {
-      // ignore
-    }
+      if (rpcError) {
+        logError('machine.delete.rpc', rpcError)
 
-    try {
-      // Step C: Attempt hard deletion of locations and machine if no foreign key constraints
-      await supabase.from('machine_locations').delete().eq('machine_id', machineId)
-      await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
-      await supabase.from('machines').delete().eq('id', machineId)
-    } catch {
-      // If historical bookings prevent hard delete, the machine is safely deactivated with is_active = false
+        // Step B: Direct fallback deactivation
+        const { error: deactivateError } = await supabase
+          .from('machines')
+          .update({ is_active: false, is_available: false })
+          .eq('id', machineId)
+        if (deactivateError) {
+          logError('machine.delete.deactivate', deactivateError)
+        }
+
+        try {
+          await supabase.from('machine_locations').delete().eq('machine_id', machineId)
+          await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
+          await supabase.from('machines').delete().eq('id', machineId)
+        } catch {
+          // Foreign key or RLS fallback
+        }
+      }
     }
   }
 }
