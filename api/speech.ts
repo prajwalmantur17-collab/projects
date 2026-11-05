@@ -4,19 +4,23 @@ export type SupportedLanguage = 'en' | 'hi' | 'kn' | 'ta'
 
 export const MAX_TEXT_LENGTH = 500
 
-export const DEFAULT_MODEL_ID = 'eleven_multilingual_v2'
+// Eleven v3 lists English, Hindi, Tamil AND Kannada (ElevenLabs docs, models page).
+// Override with the ELEVENLABS_MODEL_ID environment variable if needed.
+export const DEFAULT_MODEL_ID = 'eleven_v3'
 
 /**
- * Known model language support matrix.
- * Eleven Multilingual v2, Eleven Turbo v2.5, Eleven Flash v2.5, Eleven v3, and Eleven v4
- * all support multilingual synthesis including English (en), Hindi (hi), Kannada (kn), and Tamil (ta).
+ * Known model language support matrix (from the ElevenLabs models documentation).
+ * Multilingual v2 and the Flash/Turbo v2.5 models support Hindi, Tamil and English but NOT Kannada.
+ * Only the v3 and v4 families list Kannada.
  */
 export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
-  eleven_multilingual_v2: ['en', 'hi', 'kn', 'ta'],
-  eleven_turbo_v2_5: ['en', 'hi', 'kn', 'ta'],
-  eleven_flash_v2_5: ['en', 'hi', 'kn', 'ta'],
+  eleven_multilingual_v2: ['en', 'hi', 'ta'],
+  eleven_turbo_v2_5: ['en', 'hi', 'ta'],
+  eleven_flash_v2_5: ['en', 'hi', 'ta'],
   eleven_v3: ['en', 'hi', 'kn', 'ta'],
+  eleven_v3_conversational: ['en', 'hi', 'kn', 'ta'],
   eleven_v4: ['en', 'hi', 'kn', 'ta'],
+  eleven_v4_turbo: ['en', 'hi', 'kn', 'ta'],
 }
 
 /**
@@ -122,12 +126,14 @@ interface SpeechRequestBody {
   language?: unknown
 }
 
-// In-memory rate limiter with periodic cleanup: max 20 req/min per IP, max 300 req/min global
+// In-memory rate limiter with periodic cleanup (best effort: each serverless instance keeps its own counters).
+// Per signed-in user: 12 req/min. Per IP (checked before login is verified): 30 req/min. Global: 300 req/min.
 const rateLimitMap = new Map<string, number[]>()
 let globalTimestamps: number[] = []
 let lastCleanup = Date.now()
 const WINDOW_MS = 60_000
-const MAX_PER_IP = 20
+const MAX_PER_IP = 30
+const MAX_PER_USER = 12
 const MAX_GLOBAL_PER_MIN = 300
 
 function cleanupOldRateLimits(now: number): void {
@@ -146,7 +152,7 @@ function cleanupOldRateLimits(now: number): void {
   globalTimestamps = globalTimestamps.filter((time) => now - time < WINDOW_MS)
 }
 
-export function checkRateLimit(ip: string): boolean {
+export function checkRateLimit(key: string, max: number = MAX_PER_IP): boolean {
   const now = Date.now()
   cleanupOldRateLimits(now)
 
@@ -157,17 +163,62 @@ export function checkRateLimit(ip: string): boolean {
   }
 
   // 2. Check per-IP limit
-  const timestamps = rateLimitMap.get(ip) || []
+  const timestamps = rateLimitMap.get(key) || []
   const validTimestamps = timestamps.filter((time) => now - time < WINDOW_MS)
 
-  if (validTimestamps.length >= MAX_PER_IP) {
+  if (validTimestamps.length >= max) {
     return false
   }
 
   validTimestamps.push(now)
-  rateLimitMap.set(ip, validTimestamps)
+  rateLimitMap.set(key, validTimestamps)
   globalTimestamps.push(now)
   return true
+}
+
+// Verified-token cache so we do not call Supabase Auth on every sentence.
+const tokenCache = new Map<string, { userId: string; expires: number }>()
+const TOKEN_CACHE_MS = 60_000
+
+/**
+ * Verifies a Supabase access token by asking Supabase Auth who it belongs to.
+ * Returns the user id, 'unconfigured' when the server has no Supabase settings, or null when invalid.
+ */
+export async function verifySupabaseUser(authHeader: unknown): Promise<string | 'unconfigured' | null> {
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\/$/, '')
+  const anonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim()
+  if (!supabaseUrl || !anonKey) return 'unconfigured'
+
+  if (typeof authHeader !== 'string') return null
+  const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim())
+  if (!match) return null
+  const token = match[1]
+
+  const now = Date.now()
+  const cached = tokenCache.get(token)
+  if (cached && cached.expires > now) return cached.userId
+  if (tokenCache.size > 500) {
+    for (const [key, value] of tokenCache.entries()) {
+      if (value.expires <= now) tokenCache.delete(key)
+    }
+  }
+
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    if (!response.ok) return null
+    const user = (await response.json()) as { id?: unknown }
+    if (typeof user.id !== 'string' || !user.id) return null
+    tokenCache.set(token, { userId: user.id, expires: now + TOKEN_CACHE_MS })
+    return user.id
+  } catch {
+    return null
+  }
 }
 
 async function parseRequestBody(req: IncomingMessage & { body?: unknown }): Promise<SpeechRequestBody | null> {
@@ -239,7 +290,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204)
@@ -264,7 +315,31 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   // Rate limiting check
   const clientIp = getClientIp(req)
-  if (!checkRateLimit(clientIp)) {
+  if (!checkRateLimit(`ip:${clientIp}`, MAX_PER_IP)) {
+    sendJson(res, 429, {
+      error: 'rate_limit_exceeded',
+      message: 'Too many requests. Please wait a minute before requesting audio again.',
+    })
+    return
+  }
+
+  // Only signed-in users may spend ElevenLabs credits.
+  const userId = await verifySupabaseUser(req.headers.authorization)
+  if (userId === 'unconfigured') {
+    sendJson(res, 503, {
+      error: 'auth_not_configured',
+      message: 'Server is missing Supabase settings (SUPABASE_URL / SUPABASE_ANON_KEY).',
+    })
+    return
+  }
+  if (!userId) {
+    sendJson(res, 401, {
+      error: 'sign_in_required',
+      message: 'Please sign in to use the voice assistant.',
+    })
+    return
+  }
+  if (!checkRateLimit(`user:${userId}`, MAX_PER_USER)) {
     sendJson(res, 429, {
       error: 'rate_limit_exceeded',
       message: 'Too many requests. Please wait a minute before requesting audio again.',
@@ -319,7 +394,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       error: 'language_unsupported_by_model',
       language: lang,
       model: config.modelId,
-      message: `${lang === 'kn' ? 'Kannada' : lang} is not supported by ElevenLabs model ${config.modelId}. To enable speech for this language, configure an ElevenLabs model that supports it (such as eleven_v4).`,
+      message: `${lang === 'kn' ? 'Kannada' : lang} is not supported by ElevenLabs model ${config.modelId}. To enable speech for this language, configure an ElevenLabs model that supports it (such as eleven_v3).`,
     })
     return
   }
@@ -348,9 +423,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       },
     }
 
-    if (lang === 'ta' || lang === 'hi' || lang === 'en') {
-      requestPayload.language_code = lang
-    }
+    // ISO 639-1 code helps the model pick the right language (including Kannada).
+    requestPayload.language_code = lang
 
     const response = await fetch(elevenLabsUrl, {
       method: 'POST',

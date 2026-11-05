@@ -362,23 +362,17 @@ export async function listBlackoutDates(machineId: string) {
 
 export async function addBlackoutDate(machineId: string, date: string): Promise<void> {
   if (supabase) {
-    try {
-      await supabase
-        .from('machine_blackout_dates')
-        .insert({ machine_id: machineId, unavailable_on: date })
-    } catch {
-      // Fall through
-    }
+    const { error } = await supabase
+      .from('machine_blackout_dates')
+      .insert({ machine_id: machineId, unavailable_on: date })
+    if (error) throw error
   }
 }
 
 export async function removeBlackoutDate(id: string): Promise<void> {
   if (supabase) {
-    try {
-      await supabase.from('machine_blackout_dates').delete().eq('id', id)
-    } catch {
-      // Fall through
-    }
+    const { error } = await supabase.from('machine_blackout_dates').delete().eq('id', id)
+    if (error) throw error
   }
 }
 
@@ -393,8 +387,41 @@ export async function createMachine(
     state: 'Karnataka',
   }
 
-  const newId = `m-${crypto.randomUUID()}`
+  let newId = `m-${crypto.randomUUID()}`
   const now = new Date().toISOString()
+
+  // With a database connection the machine is saved there FIRST. If that fails the error reaches
+  // the form, so an owner never sees a machine that farmers cannot find.
+  if (supabase) {
+    const payload: Record<string, unknown> = {
+      owner_id: ownerId,
+      machine_type: input.machine_type,
+      model: input.model,
+      price_per_acre: input.price_per_acre,
+      pricing_unit: input.pricing_unit || 'per_acre',
+      crops: input.crops,
+      phone: input.phone,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      image_path: imagePath,
+    }
+
+    let { data, error } = await supabase.from('machines').insert(payload).select('id').single()
+
+    if (error && error.message?.includes('pricing_unit')) {
+      delete payload.pricing_unit
+      const fallback = await supabase.from('machines').insert(payload).select('id').single()
+      data = fallback.data
+      error = fallback.error
+    }
+
+    if (error || !data?.id) {
+      throw error ?? new Error('The machine could not be saved.')
+    }
+
+    newId = data.id as string
+    await setMachineLocations(newId, input.locations)
+  }
 
   const card: MachineCard = {
     id: newId,
@@ -418,49 +445,8 @@ export async function createMachine(
     service_villages: input.locations.map((l) => l.village),
   }
 
-  // 1. Always save to local reactive store for instant UI response and demo persistence
+  // Local copy: used for instant UI and as the only store when no database is configured.
   addLocalMachine(card)
-
-  // 2. Also try Supabase if connected
-  if (supabase) {
-    try {
-      const payload: Record<string, unknown> = {
-        owner_id: ownerId,
-        machine_type: input.machine_type,
-        model: input.model,
-        price_per_acre: input.price_per_acre,
-        pricing_unit: input.pricing_unit || 'per_acre',
-        crops: input.crops,
-        phone: input.phone,
-        latitude: input.latitude,
-        longitude: input.longitude,
-        image_path: imagePath,
-      }
-
-      let { data, error } = await supabase
-        .from('machines')
-        .insert(payload)
-        .select('id')
-        .single()
-
-      if (error && error.message?.includes('pricing_unit')) {
-        delete payload.pricing_unit
-        const fallback = await supabase
-          .from('machines')
-          .insert(payload)
-          .select('id')
-          .single()
-        data = fallback.data
-        error = fallback.error
-      }
-
-      if (!error && data?.id) {
-        await setMachineLocations(data.id, input.locations)
-      }
-    } catch (err) {
-      console.warn('Could not save to Supabase, saved locally:', err)
-    }
-  }
 
   return card
 }
@@ -483,32 +469,31 @@ export async function updateMachine(
   }
   if (imagePath !== undefined) patch.image_path = imagePath
 
-  updateLocalMachine(machineId, patch)
-
   if (supabase) {
-    try {
-      await setMachineLocations(machineId, input.locations)
-      const dbPatch: Record<string, unknown> = {
-        machine_type: input.machine_type,
-        model: input.model,
-        price_per_acre: input.price_per_acre,
-        pricing_unit: input.pricing_unit || 'per_acre',
-        crops: input.crops,
-        phone: input.phone,
-        latitude: input.latitude,
-        longitude: input.longitude,
-      }
-      if (imagePath !== undefined) dbPatch.image_path = imagePath
-
-      const { error } = await supabase.from('machines').update(dbPatch).eq('id', machineId)
-      if (error && error.message?.includes('pricing_unit')) {
-        delete dbPatch.pricing_unit
-        await supabase.from('machines').update(dbPatch).eq('id', machineId)
-      }
-    } catch {
-      // Fall through
+    const dbPatch: Record<string, unknown> = {
+      machine_type: input.machine_type,
+      model: input.model,
+      price_per_acre: input.price_per_acre,
+      pricing_unit: input.pricing_unit || 'per_acre',
+      crops: input.crops,
+      phone: input.phone,
+      latitude: input.latitude,
+      longitude: input.longitude,
     }
+    if (imagePath !== undefined) dbPatch.image_path = imagePath
+
+    let { error } = await supabase.from('machines').update(dbPatch).eq('id', machineId)
+    if (error && error.message?.includes('pricing_unit')) {
+      delete dbPatch.pricing_unit
+      const retry = await supabase.from('machines').update(dbPatch).eq('id', machineId)
+      error = retry.error
+    }
+    if (error) throw error
+
+    await setMachineLocations(machineId, input.locations)
   }
+
+  updateLocalMachine(machineId, patch)
 }
 
 export async function setMachineLocations(
@@ -516,14 +501,11 @@ export async function setMachineLocations(
   locations: Array<{ village: string; district: string; state: string; is_primary: boolean }>,
 ): Promise<void> {
   if (supabase) {
-    try {
-      await supabase.rpc('set_machine_locations', {
-        p_machine_id: machineId,
-        p_locations: locations,
-      })
-    } catch {
-      // Fall through
-    }
+    const { error } = await supabase.rpc('set_machine_locations', {
+      p_machine_id: machineId,
+      p_locations: locations,
+    })
+    if (error) throw error
   }
 }
 

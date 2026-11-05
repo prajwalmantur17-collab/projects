@@ -31,16 +31,16 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(MAX_TEXT_LENGTH).toBe(500)
   })
 
-  it('sets eleven_multilingual_v2 as the default model', () => {
-    expect(DEFAULT_MODEL_ID).toBe('eleven_multilingual_v2')
+  it('sets eleven_v3 as the default model', () => {
+    expect(DEFAULT_MODEL_ID).toBe('eleven_v3')
   })
 
-  it('verifies eleven_multilingual_v2 supports English, Hindi, Kannada, and Tamil', () => {
+  it('verifies eleven_multilingual_v2 supports English, Hindi, and Tamil', () => {
     const v2Languages = MODEL_SUPPORTED_LANGUAGES.eleven_multilingual_v2
     expect(v2Languages).toContain('en')
     expect(v2Languages).toContain('hi')
     expect(v2Languages).toContain('ta')
-    expect(v2Languages).toContain('kn')
+    expect(v2Languages).not.toContain('kn')
   })
 
   it('verifies eleven_v4 supports all languages including Kannada', () => {
@@ -63,7 +63,7 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
     expect(config.apiKey).toBeNull()
   })
 
-  it('reports Kannada as supported on eleven_multilingual_v2', () => {
+  it('reports Kannada as supported on default model (eleven_v3)', () => {
     expect(resolveSpeechConfig('en').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('hi').isModelLanguageSupported).toBe(true)
     expect(resolveSpeechConfig('ta').isModelLanguageSupported).toBe(true)

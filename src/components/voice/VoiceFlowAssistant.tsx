@@ -275,7 +275,10 @@ export function VoiceFlowAssistant<V extends object = Record<string, never>>({
         await speak(blocked, latest.current.language)
         return
       }
-      if (!hasVoiceFor(latest.current.language)) setNoVoice(true)
+      // hasVoiceFor is async: check it without blocking the conversation.
+      void hasVoiceFor(latest.current.language).then((available) => {
+        if (!available && !run.cancelled) setNoVoice(true)
+      })
 
       if (opening) {
         await say(opening)

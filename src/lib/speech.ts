@@ -4,11 +4,7 @@
  * with browser Web Speech API as fallback.
  */
 import type { Language } from '../types'
-import {
-  fetchElevenLabsAudio,
-  playElevenLabsSpeech,
-  stopElevenLabsAudio,
-} from './elevenLabsSpeech'
+import { speakWithElevenLabs, stopElevenLabsAudio } from './elevenLabsSpeech'
 
 export const SPEECH_LOCALES: Record<Language, string> = {
   en: 'en-IN',
@@ -470,9 +466,11 @@ export async function speakViaWebSpeech(
 
 /**
  * Speaks translated text aloud in the user's active language.
- * Primary: Uses ElevenLabs realistic AI speech via serverless API.
- * Fallback: Automatically falls back to browser's built-in Web Speech API if ElevenLabs is
- * unconfigured, rate-limited, offline, or if the language is unsupported by the ElevenLabs model.
+ * Uses ElevenLabs realistic AI speech via the serverless API, sentence by sentence.
+ * The browser's Web Speech API is used ONLY when ElevenLabs cannot be used at all:
+ * the server has no ElevenLabs key, or the visitor is not signed in. Real ElevenLabs failures
+ * (quota, rate limit, offline, unsupported language) are reported through onError instead of
+ * silently switching to a different, often wrong-language, voice.
  */
 export async function speakAloudWithFeedback(
   text: string,
@@ -487,32 +485,30 @@ export async function speakAloudWithFeedback(
 
   cancelSpeech()
 
-  // If ElevenLabs is enabled, attempt realistic voice generation first
   if (!options?.disableElevenLabs) {
     callbacks?.onGenerating?.()
-    const fetchResult = await fetchElevenLabsAudio(cleanText, language)
+    const result = await speakWithElevenLabs(cleanText, language, {
+      onStart: callbacks?.onStart,
+      onEnd: callbacks?.onEnd,
+    })
 
-    if (fetchResult.ok) {
-      const playResult = await playElevenLabsSpeech(fetchResult.audioUrl, {
-        onStart: callbacks?.onStart,
-        onEnd: callbacks?.onEnd,
-        onError: callbacks?.onError,
-      })
-
-      if (playResult.success) {
-        return { success: true, provider: 'elevenlabs' }
-      }
-    } else if (fetchResult.code === 'cancelled') {
+    if (result.ok) {
+      return { success: true, provider: 'elevenlabs' }
+    }
+    if (result.code === 'cancelled') {
       return { success: false, reason: 'cancelled' }
-    } else {
-      // Log ElevenLabs fallback reason in development console
-      if (import.meta.env?.DEV) {
-        console.info(`[ElevenLabs] Falling back to Web Speech: ${fetchResult.message} (${fetchResult.code})`)
-      }
+    }
+
+    // ElevenLabs is not available to this visitor at all: use the browser voice instead.
+    const unavailable =
+      result.code === 'elevenlabs_not_configured' || result.code === 'sign_in_required'
+    if (!unavailable) {
+      callbacks?.onError?.(result.message)
+      callbacks?.onEnd?.()
+      return { success: false, reason: 'error', message: result.message }
     }
   }
 
-  // Graceful fallback to browser's Web Speech API
   return speakViaWebSpeech(cleanText, language, callbacks)
 }
 

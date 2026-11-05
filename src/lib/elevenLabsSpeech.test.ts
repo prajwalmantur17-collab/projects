@@ -3,8 +3,34 @@ import {
   clearElevenLabsCache,
   fetchElevenLabsAudio,
   hasCachedAudio,
+  splitIntoSpeechChunks,
   stopElevenLabsAudio,
 } from './elevenLabsSpeech'
+
+describe('splitIntoSpeechChunks', () => {
+  it('returns nothing for empty text', () => {
+    expect(splitIntoSpeechChunks('   ')).toEqual([])
+  })
+
+  it('keeps the first sentence on its own so speech starts fast', () => {
+    const chunks = splitIntoSpeechChunks('Hello farmer. Your booking is confirmed. See you soon!')
+    expect(chunks[0]).toBe('Hello farmer.')
+    expect(chunks.join(' ')).toBe('Hello farmer. Your booking is confirmed. See you soon!')
+  })
+
+  it('splits on question marks and the Hindi danda', () => {
+    const chunks = splitIntoSpeechChunks('आपका नाम क्या है? मशीन बुक हो गई। धन्यवाद')
+    expect(chunks[0]).toBe('आपका नाम क्या है?')
+    expect(chunks.join(' ')).toContain('धन्यवाद')
+  })
+
+  it('never makes a chunk longer than the server limit', () => {
+    const long = 'word '.repeat(300)
+    for (const chunk of splitIntoSpeechChunks(long)) {
+      expect(chunk.length).toBeLessThanOrEqual(450)
+    }
+  })
+})
 
 describe('ElevenLabs Client-Side Speech Service', () => {
   beforeEach(() => {

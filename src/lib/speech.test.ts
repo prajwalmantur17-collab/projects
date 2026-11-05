@@ -140,7 +140,7 @@ describe('speech Web Speech API helper', () => {
       // @ts-expect-error Mocking window
       delete window.speechSynthesis
       try {
-        const result = await speakAloudWithFeedback('Hello', 'en')
+        const result = await speakAloudWithFeedback('Hello', 'en', undefined, { disableElevenLabs: true })
         expect(result.success).toBe(false)
         if (!result.success) {
           expect(result.reason).toBe('unsupported')
