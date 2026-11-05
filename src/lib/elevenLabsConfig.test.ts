@@ -52,10 +52,10 @@ describe('ElevenLabs speech configuration and model capabilities', () => {
   })
 
   it('resolves correct default voices for English, Hindi, Kannada, and Tamil', () => {
-    expect(DEFAULT_VOICES.en).toBe('LHMvGhXWZPfzCiDpiEc1')
-    expect(DEFAULT_VOICES.hi).toBe('LHMvGhXWZPfzCiDpiEc1')
-    expect(DEFAULT_VOICES.kn).toBe('LHMvGhXWZPfzCiDpiEc1')
-    expect(DEFAULT_VOICES.ta).toBe('LHMvGhXWZPfzCiDpiEc1')
+    expect(DEFAULT_VOICES.en).toBe('hr8Jn6R7mrb0ncJHDryQ')
+    expect(DEFAULT_VOICES.hi).toBe('hr8Jn6R7mrb0ncJHDryQ')
+    expect(DEFAULT_VOICES.kn).toBe('hr8Jn6R7mrb0ncJHDryQ')
+    expect(DEFAULT_VOICES.ta).toBe('hr8Jn6R7mrb0ncJHDryQ')
   })
 
   it('detects missing API key when ELEVENLABS_API_KEY is unset', () => {

@@ -25,13 +25,13 @@ export const MODEL_SUPPORTED_LANGUAGES: Record<string, SupportedLanguage[]> = {
 
 /**
  * Standard ElevenLabs voice configuration:
- * - LHMvGhXWZPfzCiDpiEc1: Default voice
+ * - hr8Jn6R7mrb0ncJHDryQ: Default voice
  */
 export const DEFAULT_VOICES: Record<SupportedLanguage, string> = {
-  en: 'LHMvGhXWZPfzCiDpiEc1',
-  hi: 'LHMvGhXWZPfzCiDpiEc1',
-  kn: 'LHMvGhXWZPfzCiDpiEc1',
-  ta: 'LHMvGhXWZPfzCiDpiEc1',
+  en: 'hr8Jn6R7mrb0ncJHDryQ',
+  hi: 'hr8Jn6R7mrb0ncJHDryQ',
+  kn: 'hr8Jn6R7mrb0ncJHDryQ',
+  ta: 'hr8Jn6R7mrb0ncJHDryQ',
 }
 
 export interface SpeechResolution {
