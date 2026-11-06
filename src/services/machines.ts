@@ -81,6 +81,7 @@ export async function searchMachines(params: {
   machineType?: string
   limit?: number
   offset?: number
+  signal?: AbortSignal
 }): Promise<MachineCard[]> {
   const rawVillage = (params.village || '').trim()
   const rawDistrict = (params.district || '').trim()
@@ -89,125 +90,42 @@ export async function searchMachines(params: {
   const cleanCrop = (params.crop || '').trim().toLowerCase()
   const cleanType = (params.machineType || '').trim().toLowerCase()
 
-  // 1. Try Supabase if available
+  if (params.signal?.aborted) {
+    throw new DOMException('Search request aborted', 'AbortError')
+  }
+
+  // 1. Try Supabase if available (single round-trip RPC)
   if (supabase) {
     try {
-      if (cleanVillage || cleanDistrict) {
-        // Find machines in the specified village or district
-        const { data: primaryData, error } = await supabase.rpc('search_machines', {
-          p_village: cleanVillage || null,
-          p_district: cleanDistrict || null,
-          p_state: null,
-          p_crop: params.crop || null,
-          p_machine_type: params.machineType || null,
-          p_limit: params.limit ?? 48,
-          p_offset: params.offset ?? 0,
-        })
+      let query = supabase.rpc('search_machines', {
+        p_village: cleanVillage || null,
+        p_district: cleanDistrict || null,
+        p_state: null,
+        p_crop: params.crop || null,
+        p_machine_type: params.machineType || null,
+        p_limit: params.limit ?? 48,
+        p_offset: params.offset ?? 0,
+      })
 
-        if (!error && Array.isArray(primaryData)) {
-          let list = deduplicateMachines(primaryData as MachineCard[]).filter(
-            (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-          )
-
-          // If village was searched with a stale/unmatching district and found nothing, retry with village alone
-          if (cleanVillage && cleanDistrict && list.length === 0) {
-            const { data: villageOnlyData, error: vErr } = await supabase.rpc('search_machines', {
-              p_village: cleanVillage,
-              p_district: null,
-              p_state: null,
-              p_crop: params.crop || null,
-              p_machine_type: params.machineType || null,
-              p_limit: params.limit ?? 48,
-              p_offset: params.offset ?? 0,
-            })
-            if (!vErr && Array.isArray(villageOnlyData) && villageOnlyData.length > 0) {
-              list = deduplicateMachines(villageOnlyData as MachineCard[]).filter(
-                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-              )
-            }
-          }
-
-          // Nothing in that exact village (e.g. a city area like "Bharathi City"): show machines
-          // from the same district so nearby villages are not missed.
-          if (cleanVillage && cleanDistrict && list.length === 0) {
-            const { data: districtOnlyData, error: dOnlyErr } = await supabase.rpc('search_machines', {
-              p_village: null,
-              p_district: cleanDistrict,
-              p_state: null,
-              p_crop: params.crop || null,
-              p_machine_type: params.machineType || null,
-              p_limit: params.limit ?? 48,
-              p_offset: params.offset ?? 0,
-            })
-            if (!dOnlyErr && Array.isArray(districtOnlyData) && districtOnlyData.length > 0) {
-              list = deduplicateMachines(districtOnlyData as MachineCard[]).filter(
-                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-              )
-            }
-          }
-
-          // If village was searched without district, see if any machine has a district we can broaden to (same district machines)
-          if (cleanVillage && !cleanDistrict && list.length > 0) {
-            const resolvedDistrict = list[0]?.district
-            if (resolvedDistrict) {
-              const { data: districtData, error: distErr } = await supabase.rpc('search_machines', {
-                p_village: null,
-                p_district: resolvedDistrict,
-                p_state: null,
-                p_crop: params.crop || null,
-                p_machine_type: params.machineType || null,
-                p_limit: params.limit ?? 48,
-                p_offset: 0,
-              })
-              if (!distErr && Array.isArray(districtData)) {
-                list = deduplicateMachines([...list, ...(districtData as MachineCard[])]).filter(
-                  (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-                )
-              }
-            }
-          }
-
-          // If no machines found in this specific locality, broaden to state/all verified machines
-          if (list.length === 0) {
-            const { data: allData, error: allErr } = await supabase.rpc('search_machines', {
-              p_village: null,
-              p_district: null,
-              p_state: null,
-              p_crop: params.crop || null,
-              p_machine_type: params.machineType || null,
-              p_limit: params.limit ?? 48,
-              p_offset: 0,
-            })
-            if (!allErr && Array.isArray(allData)) {
-              list = deduplicateMachines(allData as MachineCard[]).filter(
-                (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-              )
-            }
-          }
-
-          if (list.length > 0) {
-            return list
-          }
-        }
-      } else {
-        // Broad search across all active machines when no location is specified
-        const { data: allData, error: allErr } = await supabase.rpc('search_machines', {
-          p_village: null,
-          p_district: null,
-          p_state: null,
-          p_crop: params.crop || null,
-          p_machine_type: params.machineType || null,
-          p_limit: params.limit ?? 48,
-          p_offset: params.offset ?? 0,
-        })
-        if (!allErr && Array.isArray(allData) && allData.length > 0) {
-          return deduplicateMachines(allData as MachineCard[]).filter(
-            (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-          )
-        }
+      if (params.signal) {
+        query = query.abortSignal(params.signal)
       }
-    } catch {
-      // Fall through to local fallback
+
+      const { data, error } = await query
+
+      if (error) {
+        logError('searchMachines RPC error', error)
+      } else if (Array.isArray(data)) {
+        return deduplicateMachines(data as MachineCard[]).filter(
+          (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+        )
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('aborted'))) {
+        throw err
+      }
+      logError('searchMachines network/execution error', err)
+      // Fall through to local resilient store on network/offline errors
     }
   }
 
@@ -277,6 +195,31 @@ export async function searchMachines(params: {
 
     return isVillageMatch || isDistrictMatch
   })
+
+  // Sort matching candidates by proximity rank: village first, then district
+  const sorted = [...filtered].sort((a, b) => {
+    const aVillage = (a.village || '').toLowerCase()
+    const bVillage = (b.village || '').toLowerCase()
+    const aSvs = Array.isArray(a.service_villages)
+      ? a.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+      : []
+    const bSvs = Array.isArray(b.service_villages)
+      ? b.service_villages.map((s) => (typeof s === 'string' ? s.toLowerCase() : ''))
+      : []
+
+    const aIsVillage =
+      Boolean(vTarget) &&
+      (aVillage === vTarget || aSvs.includes(vTarget) || (vTarget.length >= 3 && aVillage.includes(vTarget)))
+    const bIsVillage =
+      Boolean(vTarget) &&
+      (bVillage === vTarget || bSvs.includes(vTarget) || (vTarget.length >= 3 && bVillage.includes(vTarget)))
+
+    if (aIsVillage && !bIsVillage) return -1
+    if (!aIsVillage && bIsVillage) return 1
+    return 0
+  })
+
+  return deduplicateMachines(sorted)
 
   return deduplicateMachines(filtered)
 }

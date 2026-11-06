@@ -118,4 +118,74 @@ describe('deleteMachine', () => {
     await deleteMachine(wheatMachine.id, ownerId)
     await deleteMachine(riceMachine.id, ownerId)
   })
+
+  it('accurately matches exact village, service village, district fallback, and handles no results', async () => {
+    const ownerId = 'search-hierarchy-owner'
+    // Machine 1: Primary in KoppalMain, serves AlwandiService, district Koppal
+    const koppalMachine = await createMachine(
+      ownerId,
+      {
+        machine_type: 'combine_harvester',
+        model: 'KoppalHarvester',
+        price_per_acre: 1500,
+        pricing_unit: 'per_acre',
+        crops: ['wheat'],
+        phone: '9876543220',
+        latitude: 15.34,
+        longitude: 76.15,
+        locations: [
+          { village: 'KoppalMain', district: 'KoppalDistrict', state: 'Karnataka', is_primary: true },
+          { village: 'AlwandiService', district: 'KoppalDistrict', state: 'Karnataka', is_primary: false },
+        ],
+      },
+      null,
+    )
+
+    // Machine 2: Primary in Betageri, district GadagDistrict
+    const gadagMachine = await createMachine(
+      ownerId,
+      {
+        machine_type: 'tractor_harvester',
+        model: 'GadagTractor',
+        price_per_acre: 1000,
+        pricing_unit: 'per_acre',
+        crops: ['wheat', 'rice'],
+        phone: '9876543221',
+        latitude: 15.42,
+        longitude: 75.63,
+        locations: [
+          { village: 'BetageriVillage', district: 'GadagDistrict', state: 'Karnataka', is_primary: true },
+        ],
+      },
+      null,
+    )
+
+    // 1. Exact primary village match
+    const exactResults = await searchMachines({ village: 'KoppalMain' })
+    expect(exactResults.some((m) => m.id === koppalMachine.id)).toBe(true)
+    expect(exactResults.some((m) => m.id === gadagMachine.id)).toBe(false)
+
+    // 2. Service village match
+    const serviceResults = await searchMachines({ village: 'AlwandiService' })
+    expect(serviceResults.some((m) => m.id === koppalMachine.id)).toBe(true)
+    expect(serviceResults.some((m) => m.id === gadagMachine.id)).toBe(false)
+
+    // 3. District fallback match (village not matched, but district matches)
+    const districtResults = await searchMachines({ village: 'OtherVillage', district: 'GadagDistrict' })
+    expect(districtResults.some((m) => m.id === gadagMachine.id)).toBe(true)
+    expect(districtResults.some((m) => m.id === koppalMachine.id)).toBe(false)
+
+    // 4. No results when neither village nor district match
+    const noResults = await searchMachines({ village: 'NonExistentVillage', district: 'NonExistentDistrict' })
+    expect(noResults.some((m) => m.id === koppalMachine.id || m.id === gadagMachine.id)).toBe(false)
+
+    // 5. Cancellation via AbortSignal
+    const controller = new AbortController()
+    controller.abort()
+    await expect(searchMachines({ village: 'KoppalMain', signal: controller.signal })).rejects.toThrow()
+
+    // Clean up
+    await deleteMachine(koppalMachine.id, ownerId)
+    await deleteMachine(gadagMachine.id, ownerId)
+  })
 })
