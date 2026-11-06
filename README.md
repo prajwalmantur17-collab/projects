@@ -75,27 +75,35 @@ in a Vite environment variable or any browser bundle.
 
 ### 4. Apply the database migrations
 
-Apply the files in `supabase/migrations/` **in filename order**:
+Apply the migration files in `supabase/migrations/` **in filename order**:
 
-1. `20260101000000_schema.sql` - enums, tables, indexes, triggers, and the
-   `machine_cards` read view.
-2. `20260101000100_functions.sql` - the RPCs and role guard.
-3. `20260101000200_rls.sql` - row level security and least-privilege grants.
-4. `20260101000300_storage.sql` - the public `machine-images` bucket and its
-   policies.
-5. `20260101000400_realtime.sql` - adds bookings and notifications to the
-   Realtime publication.
+1. `20260101000000_schema.sql` — Enums, tables, indexes, triggers, and base `machine_cards` view.
+2. `20260101000100_functions.sql` — Auth triggers, user role management, and booking RPCs.
+3. `20260101000200_rls.sql` — Row Level Security and least-privilege table grants.
+4. `20260101000300_storage.sql` — Public `machine-images` storage bucket and folder policies.
+5. `20260101000400_realtime.sql` — Enables Realtime publications for bookings and notifications.
+6. `20260101000500_live_tracking.sql` — GPS live tracking table and permissions.
+7. `20260101000600_two_way_tracking.sql` — Bidirectional location tracking (farmer + owner).
+8. `20260101000700_delete_machine.sql` — Machine deletion policy for machine owners.
+9. `20260101000800_platform_stats.sql` — Safe public platform statistics RPC (`get_platform_stats`).
+10. `20260101000900_delete_machine_rpc.sql` — Atomic cascade deletion RPC for machine listings.
+11. `20260101001000_optimized_search_machines.sql` — Single round-trip ranked machine search RPC.
+12. `20260101001100_features_and_security_hardening.sql` — Extended crop catalog (20 crops), avatars bucket, work status, machine waitlist, 'My Record' analytics, and security hardening.
 
-With the Supabase CLI:
+#### Deployment Options:
 
+**Option A: Supabase CLI (Recommended)**
 ```bash
 supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Or paste each file into the Supabase Dashboard SQL editor and run it in order.
-The migrations assume a fresh project; review them before applying to a
-database that already contains other tables.
+**Option B: Dashboard SQL Editor**
+Run each migration file from `supabase/migrations/` sequentially in the Supabase SQL editor.
+
+> [!NOTE]
+> **Standalone SQL Scripts in `supabase/`**:
+> The standalone `.sql` files at the root of `supabase/` (`all_in_one_setup.sql`, `fix_bookings.sql`, `more_crops.sql`, `work_status.sql`, `avatars.sql`, `record.sql`, `security_hardening.sql`, and `allow_booking_after_completion.sql`) are legacy standalone utility scripts and one-time patch files. They are preserved for reference, but running the sequential migration chain (`20260101000000` through `20260101001100`) is the canonical, complete, and reproducible setup path for both new and existing environments. If you want sample data, `supabase/seed_machines.sql` can optionally be applied afterwards.
 
 ### 5. Enable email/password sign-in
 
