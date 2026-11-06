@@ -88,17 +88,44 @@ export async function getMachineStatus(machineId: string): Promise<MachineStatus
   }
 }
 
-/** Machines that are working right now, keyed by machine id. Never throws. */
+const BUSY_TTL_MS = 30_000 // 30 seconds
+let cachedBusy: { data: Map<string, string | null>; timestamp: number } | null = null
+let inflightBusy: Promise<Map<string, string | null>> | null = null
+
+export function clearBusyMachinesCache(): void {
+  cachedBusy = null
+  inflightBusy = null
+}
+
+/** Machines that are working right now, keyed by machine id. Never throws. Cached for 30s. */
 export async function getBusyMachines(): Promise<Map<string, string | null>> {
-  const busy = new Map<string, string | null>()
-  try {
-    const { data, error } = await requireSupabase().rpc('busy_machine_ids')
-    if (error || !Array.isArray(data)) return busy
-    for (const row of data as Array<{ machine_id: string; expected_free_at: string | null }>) {
-      busy.set(row.machine_id, row.expected_free_at ?? null)
-    }
-  } catch {
-    // ignore: machines simply look free
+  const now = Date.now()
+  if (cachedBusy && now - cachedBusy.timestamp < BUSY_TTL_MS) {
+    return cachedBusy.data
   }
-  return busy
+
+  if (inflightBusy) {
+    return inflightBusy
+  }
+
+  inflightBusy = (async () => {
+    const busy = new Map<string, string | null>()
+    try {
+      const client = requireSupabase()
+      const { data, error } = await client.rpc('busy_machine_ids')
+      if (!error && Array.isArray(data)) {
+        for (const row of data as Array<{ machine_id: string; expected_free_at: string | null }>) {
+          busy.set(row.machine_id, row.expected_free_at ?? null)
+        }
+      }
+    } catch {
+      // ignore: machines simply look free
+    }
+    cachedBusy = { data: busy, timestamp: Date.now() }
+    return busy
+  })().finally(() => {
+    inflightBusy = null
+  })
+
+  return inflightBusy
 }

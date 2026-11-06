@@ -95,16 +95,38 @@ export function FarmerHomePage() {
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null)
   const [latestActivity, setLatestActivity] = useState<LatestActivity | null>(null)
 
+  // Defer non-critical statistics and latest activity until after main UI mounts and idle time
   useEffect(() => {
     let active = true
-    void fetchPlatformStats().then((data) => {
-      if (active && data) setPlatformStats(data)
-    })
-    void fetchLatestMachineActivity().then((data) => {
-      if (active && data) setLatestActivity(data)
-    })
+    let cancelIdle: (() => void) | null = null
+
+    const loadDeferred = () => {
+      void fetchPlatformStats().then((data) => {
+        if (active && data) setPlatformStats(data)
+      })
+      void fetchLatestMachineActivity().then((data) => {
+        if (active && data) setLatestActivity(data)
+      })
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(
+        loadDeferred,
+        { timeout: 2000 },
+      )
+      cancelIdle = () => {
+        if ('cancelIdleCallback' in window) {
+          (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(id)
+        }
+      }
+    } else {
+      const timer = setTimeout(loadDeferred, 800)
+      cancelIdle = () => clearTimeout(timer)
+    }
+
     return () => {
       active = false
+      if (cancelIdle) cancelIdle()
     }
   }, [])
 
@@ -129,9 +151,17 @@ export function FarmerHomePage() {
   const [results, setResults] = useState<MachineCardType[] | null>(null)
   const [busyMachines, setBusyMachines] = useState<Map<string, string | null>>(() => new Map())
 
+  // Fetch busy-machine status ONLY after search results exist, avoiding useless mount requests
   useEffect(() => {
-    void getBusyMachines().then((map) => setBusyMachines(map))
-  }, [])
+    if (!results || results.length === 0) return
+    let active = true
+    void getBusyMachines().then((map) => {
+      if (active) setBusyMachines(map)
+    })
+    return () => {
+      active = false
+    }
+  }, [results])
   const [snapshot, setSnapshot] = useState<SearchSnapshot | null>(null)
   const [smartSummary, setSmartSummary] = useState<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
