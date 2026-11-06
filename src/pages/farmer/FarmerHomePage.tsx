@@ -592,7 +592,10 @@ export function FarmerHomePage() {
           <img
             src="/hero/farmer.webp"
             alt=""
+            width={400}
+            height={400}
             loading="eager"
+            fetchPriority="high"
             className="h-full w-full object-cover object-[center_top]"
             onError={(e) => {
               const target = e.currentTarget
