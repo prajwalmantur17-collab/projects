@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -51,8 +51,23 @@ import { CropPhotoDetector } from '../../components/crop/CropPhotoDetector'
 import { CropPickerModal } from '../../components/crop/CropPickerModal'
 import { CROP_CONFIGS } from '../../lib/cropConfig'
 import { VoiceSearchButton } from '../../components/voice/VoiceSearchButton'
-import { LiveMap } from '../../components/map/LiveMap'
 import type { MapMachine } from '../../components/map/LiveMap'
+
+const LiveMap = lazy(() => import('../../components/map/LiveMap').then((m) => ({ default: m.LiveMap })))
+
+function MapSkeleton({ className = 'h-72 sm:h-96' }: { className?: string }) {
+  return (
+    <div
+      className={`relative flex items-center justify-center bg-gray-50/80 animate-pulse text-emerald-800 rounded-3xl ${className}`}
+      aria-label="Loading interactive map"
+    >
+      <div className="flex flex-col items-center gap-2">
+        <MapPin className="size-8 text-emerald-600/70 animate-bounce" />
+        <span className="text-xs font-semibold text-gray-500">Loading interactive map...</span>
+      </div>
+    </div>
+  )
+}
 import { machineTypeLabelKey } from '../../lib/labels'
 import { KisanVoiceAssistant } from '../../components/voice/KisanVoiceAssistant'
 import type { VoiceQueryResult } from '../../lib/voice'
@@ -1102,7 +1117,9 @@ export function FarmerHomePage() {
                 </p>
               </div>
             </div>
-            <LiveMap me={geo.coordinates} machines={mapMachines} className="h-72 sm:h-96" />
+            <Suspense fallback={<MapSkeleton className="h-72 sm:h-96" />}>
+              <LiveMap me={geo.coordinates} machines={mapMachines} className="h-72 sm:h-96" />
+            </Suspense>
           </div>
         </div>
       ) : null}
