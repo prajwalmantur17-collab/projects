@@ -215,7 +215,14 @@ export function parseNaturalSearchQuery(rawQuery: string): ParsedQuery {
 /**
  * Executes a smart natural language search against the database
  */
-export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchResult> {
+export async function executeSmartSearch(
+  rawQuery: string,
+  signal?: AbortSignal,
+): Promise<SmartSearchResult> {
+  if (signal?.aborted) {
+    throw new DOMException('Smart search aborted', 'AbortError')
+  }
+
   const parsed = parseNaturalSearchQuery(rawQuery)
 
   let machines: MachineCard[] = []
@@ -223,7 +230,7 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
   // 1. If location, crop, or machine type is detected, use the optimized search_machines RPC first
   if (supabase && (parsed.location || parsed.crop || parsed.machineType)) {
     try {
-      const { data, error } = await supabase.rpc('search_machines', {
+      let query = supabase.rpc('search_machines', {
         p_village: parsed.location || null,
         p_district: null,
         p_state: null,
@@ -233,6 +240,12 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
         p_offset: 0,
       })
 
+      if (signal) {
+        query = query.abortSignal(signal)
+      }
+
+      const { data, error } = await query
+
       if (!error && Array.isArray(data)) {
         machines = deduplicateMachines(data as MachineCard[]).filter(
           (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
@@ -241,6 +254,10 @@ export async function executeSmartSearch(rawQuery: string): Promise<SmartSearchR
     } catch {
       // Fall through to table select
     }
+  }
+
+  if (signal?.aborted) {
+    throw new DOMException('Smart search aborted', 'AbortError')
   }
 
   // 2. If no RPC results, or if query is for new/recent machines or model, query machine_cards with limit(48)

@@ -185,6 +185,15 @@ export function FarmerHomePage() {
   const [sortBy, setSortBy] = useState<'nearest' | 'cheapest'>('nearest')
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
 
+  const searchSequenceRef = useRef(0)
+  const searchAbortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      searchAbortControllerRef.current?.abort()
+    }
+  }, [])
+
   const hasSearched = results !== null
   const parsedAcreage = parseFloat(acreage) > 0 ? parseFloat(acreage) : null
 
@@ -296,6 +305,11 @@ export function FarmerHomePage() {
     overrideVillage?: string,
     overrideDistrict?: string,
   ) => {
+    const seq = ++searchSequenceRef.current
+    searchAbortControllerRef.current?.abort()
+    const controller = new AbortController()
+    searchAbortControllerRef.current = controller
+
     setErrors({})
     setSearchError(null)
     setSearching(true)
@@ -312,7 +326,10 @@ export function FarmerHomePage() {
         crop: activeCrop || undefined,
         machineType: machineType || undefined,
         limit: 48,
+        signal: controller.signal,
       })
+      if (seq !== searchSequenceRef.current) return
+
       setResults((found || []).filter((m) => m && m.is_active !== false))
       setSnapshot({
         village: cleanedVillage || cleanedDistrict || t('ui.nearby'),
@@ -321,23 +338,33 @@ export function FarmerHomePage() {
         acreage,
       })
       window.setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        resultsRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
       }, 60)
-    } catch (caught) {
+    } catch (caught: unknown) {
+      if (seq !== searchSequenceRef.current || controller.signal.aborted) return
       logError('farmer.search', caught)
       const key = mapErrorToKey(caught, 'farmer.searchError')
       setSearchError(key)
       toast.error(t(key))
     } finally {
-      setSearching(false)
+      if (seq === searchSequenceRef.current) {
+        setSearching(false)
+      }
     }
   }
 
   const handleSmartSearch = async (rawQuery: string) => {
+    const seq = ++searchSequenceRef.current
+    searchAbortControllerRef.current?.abort()
+    const controller = new AbortController()
+    searchAbortControllerRef.current = controller
+
     setSearching(true)
     setSearchError(null)
     try {
-      const res = await executeSmartSearch(rawQuery)
+      const res = await executeSmartSearch(rawQuery, controller.signal)
+      if (seq !== searchSequenceRef.current) return
+
       setResults(res.machines)
       setSmartSummary(res.summaryKey ? t(res.summaryKey, res.summaryParams) : res.summary)
       if (res.detectedLocation) {
@@ -353,15 +380,18 @@ export function FarmerHomePage() {
         acreage: '',
       })
       setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        resultsRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
       }, 150)
-    } catch (caught) {
+    } catch (caught: unknown) {
+      if (seq !== searchSequenceRef.current || controller.signal.aborted) return
       logError('farmer.smartSearch', caught)
       const errKey = mapErrorToKey(caught)
       setSearchError(errKey)
       toast.error(t(errKey))
     } finally {
-      setSearching(false)
+      if (seq === searchSequenceRef.current) {
+        setSearching(false)
+      }
     }
   }
 
@@ -467,6 +497,10 @@ export function FarmerHomePage() {
   }
 
   const clearSearch = () => {
+    searchSequenceRef.current++
+    searchAbortControllerRef.current?.abort()
+    searchAbortControllerRef.current = null
+    setSearching(false)
     setResults(null)
     setSnapshot(null)
     setSmartSummary(null)
@@ -1157,9 +1191,14 @@ export function FarmerHomePage() {
         {searching || geocoding ? (
           /* Live Scanning State: Skeletons replacing radar block */
           <div>
-            <div className="mb-4 flex items-center gap-2 rounded-full border border-leaf-200 bg-white px-4 py-1.5 text-sm font-bold text-leaf-800 shadow-sm w-fit">
-              <Radio className="size-3.5 animate-pulse text-leaf-600" aria-hidden="true" />
-              <span>{t('ui.scanning')}</span>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 rounded-full border border-leaf-200 bg-white px-4 py-1.5 text-sm font-bold text-leaf-800 shadow-sm w-fit">
+                <Radio className="size-3.5 animate-pulse text-leaf-600" aria-hidden="true" />
+                <span>{t('ui.scanning')}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearSearch}>
+                {t('farmer.clearSearch')}
+              </Button>
             </div>
             <div
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
