@@ -554,6 +554,7 @@ export function FarmerHomePage() {
       if (!fix || seq !== locateSequenceRef.current) return
 
       const coords = { latitude: fix.latitude, longitude: fix.longitude }
+      setPicked({ name: t('ui.nearby'), coords })
 
       // A very coarse fix (Wi-Fi/IP based) would show the wrong area, so ask the
       // person to check it instead of searching with it.
@@ -571,6 +572,7 @@ export function FarmerHomePage() {
           place: geocoded.village,
           district: geocoded.district,
         })
+        setPicked({ name: geocoded.village, coords })
 
         // Auto-scan only when the position is trustworthy.
         if (!poor) {
@@ -585,6 +587,7 @@ export function FarmerHomePage() {
           place: fallbackPlace,
           district: '',
         })
+        setPicked({ name: fallbackPlace, coords })
         if (!poor) {
           void runSearch(crop, '', '')
         }

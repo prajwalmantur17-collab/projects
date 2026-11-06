@@ -36,10 +36,13 @@ describe('useGeolocation hook', () => {
       error({ code: 1, message: 'User denied Geolocation' })
       return 123
     })
+    const mockGetCurrent = vi.fn().mockImplementation((_success, error) => {
+      error({ code: 1, message: 'User denied Geolocation' })
+    })
     const mockClear = vi.fn()
 
     Object.defineProperty(navigator, 'geolocation', {
-      value: { watchPosition: mockWatch, clearWatch: mockClear },
+      value: { getCurrentPosition: mockGetCurrent, watchPosition: mockWatch, clearWatch: mockClear },
       configurable: true,
     })
 
@@ -59,10 +62,11 @@ describe('useGeolocation hook', () => {
       watchCallback = success
       return 1
     })
+    const mockGetCurrent = vi.fn()
     const mockClear = vi.fn()
 
     Object.defineProperty(navigator, 'geolocation', {
-      value: { watchPosition: mockWatch, clearWatch: mockClear },
+      value: { getCurrentPosition: mockGetCurrent, watchPosition: mockWatch, clearWatch: mockClear },
       configurable: true,
     })
 

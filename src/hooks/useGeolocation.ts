@@ -25,8 +25,8 @@ export const POOR_ACCURACY_M = 1500
 const CACHE_VALID_MS = 60_000
 /** Fast-return timer: if we already have a usable fix after this time, don't keep user waiting. */
 const FAST_RETURN_MS = 2500
-/** Hard timeout for GPS fix. */
-const MAX_WAIT_MS = 5000
+/** Hard timeout for high-precision GPS before fallback. */
+const MAX_WAIT_MS = 7000
 
 let lastKnownFix: { fix: GeoFix; timestamp: number } | null = null
 
@@ -120,29 +120,46 @@ export function useGeolocation() {
         resolve(result)
       }
 
-      try {
-        watchId = navigator.geolocation.watchPosition(
-          (position) => {
-            const fix: GeoFix = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : Infinity,
-            }
-            if (!best || fix.accuracy < best.accuracy) best = fix
+      const handleSuccess = (position: GeolocationPosition) => {
+        const fix: GeoFix = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : Infinity,
+        }
+        if (!best || fix.accuracy < best.accuracy) best = fix
 
-            // If we hit high accuracy immediately, finish without waiting
-            if (best.accuracy <= GOOD_ACCURACY_M) {
-              finish(best, null)
-            }
-          },
-          () => {
-            if (best) {
-              finish(best, null)
-              return
-            }
-            finish(null, 'farmer.locationDenied')
-          },
-          { enableHighAccuracy: true, timeout: MAX_WAIT_MS, maximumAge: 30_000 },
+        // If we hit high accuracy immediately, finish without waiting
+        if (best.accuracy <= GOOD_ACCURACY_M) {
+          finish(best, null)
+        }
+      }
+
+      const handleError = (error?: GeolocationPositionError) => {
+        if (best) {
+          finish(best, null)
+          return
+        }
+        if (error && error.code === 1) {
+          // User explicitly denied permission
+          finish(null, 'farmer.locationDenied')
+        }
+        // If it was code 2 (POSITION_UNAVAILABLE) or code 3 (TIMEOUT),
+        // let the timer or fallback attempt complete rather than instantly failing
+      }
+
+      try {
+        // Fast primary attempt with getCurrentPosition (much faster and more reliable than watchPosition alone)
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          handleError,
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
+        )
+
+        // Also start watchPosition to refine fix if accuracy improves
+        watchId = navigator.geolocation.watchPosition(
+          handleSuccess,
+          handleError,
+          { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
         )
         activeWatchId.current = watchId
       } catch {
@@ -157,12 +174,29 @@ export function useGeolocation() {
         }
       }, FAST_RETURN_MS)
 
-      // Hard max wait
+      // Hard max wait: if high-accuracy timed out, try low-accuracy fallback before giving up
       hardTimer = window.setTimeout(() => {
         if (best) {
           finish(best, null)
         } else {
-          finish(null, 'farmer.locationDenied')
+          // Try one fallback with enableHighAccuracy: false (cell/wifi triangulation)
+          try {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                finish({
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy ?? 500,
+                }, null)
+              },
+              () => {
+                finish(null, 'farmer.locationDenied')
+              },
+              { enableHighAccuracy: false, timeout: 4000, maximumAge: 120_000 },
+            )
+          } catch {
+            finish(null, 'farmer.locationDenied')
+          }
         }
       }, MAX_WAIT_MS)
     })
