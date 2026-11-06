@@ -11,6 +11,7 @@ import {
   speakAloud,
   stopSpeaking,
 } from '../../lib/voice'
+import { unlockMobileAudio } from '../../lib/speech'
 import type { VoiceQueryResult } from '../../lib/voice'
 
 export function KisanVoiceAssistant({
@@ -25,6 +26,7 @@ export function KisanVoiceAssistant({
   const { mobileOpen } = useSidebar()
 
   const handleOpen = () => {
+    unlockMobileAudio()
     setIsOpen(true)
     setTranscript('')
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2, Volume2, VolumeX } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { cancelSpeech, speakAloudWithFeedback } from '../../lib/speech'
+import { cancelSpeech, speakAloudWithFeedback, unlockMobileAudio } from '../../lib/speech'
 import { toast } from '../../lib/toast'
 import type { MachineCard } from '../../types'
 
@@ -26,6 +26,9 @@ export function SpeakButton({
   const handleSpeak = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+
+    // Unlock mobile Web Audio API synchronously within user gesture
+    unlockMobileAudio()
 
     // If currently playing or generating, clicking stops playback immediately
     if (speaking || generating) {

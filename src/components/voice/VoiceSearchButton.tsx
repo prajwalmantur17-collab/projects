@@ -8,6 +8,7 @@ import {
   speakAloud,
   stopSpeaking,
 } from '../../lib/voice'
+import { unlockMobileAudio } from '../../lib/speech'
 import type { VoiceQueryResult } from '../../lib/voice'
 
 export function VoiceSearchButton({
@@ -22,6 +23,7 @@ export function VoiceSearchButton({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleStartListening = () => {
+    unlockMobileAudio()
     setErrorMessage(null)
 
     if (!isSpeechRecognitionSupported()) {

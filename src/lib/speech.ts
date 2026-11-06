@@ -4,7 +4,9 @@
  * with browser Web Speech API as fallback.
  */
 import type { Language } from '../types'
-import { speakWithElevenLabs, stopElevenLabsAudio } from './elevenLabsSpeech'
+import { speakWithElevenLabs, stopElevenLabsAudio, unlockMobileAudio } from './elevenLabsSpeech'
+
+export { unlockMobileAudio } from './elevenLabsSpeech'
 
 export const SPEECH_LOCALES: Record<Language, string> = {
   en: 'en-IN',
@@ -483,6 +485,8 @@ export async function speakAloudWithFeedback(
     return { success: true }
   }
 
+  // Pre-unlock mobile audio context during user gesture
+  unlockMobileAudio()
   cancelSpeech()
 
   if (!options?.disableElevenLabs) {

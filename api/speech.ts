@@ -313,7 +313,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return
   }
 
-  // Rate limiting check
+  // Rate limiting check: per-IP first
   const clientIp = getClientIp(req)
   if (!checkRateLimit(`ip:${clientIp}`, MAX_PER_IP)) {
     sendJson(res, 429, {
@@ -323,28 +323,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return
   }
 
-  // Only signed-in users may spend ElevenLabs credits.
-  const userId = await verifySupabaseUser(req.headers.authorization)
-  if (userId === 'unconfigured') {
-    sendJson(res, 503, {
-      error: 'auth_not_configured',
-      message: 'Server is missing Supabase settings (SUPABASE_URL / SUPABASE_ANON_KEY).',
-    })
-    return
-  }
-  if (!userId) {
-    sendJson(res, 401, {
-      error: 'sign_in_required',
-      message: 'Please sign in to use the voice assistant.',
-    })
-    return
-  }
-  if (!checkRateLimit(`user:${userId}`, MAX_PER_USER)) {
-    sendJson(res, 429, {
-      error: 'rate_limit_exceeded',
-      message: 'Too many requests. Please wait a minute before requesting audio again.',
-    })
-    return
+  // If a signed-in user token is present, also apply per-user rate limit
+  if (req.headers.authorization) {
+    const userId = await verifySupabaseUser(req.headers.authorization)
+    if (userId && userId !== 'unconfigured') {
+      if (!checkRateLimit(`user:${userId}`, MAX_PER_USER)) {
+        sendJson(res, 429, {
+          error: 'rate_limit_exceeded',
+          message: 'Too many requests. Please wait a minute before requesting audio again.',
+        })
+        return
+      }
+    }
   }
 
   const body = await parseRequestBody(req)
