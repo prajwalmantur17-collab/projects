@@ -39,8 +39,13 @@ export function useRoadRoute(from: Coordinates | null | undefined, to: Coordinat
       fromLat === undefined ||
       fromLng === undefined ||
       toLat === undefined ||
-      toLng === undefined
+      toLng === undefined ||
+      fromLat === null ||
+      fromLng === null ||
+      toLat === null ||
+      toLng === null
     ) {
+      setState({ route: null, settled: true })
       return
     }
     const start: Coordinates = { latitude: fromLat, longitude: fromLng }

@@ -12,7 +12,28 @@ export interface RoadRoute {
 export const MIN_MOVE_METERS = 100
 export const MAX_ROUTE_AGE_MS = 30_000
 export const MIN_REQUEST_GAP_MS = 15_000
-const REQUEST_TIMEOUT_MS = 8_000
+const REQUEST_TIMEOUT_MS = 4_000 // Fast 4s timeout per provider
+
+const ROUTE_CACHE_MAX = 50
+const ROUTE_CACHE_TTL_MS = 60_000
+
+interface CacheEntry {
+  route: RoadRoute
+  timestamp: number
+}
+
+const routeCache = new Map<string, CacheEntry>()
+const inflightRoutes = new Map<string, Promise<RoadRoute | null>>()
+
+export function clearRouteCache(): void {
+  routeCache.clear()
+  inflightRoutes.clear()
+}
+
+function getCacheKey(from: Coordinates, to: Coordinates): string {
+  // Round to 3 decimal places (~110m resolution) to absorb GPS jitter
+  return `${from.latitude.toFixed(3)},${from.longitude.toFixed(3)}->${to.latitude.toFixed(3)},${to.longitude.toFixed(3)}`
+}
 
 /** Straight-line distance in metres between two points (haversine). */
 export function distanceMeters(a: Coordinates, b: Coordinates): number {
@@ -137,10 +158,11 @@ async function fromOsrm(
 ): Promise<RoadRoute | null> {
   const guard = withTimeout(signal)
   try {
+    // Use overview=simplified to optimize payload and network response
     const url =
       `https://router.project-osrm.org/route/v1/driving/` +
       `${from.longitude},${from.latitude};${to.longitude},${to.latitude}` +
-      `?overview=full&geometries=geojson`
+      `?overview=simplified&geometries=geojson`
     const response = await fetch(url, { signal: guard.signal })
     if (!response.ok) return null
     const body = (await response.json()) as {
@@ -160,16 +182,57 @@ async function fromOsrm(
 }
 
 /**
- * Road route between two points. Tries OpenRouteService (when a key is set), then the
- * free OSRM server. Never throws: returns null when no route could be found.
+ * Road route between two points. Tries memory cache first, then OpenRouteService,
+ * then OSRM fallback. Deduplicates simultaneous lookups.
+ * Never throws: returns null when no route could be found.
  */
 export async function getRoadRoute(
   from: Coordinates,
   to: Coordinates,
   signal?: AbortSignal,
 ): Promise<RoadRoute | null> {
-  const ors = await fromOpenRouteService(from, to, signal)
-  if (ors) return ors
   if (signal?.aborted) return null
-  return fromOsrm(from, to, signal)
+
+  const key = getCacheKey(from, to)
+  const cached = routeCache.get(key)
+  const now = Date.now()
+  if (cached && now - cached.timestamp < ROUTE_CACHE_TTL_MS) {
+    return cached.route
+  }
+
+  const inflight = inflightRoutes.get(key)
+  if (inflight) {
+    return inflight
+  }
+
+  const promise = (async () => {
+    const ors = await fromOpenRouteService(from, to, signal)
+    if (ors) {
+      if (routeCache.size >= ROUTE_CACHE_MAX) {
+        const oldestKey = routeCache.keys().next().value
+        if (oldestKey) routeCache.delete(oldestKey)
+      }
+      routeCache.set(key, { route: ors, timestamp: Date.now() })
+      return ors
+    }
+
+    if (signal?.aborted) return null
+
+    const osrm = await fromOsrm(from, to, signal)
+    if (osrm) {
+      if (routeCache.size >= ROUTE_CACHE_MAX) {
+        const oldestKey = routeCache.keys().next().value
+        if (oldestKey) routeCache.delete(oldestKey)
+      }
+      routeCache.set(key, { route: osrm, timestamp: Date.now() })
+      return osrm
+    }
+
+    return null
+  })().finally(() => {
+    inflightRoutes.delete(key)
+  })
+
+  inflightRoutes.set(key, promise)
+  return promise
 }
