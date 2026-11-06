@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
-import { searchPlaces } from '../services/placeSearch'
+import { localMatches, searchPlaces } from '../services/placeSearch'
 import type { PlaceSuggestion } from '../services/placeSearch'
 import type { Coordinates } from '../types'
 
@@ -8,9 +8,8 @@ const DEBOUNCE_MS = 300
 const MIN_CHARS = 2
 
 /**
- * Live place suggestions for a text box. Waits for a short pause in typing,
- * cancels outdated requests, and keeps the previous list on screen while the
- * next one loads so the dropdown does not flicker.
+ * Live place suggestions for a text box. Shows instant local suggestions immediately,
+ * debounces remote lookups, cancels outdated requests, and avoids layout jumps.
  */
 export function usePlaceSuggestions(query: string, enabled: boolean, near?: Coordinates | null) {
   const { language } = useI18n()
@@ -20,21 +19,49 @@ export function usePlaceSuggestions(query: string, enabled: boolean, near?: Coor
   const lon = near?.longitude
   const key = `${language}|${q}|${lat ?? ''},${lon ?? ''}`
 
-  const [result, setResult] = useState<{ key: string; items: PlaceSuggestion[] }>({
-    key: '',
-    items: [],
+  const [result, setResult] = useState<{ key: string; items: PlaceSuggestion[] }>(() => {
+    return { key: '', items: [] }
   })
+  const [loading, setLoading] = useState(false)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
-    if (!active) return
+    if (!active) {
+      setLoading(false)
+      return
+    }
+
+    const currentRequestId = ++requestIdRef.current
+
+    // 1. Immediately show local matches so user sees instant feedback while remote request runs
+    const instantLocal = localMatches(q, language)
+    if (instantLocal.length > 0) {
+      setResult({ key, items: instantLocal })
+    }
+    setLoading(true)
+
     const controller = new AbortController()
     const timer = window.setTimeout(() => {
-      searchPlaces(q, language, controller.signal, lat !== undefined && lon !== undefined ? { latitude: lat, longitude: lon } : null)
+      searchPlaces(
+        q,
+        language,
+        controller.signal,
+        lat !== undefined && lon !== undefined ? { latitude: lat, longitude: lon } : null,
+      )
         .then((items) => {
-          if (!controller.signal.aborted) setResult({ key, items })
+          if (currentRequestId === requestIdRef.current && !controller.signal.aborted) {
+            setResult({ key, items })
+            setLoading(false)
+          }
         })
         .catch(() => {
-          if (!controller.signal.aborted) setResult({ key, items: [] })
+          if (currentRequestId === requestIdRef.current && !controller.signal.aborted) {
+            // Keep local matches if remote failed, don't clear them completely
+            if (instantLocal.length === 0) {
+              setResult({ key, items: [] })
+            }
+            setLoading(false)
+          }
         })
     }, DEBOUNCE_MS)
 
@@ -46,6 +73,6 @@ export function usePlaceSuggestions(query: string, enabled: boolean, near?: Coor
 
   return {
     suggestions: active ? result.items : [],
-    loading: active && result.key !== key,
+    loading: active && loading,
   }
 }

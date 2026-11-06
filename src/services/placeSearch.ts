@@ -20,7 +20,21 @@ export interface PlaceSuggestion {
 
 const MIN_QUERY_LENGTH = 2
 const MAX_SUGGESTIONS = 7
-const REQUEST_TIMEOUT_MS = 5000
+const REQUEST_TIMEOUT_PHOTON = 2500
+const REQUEST_TIMEOUT_NOMINATIM = 2000
+const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+const CACHE_MAX_ENTRIES = 150
+
+interface CacheEntry {
+  items: PlaceSuggestion[]
+  expires: number
+}
+
+const cache = new Map<string, CacheEntry>()
+
+export function clearPlaceCache(): void {
+  cache.clear()
+}
 
 /** Rough centre of Karnataka, used to rank local places first when GPS is off. */
 const DEFAULT_BIAS: Coordinates = { latitude: 14.8, longitude: 75.7 }
@@ -64,8 +78,6 @@ const LOCAL_PLACES: Array<[name: string, district: string, lat: number, lon: num
   ['Belagavi', 'Belagavi', 15.8497, 74.4977],
   ['Ranebennur', 'Haveri', 14.6231, 75.6218],
 ]
-
-const cache = new Map<string, PlaceSuggestion[]>()
 
 function cleanDistrictName(raw: string): string {
   return raw
@@ -158,7 +170,7 @@ async function fetchPhoton(
   const controller = new AbortController()
   const onAbort = () => controller.abort()
   signal?.addEventListener('abort', onAbort)
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_PHOTON)
 
   try {
     const url =
@@ -224,7 +236,7 @@ async function fetchNominatim(
   const controller = new AbortController()
   const onAbort = () => controller.abort()
   signal?.addEventListener('abort', onAbort)
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_NOMINATIM)
 
   try {
     const lang = acceptLanguage(language)
@@ -285,23 +297,28 @@ async function fetchNominatim(
 
 // -----------------------------------------------------------------------------
 
-function localMatches(query: string): PlaceSuggestion[] {
+export function localMatches(query: string, language: Language = 'en'): PlaceSuggestion[] {
   const q = normalizePlaceName(query, 'en').trim().toLowerCase()
   if (q.length < MIN_QUERY_LENGTH) return []
 
   const starts: PlaceSuggestion[] = []
   const contains: PlaceSuggestion[] = []
-  for (const [name, district, lat, lon] of LOCAL_PLACES) {
-    const lower = name.toLowerCase()
+  for (const [rawName, rawDistrict, lat, lon] of LOCAL_PLACES) {
+    const lower = rawName.toLowerCase()
     const hit = lower.startsWith(q) ? starts : lower.includes(q) ? contains : null
     if (!hit) continue
+
+    const name = normalizePlaceName(rawName, language)
+    const district = normalizePlaceName(rawDistrict, language)
+    const state = normalizePlaceName('Karnataka', language)
+
     hit.push({
       id: `local-${lower}`,
       name,
-      detail: [district !== name ? district : '', 'Karnataka'].filter(Boolean).join(', '),
+      detail: [district !== name ? district : '', state].filter(Boolean).join(', '),
       village: name,
       district,
-      state: 'Karnataka',
+      state,
       coords: { latitude: lat, longitude: lon },
     })
   }
@@ -332,14 +349,21 @@ export async function searchPlaces(
   signal?: AbortSignal,
   near?: Coordinates | null,
 ): Promise<PlaceSuggestion[]> {
+  if (signal?.aborted) {
+    throw new DOMException('The user aborted a request.', 'AbortError')
+  }
+
   const q = query.trim()
   if (q.length < MIN_QUERY_LENGTH) return []
 
   const bias = near ?? DEFAULT_BIAS
   // ~11 km buckets so small GPS jitter does not defeat the cache.
   const key = `${language}:${q.toLowerCase()}:${bias.latitude.toFixed(1)},${bias.longitude.toFixed(1)}`
+  const now = Date.now()
   const cached = cache.get(key)
-  if (cached) return cached
+  if (cached && cached.expires > now) {
+    return cached.items
+  }
 
   let remote: PlaceSuggestion[] = []
   try {
@@ -347,7 +371,9 @@ export async function searchPlaces(
   } catch (error) {
     if (signal?.aborted) throw error
   }
-  if (remote.length === 0) {
+
+  // Only fall back to Nominatim if Photon gave 0 results AND query is at least 3 characters
+  if (remote.length === 0 && q.length >= 3 && !signal?.aborted) {
     try {
       remote = await fetchNominatim(q, language, signal)
     } catch (error) {
@@ -356,7 +382,13 @@ export async function searchPlaces(
     }
   }
 
-  const result = merge(remote, localMatches(q))
-  if (remote.length > 0) cache.set(key, result)
+  const result = merge(remote, localMatches(q, language))
+  if (remote.length > 0) {
+    if (cache.size >= CACHE_MAX_ENTRIES) {
+      const oldestKey = cache.keys().next().value
+      if (oldestKey) cache.delete(oldestKey)
+    }
+    cache.set(key, { items: result, expires: now + CACHE_TTL_MS })
+  }
   return result
 }
