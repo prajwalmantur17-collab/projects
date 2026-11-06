@@ -6,7 +6,10 @@
   "description": "Harvest Rentals - find and book harvesting machines near your village.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "prebuild": "node scripts/check-secrets.mjs",
+    "build": "tsc -b && vite build && node scripts/verify-dist.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
