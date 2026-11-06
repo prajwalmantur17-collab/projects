@@ -21,6 +21,43 @@ function extensionFor(file: File): string {
   return 'jpg'
 }
 
+export function subscribeToMachineDeletions(onDelete: (machineId: string) => void): () => void {
+  if (!supabase || typeof window === 'undefined' || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test')) {
+    return () => {}
+  }
+
+  try {
+    const channel = supabase
+      .channel('public-machines-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'machines' },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            const oldId = (payload.old as { id?: string })?.id
+            if (oldId) {
+              markMachineDeleted(oldId)
+              onDelete(oldId)
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as { id?: string; is_active?: boolean; is_available?: boolean }
+            if (updated?.id && (updated.is_active === false || updated.is_available === false)) {
+              markMachineDeleted(updated.id)
+              onDelete(updated.id)
+            }
+          }
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase?.removeChannel(channel)
+    }
+  } catch {
+    return () => {}
+  }
+}
+
 export function getMachineImageUrl(path: string | null): string | null {
   if (!path) return null
   // If it's already a full HTTP(S) URL or Data URL, return it directly
@@ -115,7 +152,10 @@ export async function searchMachines(params: {
 
       if (error) {
         logError('searchMachines RPC error', error)
+        throw error
       } else if (Array.isArray(data)) {
+        // Server responded authoritatively. If Supabase returns 0 machines, display 0 machines!
+        // Never fall back to stale localStorage when the server successfully answered.
         return deduplicateMachines(data as MachineCard[]).filter(
           (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
         )
@@ -125,11 +165,16 @@ export async function searchMachines(params: {
         throw err
       }
       logError('searchMachines network/execution error', err)
-      // Fall through to local resilient store on network/offline errors
+      // Only fall through to local store on genuine network/offline error
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+      if (!isOffline && err && typeof err === 'object' && 'code' in err) {
+        // Database/RLS error while online: rethrow so UI displays server error rather than stale local cache
+        throw err
+      }
     }
   }
 
-  // 2. Local Resilient Store Search
+  // 2. Offline / Local Resilient Store Search (Only if offline or client-only mock mode)
   const all = getLocalMachines()
 
   // Filter by crop & machine type first
@@ -233,16 +278,24 @@ export async function getMachineCard(machineId: string): Promise<MachineCard | n
         .select('*')
         .eq('id', machineId)
         .maybeSingle()
-      if (!error && data) {
-        return isMachineDeleted((data as MachineCard).id) ? null : (data as MachineCard)
+      if (!error) {
+        if (!data) return null
+        const card = data as MachineCard
+        return (!card.is_active || isMachineDeleted(card.id)) ? null : card
       }
     } catch {
-      // Fall through
+      // Fall through to offline cache check
     }
   }
 
-  const local = getLocalMachines().find((m) => m.id === machineId)
-  return local ?? null
+  // Only check local machine cache if genuine offline
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+  if (isOffline || !supabase) {
+    const local = getLocalMachines().find((m) => m.id === machineId)
+    return (local && local.is_active && !isMachineDeleted(local.id)) ? local : null
+  }
+
+  return null
 }
 
 export async function listOwnerMachines(ownerId: string): Promise<MachineCard[]> {
@@ -498,44 +551,51 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
   const effectiveOwner = ownerId || local?.owner_id
   const imagePath = local?.image_path
 
-  // 1. Mark as permanently deleted in client storage immediately
-  markMachineDeleted(machineId)
-
-  // 2. Clean up storage image if any
-  if (imagePath && effectiveOwner) {
-    void deleteMachineImage(imagePath, effectiveOwner).catch(() => undefined)
-  }
-
-  // 3. Immediately delete / deactivate in Supabase so it vanishes from all searches
+  // 1. If backend database is configured, perform and verify server-side deletion FIRST
   if (supabase) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)
     if (isUuid) {
       // Step A: Invoke the dedicated delete_machine RPC (cancels pending bookings,
-      // marks is_active=false, removes machine_locations, and hard-deletes if no foreign keys)
-      const { error: rpcError } = await supabase.rpc('delete_machine', {
+      // marks is_active=false, is_available=false, removes locations, blackout dates, and hard-deletes if safe)
+      const { data: rpcSuccess, error: rpcError } = await supabase.rpc('delete_machine', {
         p_machine_id: machineId,
       })
 
       if (rpcError) {
         logError('machine.delete.rpc', rpcError)
 
-        // Step B: Direct fallback deactivation
+        // Step B: Direct fallback deactivation if RPC had an issue
         const { error: deactivateError } = await supabase
           .from('machines')
           .update({ is_active: false, is_available: false })
           .eq('id', machineId)
+
         if (deactivateError) {
           logError('machine.delete.deactivate', deactivateError)
+          throw deactivateError
         }
 
+        // Clean up secondary location and blackout tables when safe
         try {
           await supabase.from('machine_locations').delete().eq('machine_id', machineId)
           await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
           await supabase.from('machines').delete().eq('id', machineId)
         } catch {
-          // Foreign key or RLS fallback
+          // Retained with is_active=false, is_available=false due to foreign keys (e.g. historical bookings)
         }
+      } else if (rpcSuccess === false) {
+        throw new Error('HR_DELETE_FAILED: Server could not complete machine deletion')
       }
     }
+  }
+
+  // 2. Server confirmed state change: now purge from client storage & broadcast
+  markMachineDeleted(machineId)
+
+  // 3. Clean up storage image separately without blocking deletion
+  if (imagePath && effectiveOwner) {
+    void deleteMachineImage(imagePath, effectiveOwner).catch((err) => {
+      console.warn('Storage image cleanup non-fatal failure:', err)
+    })
   }
 }

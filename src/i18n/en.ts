@@ -564,6 +564,9 @@ export const en = {
   'voice.speakDetails': 'Listen Aloud',
   'voice.speaking': 'Playing Audio...',
   'voice.stopSpeaking': 'Stop Audio',
+  'farmer.offlineResultsNotice': 'You are currently offline. Showing saved listings which may be outdated. Please reconnect before booking.',
+  'farmer.reconnectingNotice': 'Reconnecting to server to refresh live availability…',
+  'farmer.searchOfflineError': 'Internet connection is unavailable and no local machine records were found.',
 } as const
 
 export type TranslationKey = keyof typeof en

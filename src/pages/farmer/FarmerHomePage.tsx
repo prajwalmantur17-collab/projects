@@ -29,7 +29,7 @@ import { normalizeWhitespace } from '../../lib/validation'
 import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
 import { POOR_ACCURACY_M, useGeolocation } from '../../hooks/useGeolocation'
-import { getMachineImageUrl, searchMachines } from '../../services/machines'
+import { getMachineImageUrl, isMachineDeleted, searchMachines, subscribeToMachineDeletions } from '../../services/machines'
 import { executeSmartSearch } from '../../services/smartSearch'
 import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/platformStats'
 import type { PlatformStats, LatestActivity } from '../../services/platformStats'
@@ -163,6 +163,7 @@ export function FarmerHomePage() {
   const [detectedPlace, setDetectedPlace] = useState<{ place: string; district: string } | null>(null)
   const [locationWarning, setLocationWarning] = useState(false)
   const [searchError, setSearchError] = useState<TranslationKey | null>(null)
+  const [isOfflineResults, setIsOfflineResults] = useState(false)
   const [results, setResults] = useState<MachineCardType[] | null>(null)
   const [busyMachines, setBusyMachines] = useState<Map<string, string | null>>(() => new Map())
 
@@ -312,6 +313,7 @@ export function FarmerHomePage() {
 
     setErrors({})
     setSearchError(null)
+    setIsOfflineResults(false)
     setSearching(true)
     const targetVillage = overrideVillage !== undefined ? overrideVillage : village
     const targetDistrict = overrideDistrict !== undefined ? overrideDistrict : district
@@ -330,6 +332,8 @@ export function FarmerHomePage() {
       })
       if (seq !== searchSequenceRef.current) return
 
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+      setIsOfflineResults(isOffline && (found || []).length > 0)
       setResults((found || []).filter((m) => m && m.is_active !== false))
       setSnapshot({
         village: cleanedVillage || cleanedDistrict || t('ui.nearby'),
@@ -417,6 +421,28 @@ export function FarmerHomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Cross-device synchronization & Realtime deletion listener
+  useEffect(() => {
+    // 1. Supabase Realtime table changes
+    const unsubscribe = subscribeToMachineDeletions((deletedId) => {
+      setResults((prev) => (prev ? prev.filter((m) => m.id !== deletedId) : null))
+    })
+
+    // 2. Window focus & visibility revalidation: re-filter when returning to the tab
+    const handleRevalidate = () => {
+      setResults((prev) => (prev ? prev.filter((m) => !isMachineDeleted(m.id)) : null))
+    }
+
+    window.addEventListener('focus', handleRevalidate)
+    document.addEventListener('visibilitychange', handleRevalidate)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('focus', handleRevalidate)
+      document.removeEventListener('visibilitychange', handleRevalidate)
+    }
+  }, [])
+
   const handleVoiceResult = (result: VoiceQueryResult) => {
     if (result.village) setVillage(result.village)
     if (result.crop) setCrop(result.crop)
@@ -501,6 +527,7 @@ export function FarmerHomePage() {
     searchAbortControllerRef.current?.abort()
     searchAbortControllerRef.current = null
     setSearching(false)
+    setIsOfflineResults(false)
     setResults(null)
     setSnapshot(null)
     setSmartSummary(null)
@@ -1166,6 +1193,11 @@ export function FarmerHomePage() {
 
       {/* Results / Scanner Section */}
       <section ref={resultsRef} aria-live="polite" className="space-y-5">
+        {isOfflineResults ? (
+          <Alert variant="warning">
+            {t('farmer.offlineResultsNotice')}
+          </Alert>
+        ) : null}
         {searchError ? <Alert variant="warning">{t(searchError)}</Alert> : null}
 
         {smartSummary ? (

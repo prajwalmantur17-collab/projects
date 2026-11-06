@@ -562,4 +562,7 @@ export const kn: Record<TranslationKey, string> = {
   'voice.speakDetails': 'ಧ್ವನಿಯಲ್ಲಿ ಆಲಿಸಿ',
   'voice.speaking': 'ಆಡಿಯೋ ಪ್ಲೇ ಆಗುತ್ತಿದೆ...',
   'voice.stopSpeaking': 'ಆಡಿಯೋ ನಿಲ್ಲಿಸಿ',
+  'farmer.offlineResultsNotice': 'ನೀವು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ. ಉಳಿಸಲಾದ ಯಂತ್ರಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ, ಇದು ಹಳೆಯದಾಗಿರಬಹುದು. ಬುಕಿಂಗ್ ಮಾಡುವ ಮೊದಲು ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕಿಸಿ.',
+  'farmer.reconnectingNotice': 'ಸರ್ವರ್‌ಗೆ ಮರುಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ…',
+  'farmer.searchOfflineError': 'ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಲಭ್ಯವಿಲ್ಲ ಮತ್ತು ಯಾವುದೇ ಸ್ಥಳೀಯ ದಾಖಲೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.',
 }

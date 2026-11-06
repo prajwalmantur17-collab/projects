@@ -33,3 +33,4 @@ function scanDist(dir) {
 
 scanDist(distDir)
 console.log('\x1b[32m[DIST SECURITY AUDIT]\x1b[0m Built client bundle verified: no server-only secrets found in dist.')
+

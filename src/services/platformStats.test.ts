@@ -129,3 +129,4 @@ describe('platformStats service', () => {
     expect(result).toBeNull()
   })
 })
+

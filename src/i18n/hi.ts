@@ -562,4 +562,7 @@ export const hi: Record<TranslationKey, string> = {
   'voice.speakDetails': 'आवाज में सुनें',
   'voice.speaking': 'ऑडियो चल रहा है...',
   'voice.stopSpeaking': 'ऑडियो रोकें',
+  'farmer.offlineResultsNotice': 'आप वर्तमान में ऑफ़लाइन हैं। सहेजी गई मशीनें दिखाई जा रही हैं, जो पुरानी हो सकती हैं। बुकिंग से पहले कृपया पुनः कनेक्ट करें।',
+  'farmer.reconnectingNotice': 'सर्वर से पुनः कनेक्ट किया जा रहा है…',
+  'farmer.searchOfflineError': 'इंटरनेट कनेक्शन उपलब्ध नहीं है और कोई स्थानीय रिकॉर्ड नहीं मिला।',
 }

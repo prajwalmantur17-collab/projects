@@ -104,17 +104,18 @@ export function OwnerHomePage() {
     setActionError(null)
     setSuccess(null)
     try {
-      // 1. Immediately remove from local state so it vanishes from the UI without any delay!
+      // 1. Perform deletion on backend first
+      await deleteMachine(idToDelete, ownerId)
+
+      // 2. Server confirmed deletion: update local state & show success
       setDeletedIds((prev) => new Set([...prev, idToDelete]))
       setDeleteTarget(null)
-
-      // 2. Perform deletion in store & backend
-      await deleteMachine(idToDelete, ownerId)
       setSuccess('owner.deleteSuccess')
       machines.reload()
     } catch (caught) {
       logError('owner.deleteMachine', caught)
       setActionError(mapErrorToKey(caught, 'owner.deleteError'))
+      // Do not falsely hide the machine or claim deletion succeeded
     } finally {
       setDeleting(false)
     }

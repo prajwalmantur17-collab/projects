@@ -810,3 +810,4 @@ $$;
 grant execute on function public.set_machine_locations(uuid, jsonb) to authenticated;
 
 notify pgrst, 'reload schema';
+

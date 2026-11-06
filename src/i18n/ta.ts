@@ -564,4 +564,7 @@ export const ta: Record<TranslationKey, string> = {
   'voice.speakDetails': 'குரலில் கேளுங்கள்',
   'voice.speaking': 'ஆடியோ இயங்குகிறது...',
   'voice.stopSpeaking': 'ஆடியோவை நிறுத்து',
+  'farmer.offlineResultsNotice': 'நீங்கள் தற்போது ஆஃப்லைனில் உள்ளீர்கள். சேமிக்கப்பட்ட இயந்திரங்கள் காட்டப்படுகின்றன. முன்பதிவு செய்வதற்கு முன் இணைக்கவும்.',
+  'farmer.reconnectingNotice': 'சேவையகத்துடன் மீண்டும் இணைக்கப்படுகிறது…',
+  'farmer.searchOfflineError': 'இணைய இணைப்பு கிடைக்கவில்லை மற்றும் உள்ளூர் பதிவுகள் எதுவும் கிடைக்கவில்லை.',
 }

@@ -70,3 +70,4 @@ function scanDir(dir) {
 scanDir(path.join(ROOT, 'src'))
 
 info('Pre-build secret hygiene checks passed.')
+

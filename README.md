@@ -89,6 +89,7 @@ Apply the migration files in `supabase/migrations/` **in filename order**:
 10. `20260101000900_delete_machine_rpc.sql` — Atomic cascade deletion RPC for machine listings.
 11. `20260101001000_optimized_search_machines.sql` — Single round-trip ranked machine search RPC.
 12. `20260101001100_features_and_security_hardening.sql` — Extended crop catalog (20 crops), avatars bucket, work status, machine waitlist, 'My Record' analytics, and security hardening.
+13. `20260101001200_enforce_deleted_machine_consistency.sql` — Bulletproof machine deletion, strict active machine filtering in `machine_cards`, inactive check in `create_booking`, and Realtime synchronization.
 
 #### Deployment Options:
 

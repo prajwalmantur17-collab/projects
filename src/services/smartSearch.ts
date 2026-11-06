@@ -227,6 +227,8 @@ export async function executeSmartSearch(
 
   let machines: MachineCard[] = []
 
+  let serverQueried = false
+
   // 1. If location, crop, or machine type is detected, use the optimized search_machines RPC first
   if (supabase && (parsed.location || parsed.crop || parsed.machineType)) {
     try {
@@ -247,6 +249,7 @@ export async function executeSmartSearch(
       const { data, error } = await query
 
       if (!error && Array.isArray(data)) {
+        serverQueried = true
         machines = deduplicateMachines(data as MachineCard[]).filter(
           (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
         )
@@ -261,7 +264,7 @@ export async function executeSmartSearch(
   }
 
   // 2. If no RPC results, or if query is for new/recent machines or model, query machine_cards with limit(48)
-  if (machines.length === 0 && supabase) {
+  if (machines.length === 0 && !serverQueried && supabase) {
     try {
       const { data, error } = await supabase
         .from('machine_cards')
@@ -271,6 +274,7 @@ export async function executeSmartSearch(
         .limit(48)
 
       if (!error && Array.isArray(data)) {
+        serverQueried = true
         machines = deduplicateMachines(data as MachineCard[]).filter(
           (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
         )
@@ -280,11 +284,14 @@ export async function executeSmartSearch(
     }
   }
 
-  // 3. Fallback to local store if Supabase returned nothing or is offline
-  if (machines.length === 0) {
-    machines = deduplicateMachines(getLocalMachines()).filter(
-      (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-    )
+  // 3. Fallback to local store ONLY if Supabase is offline or completely unconfigured
+  if (machines.length === 0 && !serverQueried) {
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+    if (isOffline || !supabase) {
+      machines = deduplicateMachines(getLocalMachines()).filter(
+        (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
+      )
+    }
   }
 
   // 4. Refine and filter based on parsed parameters

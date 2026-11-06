@@ -123,3 +123,4 @@ $$;
 -- 3. Grants for both anonymous visitors (guest farmers) and authenticated users
 grant execute on function public.search_machines(text, text, text, text, text, integer, integer)
   to anon, authenticated;
+
