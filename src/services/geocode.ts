@@ -205,109 +205,187 @@ function cleanDistrict(raw: string): string {
     .trim()
 }
 
+// -----------------------------------------------------------------------------
+// In-Memory Reverse Geocoding Cache & Request Deduplication
+// -----------------------------------------------------------------------------
+
+const reverseGeocodeCache = new Map<string, ReverseGeocodeResult>()
+const inflightReverseGeocode = new Map<string, Promise<ReverseGeocodeResult | null>>()
+const REVERSE_CACHE_MAX = 200
+
+export function clearReverseGeocodeCache(): void {
+  reverseGeocodeCache.clear()
+  inflightReverseGeocode.clear()
+}
+
+function getGeocodeCacheKey(coords: Coordinates, lang: Language): string {
+  return `${coords.latitude.toFixed(3)},${coords.longitude.toFixed(3)},${lang}`
+}
+
 /**
  * Reverse geocodes latitude & longitude into a human-readable village/town,
  * revenue district, and state according to the user's active language ('en', 'kn', 'hi').
+ *
+ * Performance features:
+ * - In-memory cache by rounded coordinates (~110m resolution) & language.
+ * - Simultaneous request deduplication.
+ * - Guaranteed timeout cleanup in finally blocks.
+ * - Fast-fail timeout budget (2.5s Nominatim + 2.0s BigDataCloud fallback).
+ * - Full AbortSignal support for client cancellation.
  */
 export async function reverseGeocode(
   coords: Coordinates,
   language: Language = 'en',
+  signal?: AbortSignal,
 ): Promise<ReverseGeocodeResult | null> {
-  const { latitude, longitude } = coords
-
-  const acceptLang = language === 'kn' ? 'kn,en' : language === 'hi' ? 'hi,en' : 'en'
-  const bdcLang = language === 'kn' ? 'kn' : language === 'hi' ? 'hi' : 'en'
-
-  // 1. Try OpenStreetMap Nominatim with explicit language preference
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 6000)
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=17&addressdetails=1&accept-language=${acceptLang}`
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'HarvestRentalsApp/1.0',
-        'Accept-Language': acceptLang,
-      },
-      signal: controller.signal,
-    })
-    clearTimeout(timer)
-
-    if (res.ok) {
-      const data = await res.json()
-      const addr = data.address || {}
-      // Most local name first, so a spot in Bengaluru gives "Bharathi City" / "Kogilu", not just "Bengaluru".
-      // Priority: village > neighbourhood > suburb > hamlet > locality > town > city_district > city > county
-      const rawVillage =
-        addr.village ||
-        addr.neighbourhood ||
-        addr.suburb ||
-        addr.hamlet ||
-        addr.locality ||
-        addr.town ||
-        addr.city_district ||
-        addr.city ||
-        addr.county ||
-        ''
-      const rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
-      const rawState = addr.state || ''
-
-      if (rawVillage || rawDistrict) {
-        const village = normalizePlaceName(rawVillage || rawDistrict, language)
-        const district = normalizePlaceName(rawDistrict || rawVillage, language)
-        const state = normalizePlaceName(rawState, language)
-        return {
-          village: village || district,
-          district: district || village,
-          state,
-        }
-      }
-    }
-  } catch {
-    // Fall through to fallback
+  if (
+    !coords ||
+    typeof coords.latitude !== 'number' ||
+    typeof coords.longitude !== 'number' ||
+    Number.isNaN(coords.latitude) ||
+    Number.isNaN(coords.longitude)
+  ) {
+    return null
   }
 
-  // 2. Fallback: BigDataCloud client reverse geocode API
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 4000)
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${bdcLang}`
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    })
-    clearTimeout(timer)
+  if (signal?.aborted) return null
 
-    if (res.ok) {
-      const data = await res.json()
-      const rawVillage = data.locality || data.city || ''
-      let rawDistrict = ''
-      if (Array.isArray(data.localityInfo?.administrative)) {
-        const dObj = data.localityInfo.administrative.find(
-          (a: { adminLevel?: number; name?: string }) =>
-            a.adminLevel === 5 || (a.name && /district/i.test(a.name)),
-        )
-        if (dObj?.name) {
-          rawDistrict = cleanDistrict(dObj.name)
+  const cacheKey = getGeocodeCacheKey(coords, language)
+  const cached = reverseGeocodeCache.get(cacheKey)
+  if (cached) return cached
+
+  const existingPromise = inflightReverseGeocode.get(cacheKey)
+  if (existingPromise) return existingPromise
+
+  const fetchPromise = (async (): Promise<ReverseGeocodeResult | null> => {
+    const { latitude, longitude } = coords
+    const acceptLang = language === 'kn' ? 'kn,en' : language === 'hi' ? 'hi,en' : 'en'
+    const bdcLang = language === 'kn' ? 'kn' : language === 'hi' ? 'hi' : 'en'
+
+    // 1. Try OpenStreetMap Nominatim with 2.5s timeout
+    let nominatimResult: ReverseGeocodeResult | null = null
+    const nomController = new AbortController()
+    const onAbortNom = () => nomController.abort()
+    signal?.addEventListener('abort', onAbortNom, { once: true })
+    const nomTimer = setTimeout(() => nomController.abort(), 2500)
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=17&addressdetails=1&accept-language=${acceptLang}`
+      const res = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'HarvestRentalsApp/1.0',
+          'Accept-Language': acceptLang,
+        },
+        signal: nomController.signal,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const addr = data.address || {}
+        const rawVillage =
+          addr.village ||
+          addr.neighbourhood ||
+          addr.suburb ||
+          addr.hamlet ||
+          addr.locality ||
+          addr.town ||
+          addr.city_district ||
+          addr.city ||
+          addr.county ||
+          ''
+        const rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
+        const rawState = addr.state || ''
+
+        if (rawVillage || rawDistrict) {
+          const village = normalizePlaceName(rawVillage || rawDistrict, language)
+          const district = normalizePlaceName(rawDistrict || rawVillage, language)
+          const state = normalizePlaceName(rawState, language)
+          nominatimResult = {
+            village: village || district,
+            district: district || village,
+            state,
+          }
         }
       }
-      const rawState = data.principalSubdivision || ''
-      if (rawVillage || rawDistrict) {
-        const village = normalizePlaceName(rawVillage || rawDistrict, language)
-        const district = normalizePlaceName(rawDistrict || rawVillage, language)
-        const state = normalizePlaceName(rawState, language)
-        return {
-          village: village || district,
-          district: district || village,
-          state,
-        }
-      }
+    } catch {
+      // Fall through to secondary provider
+    } finally {
+      clearTimeout(nomTimer)
+      signal?.removeEventListener('abort', onAbortNom)
     }
-  } catch {
-    // Both failed or offline
-  }
 
-  return null
+    if (nominatimResult) {
+      if (reverseGeocodeCache.size >= REVERSE_CACHE_MAX) {
+        const first = reverseGeocodeCache.keys().next().value
+        if (first) reverseGeocodeCache.delete(first)
+      }
+      reverseGeocodeCache.set(cacheKey, nominatimResult)
+      return nominatimResult
+    }
+
+    if (signal?.aborted) return null
+
+    // 2. Fallback: BigDataCloud client reverse geocode API with 2.0s timeout
+    const bdcController = new AbortController()
+    const onAbortBdc = () => bdcController.abort()
+    signal?.addEventListener('abort', onAbortBdc, { once: true })
+    const bdcTimer = setTimeout(() => bdcController.abort(), 2000)
+
+    try {
+      const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${bdcLang}`
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: bdcController.signal,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const rawVillage = data.locality || data.city || ''
+        let rawDistrict = ''
+        if (Array.isArray(data.localityInfo?.administrative)) {
+          const dObj = data.localityInfo.administrative.find(
+            (a: { adminLevel?: number; name?: string }) =>
+              a.adminLevel === 5 || (a.name && /district/i.test(a.name)),
+          )
+          if (dObj?.name) {
+            rawDistrict = cleanDistrict(dObj.name)
+          }
+        }
+        const rawState = data.principalSubdivision || ''
+        if (rawVillage || rawDistrict) {
+          const village = normalizePlaceName(rawVillage || rawDistrict, language)
+          const district = normalizePlaceName(rawDistrict || rawVillage, language)
+          const state = normalizePlaceName(rawState, language)
+          const result: ReverseGeocodeResult = {
+            village: village || district,
+            district: district || village,
+            state,
+          }
+          if (reverseGeocodeCache.size >= REVERSE_CACHE_MAX) {
+            const first = reverseGeocodeCache.keys().next().value
+            if (first) reverseGeocodeCache.delete(first)
+          }
+          reverseGeocodeCache.set(cacheKey, result)
+          return result
+        }
+      }
+    } catch {
+      // Both failed or offline
+    } finally {
+      clearTimeout(bdcTimer)
+      signal?.removeEventListener('abort', onAbortBdc)
+    }
+
+    return null
+  })()
+
+  inflightReverseGeocode.set(cacheKey, fetchPromise)
+  try {
+    return await fetchPromise
+  } finally {
+    inflightReverseGeocode.delete(cacheKey)
+  }
 }
 
 const KNOWN_PLACE_COORDINATES: Record<string, Coordinates> = {

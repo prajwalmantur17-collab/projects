@@ -453,7 +453,15 @@ export function FarmerHomePage() {
     }
   }, [geo.coordinates, detectedPlace, language])
 
+  const locateSequenceRef = useRef(0)
+  const locateAbortControllerRef = useRef<AbortController | null>(null)
+
   const locate = async () => {
+    const seq = ++locateSequenceRef.current
+    locateAbortControllerRef.current?.abort()
+    const controller = new AbortController()
+    locateAbortControllerRef.current = controller
+
     // Forget every earlier place so an old result can never be reused.
     setDetectedPlace(null)
     setPicked(null)
@@ -464,7 +472,7 @@ export function FarmerHomePage() {
     setGeocoding(true)
     try {
       const fix = await geo.request()
-      if (!fix) return
+      if (!fix || seq !== locateSequenceRef.current) return
 
       const coords = { latitude: fix.latitude, longitude: fix.longitude }
 
@@ -473,7 +481,9 @@ export function FarmerHomePage() {
       const poor = fix.accuracy > POOR_ACCURACY_M
       setLocationWarning(poor)
 
-      const geocoded = await reverseGeocode(coords, language)
+      const geocoded = await reverseGeocode(coords, language, controller.signal)
+      if (seq !== locateSequenceRef.current) return
+
       if (geocoded) {
         setVillage(geocoded.village || '')
         setDistrict(geocoded.district || '')
@@ -487,9 +497,23 @@ export function FarmerHomePage() {
         if (!poor) {
           void runSearch(crop, geocoded.village, geocoded.district)
         }
+      } else {
+        // Geocoding timed out or failed, but GPS coords were found:
+        // Do not block the farmer! Provide a generic location found state and search.
+        const fallbackPlace = t('ui.nearby')
+        setVillage(fallbackPlace)
+        setDetectedPlace({
+          place: fallbackPlace,
+          district: '',
+        })
+        if (!poor) {
+          void runSearch(crop, '', '')
+        }
       }
     } finally {
-      setGeocoding(false)
+      if (seq === locateSequenceRef.current) {
+        setGeocoding(false)
+      }
     }
   }
 
