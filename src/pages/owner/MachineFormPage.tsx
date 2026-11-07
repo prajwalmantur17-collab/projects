@@ -107,7 +107,7 @@ export function MachineFormPage() {
 
   const loader = useCallback(async (): Promise<EditData> => {
     if (!machineId || !ownerId) return { machine: null, locations: [] }
-    const machine = await getMachineCard(machineId)
+    const machine = await getMachineCard(machineId, { allowInactive: true })
     if (!machine || machine.owner_id !== ownerId) {
       return { machine: null, locations: [] }
     }

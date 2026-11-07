@@ -29,7 +29,7 @@ import { normalizeWhitespace } from '../../lib/validation'
 import type { FieldErrors } from '../../lib/validation'
 import { distanceKm } from '../../lib/geo'
 import { POOR_ACCURACY_M, useGeolocation } from '../../hooks/useGeolocation'
-import { getMachineImageUrl, isMachineDeleted, searchMachines, subscribeToMachineDeletions } from '../../services/machines'
+import { getMachineImageUrl, searchMachines, subscribeToMachineDeletions } from '../../services/machines'
 import { executeSmartSearch } from '../../services/smartSearch'
 import { fetchPlatformStats, fetchLatestMachineActivity } from '../../services/platformStats'
 import type { PlatformStats, LatestActivity } from '../../services/platformStats'
@@ -188,6 +188,19 @@ export function FarmerHomePage() {
 
   const searchSequenceRef = useRef(0)
   const searchAbortControllerRef = useRef<AbortController | null>(null)
+  // Remembers the last successful search so it can be quietly re-checked with the server.
+  const lastSearchRef = useRef<
+    | {
+        kind: 'normal'
+        village?: string
+        district?: string
+        crop?: string
+        machineType?: string
+      }
+    | { kind: 'smart'; query: string }
+    | null
+  >(null)
+  const lastRevalidateRef = useRef(0)
 
   useEffect(() => {
     return () => {
@@ -332,6 +345,13 @@ export function FarmerHomePage() {
       })
       if (seq !== searchSequenceRef.current) return
 
+      lastSearchRef.current = {
+        kind: 'normal',
+        village: cleanedVillage || undefined,
+        district: cleanedDistrict || undefined,
+        crop: activeCrop || undefined,
+        machineType: machineType || undefined,
+      }
       const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
       setIsOfflineResults(isOffline && (found || []).length > 0)
       setResults((found || []).filter((m) => m && m.is_active !== false))
@@ -369,6 +389,7 @@ export function FarmerHomePage() {
       const res = await executeSmartSearch(rawQuery, controller.signal)
       if (seq !== searchSequenceRef.current) return
 
+      lastSearchRef.current = { kind: 'smart', query: rawQuery }
       setResults(res.machines)
       setSmartSummary(res.summaryKey ? t(res.summaryKey, res.summaryParams) : res.summary)
       if (res.detectedLocation) {
@@ -428,18 +449,48 @@ export function FarmerHomePage() {
       setResults((prev) => (prev ? prev.filter((m) => m.id !== deletedId) : null))
     })
 
-    // 2. Window focus & visibility revalidation: re-filter when returning to the tab
+    // 2. Re-ask the SERVER (not just re-filter local data) when the person returns to the app,
+    //    and every minute while the page is open. A deleted machine then disappears on every device.
     const handleRevalidate = () => {
-      setResults((prev) => (prev ? prev.filter((m) => !isMachineDeleted(m.id)) : null))
+      const last = lastSearchRef.current
+      if (!last || document.visibilityState === 'hidden') return
+      const now = Date.now()
+      if (now - lastRevalidateRef.current < 5000) return
+      lastRevalidateRef.current = now
+
+      const seq = searchSequenceRef.current
+      const controller = new AbortController()
+      const request =
+        last.kind === 'normal'
+          ? searchMachines({ ...last, limit: 48, signal: controller.signal })
+          : executeSmartSearch(last.query, controller.signal).then((r) => r.machines)
+
+      void request
+        .then((fresh) => {
+          // A newer search by the person wins over this quiet refresh.
+          if (seq !== searchSequenceRef.current) return
+          const offline = typeof navigator !== 'undefined' && !navigator.onLine
+          setIsOfflineResults(offline && (fresh || []).length > 0)
+          setResults((fresh || []).filter((m) => m && m.is_active !== false))
+        })
+        .catch(() => {
+          // Server not reachable: keep what is shown, but say it may be outdated.
+          if (seq !== searchSequenceRef.current) return
+          setIsOfflineResults(true)
+        })
     }
 
     window.addEventListener('focus', handleRevalidate)
+    window.addEventListener('online', handleRevalidate)
     document.addEventListener('visibilitychange', handleRevalidate)
+    const interval = window.setInterval(handleRevalidate, 60000)
 
     return () => {
       unsubscribe()
       window.removeEventListener('focus', handleRevalidate)
+      window.removeEventListener('online', handleRevalidate)
       document.removeEventListener('visibilitychange', handleRevalidate)
+      window.clearInterval(interval)
     }
   }, [])
 

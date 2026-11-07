@@ -181,6 +181,37 @@ export function deleteLocalMachine(machineId: string) {
   saveMachinesToStorage(updated)
 }
 
+/**
+ * The server is the source of truth. When it returns a machine, any old "deleted" marker for it
+ * on this device is wrong (for example from an older version that marked paused machines), so drop it.
+ */
+export function forgetDeletedMarkers(machineIds: string[]) {
+  if (!machineIds.length) return
+  const current = getDeletedMachineIds()
+  let changed = false
+  for (const id of machineIds) {
+    if (current.delete(id)) changed = true
+  }
+  if (!changed) return
+  memoryDeletedIds = current
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(DELETED_MACHINES_KEY, JSON.stringify([...current]))
+    } catch {
+      // Storage unavailable
+    }
+  }
+}
+
+/** Remove cached machines that the server no longer confirms. Keeps only those for which keep() is true. */
+export function pruneLocalMachines(keep: (machine: MachineCard) => boolean) {
+  const current = getLocalMachines()
+  const updated = current.filter(keep)
+  if (updated.length === current.length) return
+  memoryMachines = updated
+  saveMachinesToStorage(updated)
+}
+
 // Clean up any fake machines stored in localStorage on initial script execution
 if (typeof window !== 'undefined') {
   try {

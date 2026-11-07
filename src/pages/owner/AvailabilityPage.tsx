@@ -45,7 +45,7 @@ export function AvailabilityPage() {
 
   const loader = useCallback(async (): Promise<AvailabilityData> => {
     if (!machineId || !ownerId) return { machine: null, blackouts: [] }
-    const machine = await getMachineCard(machineId)
+    const machine = await getMachineCard(machineId, { allowInactive: true })
     if (!machine || machine.owner_id !== ownerId) {
       return { machine: null, blackouts: [] }
     }

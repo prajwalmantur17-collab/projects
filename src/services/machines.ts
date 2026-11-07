@@ -7,9 +7,11 @@ import { normalizePlaceName } from './geocode'
 import {
   addLocalMachine,
   deduplicateMachines,
+  forgetDeletedMarkers,
   getLocalMachines,
   isMachineDeleted,
   markMachineDeleted,
+  pruneLocalMachines,
   updateLocalMachine,
 } from './store'
 
@@ -40,9 +42,19 @@ export function subscribeToMachineDeletions(onDelete: (machineId: string) => voi
               onDelete(oldId)
             }
           } else if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as { id?: string; is_active?: boolean; is_available?: boolean }
-            if (updated?.id && (updated.is_active === false || updated.is_available === false)) {
+            const updated = payload.new as {
+              id?: string
+              is_active?: boolean
+              is_available?: boolean
+              deleted_at?: string | null
+            }
+            if (!updated?.id) return
+            if (updated.deleted_at) {
+              // Really deleted: remember it on this device.
               markMachineDeleted(updated.id)
+              onDelete(updated.id)
+            } else if (updated.is_active === false || updated.is_available === false) {
+              // Only paused: hide it now, but do NOT mark it deleted, so it can come back when resumed.
               onDelete(updated.id)
             }
           }
@@ -156,9 +168,12 @@ export async function searchMachines(params: {
       } else if (Array.isArray(data)) {
         // Server responded authoritatively. If Supabase returns 0 machines, display 0 machines!
         // Never fall back to stale localStorage when the server successfully answered.
-        return deduplicateMachines(data as MachineCard[]).filter(
-          (m) => m && m.is_active !== false && !isMachineDeleted(m.id),
-        )
+        const serverList = data as MachineCard[]
+        // Server is the source of truth: clear wrong local "deleted" markers for machines it returns,
+        // and drop old offline-only copies (ids starting with m-) that the server never had.
+        forgetDeletedMarkers(serverList.map((m) => m?.id).filter(Boolean))
+        pruneLocalMachines((m) => !m.id.startsWith('m-'))
+        return deduplicateMachines(serverList).filter((m) => m && m.is_active !== false)
       }
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('aborted'))) {
@@ -265,11 +280,12 @@ export async function searchMachines(params: {
   })
 
   return deduplicateMachines(sorted)
-
-  return deduplicateMachines(filtered)
 }
 
-export async function getMachineCard(machineId: string): Promise<MachineCard | null> {
+export async function getMachineCard(
+  machineId: string,
+  options?: { allowInactive?: boolean },
+): Promise<MachineCard | null> {
   if (isMachineDeleted(machineId)) return null
   if (supabase) {
     try {
@@ -279,9 +295,15 @@ export async function getMachineCard(machineId: string): Promise<MachineCard | n
         .eq('id', machineId)
         .maybeSingle()
       if (!error) {
-        if (!data) return null
-        const card = data as MachineCard
-        return (!card.is_active || isMachineDeleted(card.id)) ? null : card
+        if (!data) {
+          // Server says it does not exist (or is deleted): remove any stale local copy.
+          pruneLocalMachines((m) => m.id !== machineId)
+          return null
+        }
+        const card = data as MachineCard & { deleted_at?: string | null }
+        if (card.deleted_at || isMachineDeleted(card.id)) return null
+        if (!card.is_active && !options?.allowInactive) return null
+        return card
       }
     } catch {
       // Fall through to offline cache check
@@ -292,7 +314,9 @@ export async function getMachineCard(machineId: string): Promise<MachineCard | n
   const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
   if (isOffline || !supabase) {
     const local = getLocalMachines().find((m) => m.id === machineId)
-    return (local && local.is_active && !isMachineDeleted(local.id)) ? local : null
+    if (!local || isMachineDeleted(local.id)) return null
+    if (!local.is_active && !options?.allowInactive) return null
+    return local
   }
 
   return null
@@ -307,14 +331,19 @@ export async function listOwnerMachines(ownerId: string): Promise<MachineCard[]>
         .eq('owner_id', ownerId)
         .order('created_at', { ascending: false })
       if (!error && Array.isArray(data)) {
-        return deduplicateMachines(data as MachineCard[], { includeInactive: true }).filter((m) => !isMachineDeleted(m.id))
+        const serverList = data as MachineCard[]
+        const serverIds = new Set(serverList.map((m) => m?.id))
+        forgetDeletedMarkers([...serverIds].filter(Boolean) as string[])
+        // Drop this owner's cached machines that the server no longer lists.
+        pruneLocalMachines((m) => m.owner_id !== ownerId || serverIds.has(m.id))
+        return deduplicateMachines(serverList, { includeInactive: true })
       }
     } catch {
       // Fall through
     }
   }
 
-  return getLocalMachines().filter((m) => m.owner_id === ownerId && !isMachineDeleted(m.id))
+  return getLocalMachines().filter((m) => m.owner_id === ownerId)
 }
 
 export async function getMachineLocations(machineId: string) {
@@ -525,25 +554,33 @@ export async function setMachineImagePath(
   machineId: string,
   imagePath: string | null,
 ): Promise<void> {
-  updateLocalMachine(machineId, { image_path: imagePath })
   if (supabase) {
-    try {
-      await supabase.from('machines').update({ image_path: imagePath }).eq('id', machineId)
-    } catch {
-      // Fall through
-    }
+    const { error } = await supabase.from('machines').update({ image_path: imagePath }).eq('id', machineId)
+    if (error) throw error
   }
+  updateLocalMachine(machineId, { image_path: imagePath })
 }
 
 export async function setMachineActive(machineId: string, isActive: boolean): Promise<void> {
-  updateLocalMachine(machineId, { is_active: isActive })
   if (supabase) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)
     if (isUuid) {
-      const { error } = await supabase.from('machines').update({ is_active: isActive }).eq('id', machineId)
-      if (error) logError('machine.setMachineActive', error)
+      // select() returns the changed rows, so a silently blocked update (0 rows) is detected.
+      const { data, error } = await supabase
+        .from('machines')
+        .update({ is_active: isActive })
+        .eq('id', machineId)
+        .select('id')
+      if (error) {
+        logError('machine.setMachineActive', error)
+        throw error
+      }
+      if (!data || data.length === 0) {
+        throw new Error('HR_NOT_FOUND: machine was not updated')
+      }
     }
   }
+  updateLocalMachine(machineId, { is_active: isActive })
 }
 
 export async function deleteMachine(machineId: string, ownerId?: string): Promise<void> {
@@ -555,36 +592,45 @@ export async function deleteMachine(machineId: string, ownerId?: string): Promis
   if (supabase) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)
     if (isUuid) {
-      // Step A: Invoke the dedicated delete_machine RPC (cancels pending bookings,
-      // marks is_active=false, is_available=false, removes locations, blackout dates, and hard-deletes if safe)
-      const { data: rpcSuccess, error: rpcError } = await supabase.rpc('delete_machine', {
+      // The delete_machine function checks the owner, cancels pending requests, marks the machine
+      // deleted (hidden and not bookable) and keeps booking history. Any error stops here:
+      // there is NO fallback, so we never report success when the server refused.
+      const { data: result, error: rpcError } = await supabase.rpc('delete_machine', {
         p_machine_id: machineId,
       })
 
       if (rpcError) {
         logError('machine.delete.rpc', rpcError)
+        throw rpcError
+      }
+      const confirmed = result as { ok?: boolean } | boolean | null
+      const isConfirmed =
+        confirmed === true ||
+        (typeof confirmed === 'object' && confirmed !== null && confirmed.ok === true)
+      if (!isConfirmed) {
+        throw new Error('HR_DELETE_FAILED: Server could not confirm the machine was deleted')
+      }
 
-        // Step B: Direct fallback deactivation if RPC had an issue
-        const { error: deactivateError } = await supabase
-          .from('machines')
-          .update({ is_active: false, is_available: false })
-          .eq('id', machineId)
-
-        if (deactivateError) {
-          logError('machine.delete.deactivate', deactivateError)
-          throw deactivateError
+      // Double check with the server: the public list must no longer contain this machine.
+      try {
+        const verifyQuery = supabase.from('machine_cards')
+        if (verifyQuery && typeof verifyQuery.select === 'function') {
+          const { data: stillVisible, error: verifyError } = await verifyQuery
+            .select('id')
+            .eq('id', machineId)
+            .maybeSingle()
+          if (verifyError) {
+            logError('machine.delete.verify', verifyError)
+            throw verifyError
+          }
+          if (stillVisible) {
+            throw new Error('HR_DELETE_FAILED: Machine is still listed on the server')
+          }
         }
-
-        // Clean up secondary location and blackout tables when safe
-        try {
-          await supabase.from('machine_locations').delete().eq('machine_id', machineId)
-          await supabase.from('machine_blackout_dates').delete().eq('machine_id', machineId)
-          await supabase.from('machines').delete().eq('id', machineId)
-        } catch {
-          // Retained with is_active=false, is_available=false due to foreign keys (e.g. historical bookings)
+      } catch (verifyErr) {
+        if (verifyErr instanceof Error && verifyErr.message.includes('HR_DELETE_FAILED')) {
+          throw verifyErr
         }
-      } else if (rpcSuccess === false) {
-        throw new Error('HR_DELETE_FAILED: Server could not complete machine deletion')
       }
     }
   }
