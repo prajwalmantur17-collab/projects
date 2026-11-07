@@ -285,8 +285,9 @@ export async function reverseGeocode(
         const addr = data.address || {}
         const rawVillage =
           addr.village ||
-          addr.neighbourhood ||
           addr.suburb ||
+          addr.quarter ||
+          addr.neighbourhood ||
           addr.hamlet ||
           addr.locality ||
           addr.town ||

@@ -62,11 +62,7 @@ export function LocationDetectionModal({
   const watchIdRef = useRef<number | null>(null)
   const isMountedRef = useRef(true)
 
-  const cleanup = () => {
-    if (activeAbortRef.current) {
-      activeAbortRef.current.abort()
-      activeAbortRef.current = null
-    }
+  const stopGps = useCallback(() => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
@@ -75,7 +71,15 @@ export function LocationDetectionModal({
       navigator.geolocation.clearWatch(watchIdRef.current)
       watchIdRef.current = null
     }
-  }
+  }, [])
+
+  const cleanup = useCallback(() => {
+    stopGps()
+    if (activeAbortRef.current) {
+      activeAbortRef.current.abort()
+      activeAbortRef.current = null
+    }
+  }, [stopGps])
 
   const startDetection = useCallback(() => {
     cleanup()
@@ -116,35 +120,39 @@ export function LocationDetectionModal({
         bestFix = { coords: currentCoords, accuracy: acc }
       }
 
-      // If we have a usable fix, resolve reverse-geocoding
       if (!isMountedRef.current) return
       setCoords(bestFix.coords)
       setAccuracy(bestFix.accuracy)
 
-      cleanup()
+      // Stop watching GPS positions once fix is obtained, WITHOUT aborting the geocoding request!
+      stopGps()
 
       try {
-        const geocoded = await reverseGeocode(bestFix.coords, language, controller.signal)
+        const geocoded = await reverseGeocode(bestFix.coords, language, activeAbortRef.current?.signal)
         if (!isMountedRef.current) return
 
         if (geocoded) {
-          const v = geocoded.village || ''
-          const d = geocoded.district || ''
-          const s = geocoded.state || ''
+          const v = (geocoded.village || geocoded.district || '').trim()
+          const d = (geocoded.district || '').trim()
+          const s = (geocoded.state || '').trim()
           setDetectedVillage(v)
           setDetectedDistrict(d)
           setDetectedState(s)
           setCustomVillage(v)
         } else {
-          // Coords were found, but geocoding returned no match
-          setDetectedVillage('')
+          // If geocoding returns no match, default to localized nearby label
+          const nearbyFallback = t('ui.nearby')
+          setDetectedVillage(nearbyFallback)
           setDetectedDistrict('')
           setDetectedState('')
-          setCustomVillage('')
+          setCustomVillage(nearbyFallback)
         }
         setModalState('success')
       } catch {
         if (isMountedRef.current) {
+          const nearbyFallback = t('ui.nearby')
+          setDetectedVillage(nearbyFallback)
+          setCustomVillage(nearbyFallback)
           setModalState('success')
         }
       }
@@ -178,7 +186,7 @@ export function LocationDetectionModal({
     } catch {
       setModalState('unavailable')
     }
-  }, [language, timeoutMs])
+  }, [cleanup, language, stopGps, t, timeoutMs])
 
   // Trigger detection when modal opens
   useEffect(() => {
@@ -192,7 +200,7 @@ export function LocationDetectionModal({
       isMountedRef.current = false
       cleanup()
     }
-  }, [open, startDetection])
+  }, [open, startDetection, cleanup])
 
   // Accessibility: Focus trap & Escape key
   useEffect(() => {
@@ -220,7 +228,7 @@ export function LocationDetectionModal({
 
   const handleConfirm = () => {
     if (!coords) return
-    const finalVillage = (customVillage || detectedVillage).trim()
+    const finalVillage = (customVillage || detectedVillage || detectedDistrict || t('ui.nearby')).trim()
     onConfirm({
       village: finalVillage,
       district: detectedDistrict,
@@ -390,24 +398,9 @@ export function LocationDetectionModal({
                     {t('locModal.villageLabel')}
                   </span>
 
-                  {detectedVillage ? (
-                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-ink truncate mt-0.5">
-                      {detectedVillage}
-                    </h3>
-                  ) : (
-                    <div className="mt-1">
-                      <p className="text-xs font-semibold text-harvest-700">
-                        {t('locModal.villageNotFound')}
-                      </p>
-                      <input
-                        type="text"
-                        value={customVillage}
-                        onChange={(e) => setCustomVillage(e.target.value)}
-                        placeholder={t('locModal.villagePlaceholder')}
-                        className="mt-1.5 w-full rounded-xl border border-cream-300 bg-white px-3 py-2 text-sm font-semibold text-ink placeholder:text-ink-muted focus:border-leaf-700 focus:outline-none focus:ring-2 focus:ring-leaf-700/15"
-                      />
-                    </div>
-                  )}
+                  <h3 className="font-display text-lg sm:text-xl font-extrabold text-leaf-950 truncate mt-0.5">
+                    {customVillage || detectedVillage || t('ui.nearby')}
+                  </h3>
 
                   {(detectedDistrict || detectedState) && (
                     <p className="text-xs sm:text-sm font-medium text-ink-muted mt-1 truncate">

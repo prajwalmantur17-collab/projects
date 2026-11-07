@@ -615,7 +615,7 @@ export function FarmerHomePage() {
 
   const handleLocationConfirmed = (res: LocationDetectionResult) => {
     setIsLocationModalOpen(false)
-    const targetVillage = res.village.trim()
+    const targetVillage = (res.village || res.district || t('ui.nearby')).trim()
     const targetDistrict = res.district.trim()
     const targetState = res.state.trim()
 
@@ -623,20 +623,18 @@ export function FarmerHomePage() {
     setDistrict(targetDistrict)
     setState(targetState)
     setDetectedPlace({
-      place: targetVillage || targetDistrict,
+      place: targetVillage,
       district: targetDistrict,
     })
     setPicked({
-      name: targetVillage || targetDistrict || t('ui.nearby'),
+      name: targetVillage,
       coords: res.coords,
     })
     const poor = res.accuracy ? res.accuracy > POOR_ACCURACY_M : false
     setLocationWarning(poor)
 
-    // Only search for nearby machines after the user confirms the detected location.
-    if (!poor) {
-      void runSearch(crop, targetVillage, targetDistrict)
-    }
+    // Trigger machine discovery search with confirmed location
+    void runSearch(crop, targetVillage, targetDistrict)
   }
 
   const handleEnterVillageManually = () => {

@@ -219,4 +219,65 @@ describe('LocationDetectionModal Component', () => {
 
     vi.useRealTimers()
   })
+
+  it('supplies nearby fallback when reverse geocoding returns no match so location name is never blank', async () => {
+    let watchSuccess: ((pos: GeolocationPosition) => void) | null = null
+    const mockWatch = vi.fn().mockImplementation((success) => {
+      watchSuccess = success
+      return 1
+    })
+    const mockGetCurrent = vi.fn()
+    const mockClear = vi.fn()
+
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition: mockGetCurrent, watchPosition: mockWatch, clearWatch: mockClear },
+      configurable: true,
+    })
+
+    vi.spyOn(GeocodeService, 'reverseGeocode').mockResolvedValue(null)
+
+    const onConfirmMock = vi.fn()
+
+    render(
+      <I18nProvider>
+        <LocationDetectionModal
+          open={true}
+          onClose={vi.fn()}
+          onConfirm={onConfirmMock}
+          onEnterManually={vi.fn()}
+        />
+      </I18nProvider>,
+    )
+
+    await act(async () => {
+      watchSuccess?.({
+        coords: {
+          latitude: 15.0,
+          longitude: 76.0,
+          accuracy: 50,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+          toJSON: () => ({}),
+        },
+        timestamp: Date.now(),
+        toJSON: () => ({}),
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Location Found!')).toBeInTheDocument()
+    })
+
+    const confirmBtn = screen.getByRole('button', { name: 'Confirm Location' })
+    fireEvent.click(confirmBtn)
+
+    expect(onConfirmMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        village: 'Nearby',
+        coords: { latitude: 15.0, longitude: 76.0 },
+      }),
+    )
+  })
 })
