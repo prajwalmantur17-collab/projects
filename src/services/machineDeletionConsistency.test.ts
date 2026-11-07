@@ -11,16 +11,22 @@ import {
   saveMachinesToStorage,
   isMachineDeleted,
 } from './store'
+import { createBooking } from './bookings'
 import type { MachineCard } from '../types'
+
+const { mockClient } = vi.hoisted(() => {
+  const client = {
+    rpc: vi.fn(),
+    from: vi.fn(),
+  }
+  return { mockClient: client }
+})
 
 // Mock Supabase module to simulate various server scenarios
 vi.mock('../lib/supabase', () => {
   return {
-    supabase: {
-      rpc: vi.fn(),
-      from: vi.fn(),
-    },
-    requireSupabase: vi.fn(),
+    supabase: mockClient,
+    requireSupabase: vi.fn(() => mockClient),
   }
 })
 
@@ -202,6 +208,26 @@ describe('Supabase Database Consistency and Machine Deletion Tests', () => {
 
     const card = await getMachineCard(deletedId)
     expect(card).toBeNull()
+  })
+
+  // TEST 7B: Farmer attempts booking a deleted machine -> database rejects the booking
+  it('TEST 7B: database rejects create_booking for deleted or inactive machine', async () => {
+    const deletedId = '00000000-0000-0000-0000-000000000007'
+    ;(supabase!.rpc as any).mockResolvedValue({
+      data: null,
+      error: { code: 'P0001', message: 'HR_MACHINE_INACTIVE: listing is removed or paused' },
+    })
+
+    await expect(
+      createBooking({
+        machineId: deletedId,
+        serviceDate: '2026-11-20',
+        village: 'Koppal',
+        acreage: 5,
+        crop: 'wheat',
+        contactPhone: '9876543210',
+      }),
+    ).rejects.toMatchObject({ message: expect.stringContaining('HR_MACHINE_INACTIVE') })
   })
 
   // TEST 8: Supabase returns an RLS error during deletion -> Application must throw and not claim deletion succeeded
