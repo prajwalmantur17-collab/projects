@@ -115,37 +115,37 @@ export function MachineCard({
 
         {typeof distanceKm === 'number' ? (
           /* Mode A: GPS Distance in Kilometers */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-sm font-bold text-leaf-800 shadow-soft">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-xs px-2.5 py-1 text-xs font-bold text-leaf-800 shadow-soft">
             <MapPin className="size-3 text-leaf-600" aria-hidden="true" />
             {t('farmer.kmAway', { distance: formatDistance(distanceKm) })}
           </span>
         ) : isInYourVillage ? (
           /* Mode B - Level 1 (In Your Village - 0 to 5 km) */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-800 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/60">
-            <CheckCircle2 className="size-3.5 text-leaf-300" aria-hidden="true" />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-800/95 backdrop-blur-xs px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/60">
+            <CheckCircle2 className="size-3.5 text-harvest-400" aria-hidden="true" />
             {t('farmer.inYourVillage', { village: machine.village })}
           </span>
         ) : isInSameDistrict ? (
           /* Mode B - Level 2 (Same District - ~10 to 40 km) */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/50">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700/95 backdrop-blur-xs px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         ) : (
           /* Available in District */
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700 px-3 py-1 text-sm font-bold text-white shadow-soft ring-1 ring-white/50">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-leaf-700/95 backdrop-blur-xs px-3 py-1 text-xs font-bold text-white shadow-soft ring-1 ring-white/50">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             {t('farmer.availableInSameDistrict', { district: machine.district })}
           </span>
         )}
 
         {isBusy ? (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-harvest-600 px-2.5 py-1 text-sm font-bold text-white shadow-soft">
-            <span className="size-1.5 rounded-full bg-white animate-pulse" aria-hidden="true" />
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-harvest-400/95 backdrop-blur-xs px-2.5 py-1 text-xs font-bold text-ink shadow-soft">
+            <span className="size-1.5 rounded-full bg-ink animate-pulse" aria-hidden="true" />
             {t('work.busyBadge')}
           </span>
         ) : !machine.is_active ? (
-          <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-sm font-bold text-white">
+          <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-xs font-bold text-white">
             {t('farmer.paused')}
           </span>
         ) : null}
@@ -154,16 +154,16 @@ export function MachineCard({
       <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-bold leading-tight">{typeLabel}</h3>
+            <h3 className="font-display truncate text-lg font-bold leading-tight text-ink">{typeLabel}</h3>
             <p className="truncate text-sm font-medium text-ink-muted">
               {machine.model ?? t('farmer.noModel')}
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-2xl font-extrabold leading-none text-leaf-800">
+            <p className="font-display text-2xl font-extrabold leading-none tracking-tight text-leaf-800">
               {formatPrice(machine.price_per_acre)}
             </p>
-            <p className="mt-1 text-sm font-medium text-ink-muted">{unitLabel}</p>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">{unitLabel}</p>
           </div>
         </div>
 
@@ -240,16 +240,16 @@ export function MachineCard({
 
         {/* Direct Action Buttons - Clean & Non-Redundant */}
         <div className="mt-auto space-y-2 pt-2">
-          <LinkButton to={`/farmer/machines/${machine.id}`} variant="primary" size="sm" fullWidth className="min-h-12 text-base font-bold">
+          <LinkButton to={`/farmer/machines/${machine.id}`} variant="primary" size="sm" fullWidth className="min-h-12 text-base font-bold shadow-soft">
             {t('farmer.bookTitle')}
           </LinkButton>
 
           <div className="grid grid-cols-2 gap-2">
             <a
               href={telHref(machine.phone)}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-sm font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-200 bg-cream-50/60 px-3 text-sm font-bold text-leaf-900 transition-all duration-button hover:bg-white hover:border-leaf-600 hover:text-leaf-800 active:scale-98"
             >
-              <Phone className="size-3.5 shrink-0" aria-hidden="true" />
+              <Phone className="size-3.5 shrink-0 text-leaf-700" aria-hidden="true" />
               <span>{t('farmer.callOwner')}</span>
             </a>
 
@@ -257,9 +257,9 @@ export function MachineCard({
               href={whatsappHref(machine.phone, waMessage)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 text-sm font-bold text-leaf-800 transition-colors hover:bg-cream-50 active:scale-95"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-cream-200 bg-cream-50/60 px-3 text-sm font-bold text-leaf-900 transition-all duration-button hover:bg-white hover:border-leaf-600 hover:text-leaf-800 active:scale-98"
             >
-              <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
+              <MessageCircle className="size-3.5 shrink-0 text-leaf-700" aria-hidden="true" />
               <span>{t('farmer.whatsappOwner')}</span>
             </a>
           </div>

@@ -7,20 +7,20 @@ type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 type Size = 'md' | 'lg' | 'sm'
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors transition-transform transition-shadow duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.97] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100 disabled:active:brightness-100 focus-visible:outline-3 select-none'
+  'inline-flex items-center justify-center gap-2 rounded-xl font-semibold tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-leaf-700 select-none cursor-pointer'
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-leaf-700 text-cream-50 hover:bg-leaf-800 active:bg-leaf-900 shadow-soft',
-  secondary: 'bg-harvest-400 text-ink hover:bg-harvest-300 active:bg-harvest-500',
-  outline: 'border-2 border-leaf-700 bg-white text-leaf-800 hover:bg-leaf-50 active:bg-leaf-100',
+  primary: 'bg-leaf-700 text-white hover:bg-leaf-800 active:bg-leaf-900 shadow-soft hover:shadow-lift',
+  secondary: 'bg-harvest-400 text-ink hover:bg-harvest-500 active:bg-harvest-600 shadow-soft font-bold',
+  outline: 'border border-cream-300 bg-white text-ink hover:bg-cream-100 hover:border-leaf-600 hover:text-leaf-800 active:bg-cream-200 shadow-2xs',
   ghost: 'text-leaf-800 hover:bg-leaf-50 active:bg-leaf-100',
-  danger: 'bg-clay-600 text-white hover:bg-clay-700 active:bg-clay-800',
+  danger: 'bg-clay-600 text-white hover:bg-clay-700 active:bg-clay-800 shadow-soft',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'min-h-10 px-3 text-sm',
-  md: 'min-h-12 px-5 text-base',
-  lg: 'min-h-14 px-6 text-lg',
+  sm: 'min-h-9 px-3.5 text-xs',
+  md: 'min-h-11 px-5 text-sm',
+  lg: 'min-h-13 px-6 text-base',
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

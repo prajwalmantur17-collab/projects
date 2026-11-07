@@ -2,7 +2,7 @@ import { useId } from 'react'
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
 const controlBase =
-  'w-full min-h-12 rounded-xl border-2 border-cream-300 bg-white px-4 py-3 text-base text-ink shadow-xs transition-colors placeholder:text-ink-muted/70 hover:border-cream-300 focus:border-leaf-600 disabled:bg-cream-100 disabled:text-ink-muted'
+  'w-full min-h-11 rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-sm sm:text-base text-ink shadow-2xs transition-all duration-200 placeholder:text-ink-muted/70 hover:border-cream-300 focus:border-leaf-700 focus:ring-2 focus:ring-leaf-700/15 focus:outline-none disabled:bg-cream-100 disabled:text-ink-muted'
 
 function controlClasses(hasError: boolean, extra: string): string {
   return `${controlBase} ${hasError ? 'border-clay-500' : ''} ${extra}`

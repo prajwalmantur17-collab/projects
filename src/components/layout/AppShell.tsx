@@ -16,15 +16,14 @@ function AppShellContent() {
   const { collapsed } = useSidebar()
 
   return (
-    <div
-      className="min-h-dvh overflow-x-hidden relative bg-cover bg-center bg-fixed bg-no-repeat text-ink selection:bg-leaf-600 selection:text-white"
-      style={{
-        backgroundImage: "url('/images/paddy-countryside.jpg')",
-      }}
-    >
+    <div className="min-h-dvh overflow-x-hidden relative bg-cream-50 text-ink selection:bg-leaf-700 selection:text-white">
+      <div
+        className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(1200px_circle_at_50%_0%,rgba(23,107,69,0.05)_0%,rgba(248,250,245,0)_100%)]"
+        aria-hidden="true"
+      />
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-leaf-900 focus:shadow-lift"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2.5 focus:font-semibold focus:text-leaf-900 focus:shadow-lift focus:ring-2 focus:ring-leaf-700"
       >
         {t('a11y.skip')}
       </a>
@@ -40,13 +39,13 @@ function AppShellContent() {
 
       {/* Main Content Area (adjusts automatically to sidebar width) */}
       <div
-        className={`flex min-h-dvh flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`relative z-1 flex min-h-dvh flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           collapsed ? 'lg:pl-[76px]' : 'lg:pl-[260px]'
         }`}
       >
         <AppHeader />
 
-        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 lg:px-8 pb-28 lg:pb-12">
+        <main id="main-content" className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 pb-28 lg:pb-12">
           <div key={location.pathname} className="hr-route">
             <Suspense fallback={<LoadingScreen message={t('app.loading')} />}>
               <Outlet />
@@ -54,8 +53,8 @@ function AppShellContent() {
           </div>
         </main>
 
-        <footer className="mt-auto px-6 py-4 text-center text-xs backdrop-blur-md border-t border-white/20 bg-black/40 text-white/90">
-          <p>
+        <footer className="mt-auto px-6 py-5 text-center text-xs border-t border-cream-200 bg-white/70 backdrop-blur-md text-ink-muted">
+          <p className="font-medium tracking-tight">
             {t('app.name')} · {t('app.footer')}
           </p>
         </footer>

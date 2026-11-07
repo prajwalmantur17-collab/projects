@@ -698,7 +698,7 @@ export function FarmerHomePage() {
   return (
     <div className="space-y-6">
       {/* 1. Hero Banner Matching Reference Mockup */}
-      <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a2312] via-[#0f341b] to-[#184e2a] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+      <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0E3D27] via-[#176B45] to-[#245B42] p-6 sm:p-8 text-white shadow-xl border border-white/15">
         {/* Right-Side Indian Farmer Portrait with Smooth Edge Blending */}
         <div
           className="hr-hero-wrap farmer-hero-mask pointer-events-none absolute bottom-0 right-0 z-0 h-full w-[48%] sm:w-[42%] md:w-[38%] select-none overflow-hidden"
@@ -721,35 +721,34 @@ export function FarmerHomePage() {
             }}
           />
           {/* Edge blending is done with a CSS mask (see .farmer-hero-mask) so no colour strip shows */}
-
         </div>
 
         {/* Left-Side Content */}
         <div className="relative z-10 max-w-full sm:max-w-[65%]">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur-md">
-            <Tractor className="size-3.5 text-emerald-400" aria-hidden="true" />
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-md">
+            <Tractor className="size-3.5 text-harvest-400" aria-hidden="true" />
             <span>{t('ui.heroBadge')}</span>
           </div>
 
-          <h1 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-white">
-            {t('ui.namaste')} <span className="text-[#38e08a] uppercase">{name}</span>
+          <h1 className="mt-3 font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            {t('ui.namaste')} <span className="text-harvest-400">{name}</span>
           </h1>
 
-          <p className="mt-1 text-sm sm:text-base text-emerald-100/90 font-normal">
+          <p className="mt-1 text-sm sm:text-base text-leaf-100 font-normal leading-relaxed">
             {t('farmer.subtitle')}
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-              <CheckCircle2 className="size-3.5 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <CheckCircle2 className="size-3.5 text-harvest-400" />
               <span>{t('ui.verified')}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-              <PhoneCall className="size-3.5 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <PhoneCall className="size-3.5 text-harvest-400" />
               <span>{t('ui.directCall')}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#102d18]/85 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-              <Sprout className="size-3.5 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <Sprout className="size-3.5 text-harvest-400" />
               <span>{t('ui.zeroCommission')}</span>
             </div>
           </div>
@@ -791,21 +790,21 @@ export function FarmerHomePage() {
         </aside>
       ) : null}
 
-      {/* 2. Find a Machine Card Matching Reference Mockup */}
-      <div ref={searchCardRef} className="rounded-3xl bg-white/95 backdrop-blur-md p-6 sm:p-7 shadow-xl border border-white/70 space-y-6">
+      {/* 2. Find a Machine Card */}
+      <div ref={searchCardRef} className="rounded-3xl bg-white p-6 sm:p-7 shadow-soft border border-cream-200 space-y-6">
         {/* Top Split Section: Find a Machine & Actions (Left) vs Popular Crops (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           {/* Left: Find a Machine & Quick Action Buttons */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="size-12 rounded-2xl bg-[#e8f7ee] flex items-center justify-center text-emerald-700 shrink-0 shadow-2xs">
+              <div className="size-12 rounded-2xl bg-leaf-50 border border-leaf-200/60 flex items-center justify-center text-leaf-700 shrink-0 shadow-2xs">
                 <Tractor className="size-6" />
               </div>
               <div>
-                <h2 id="search-heading" className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
+                <h2 id="search-heading" className="font-display text-xl sm:text-2xl font-bold text-ink leading-tight tracking-tight">
                   {t('farmer.findTitle')}
                 </h2>
-                <p className="text-xs font-medium text-gray-500">{t('farmer.findSubtitle')}</p>
+                <p className="text-xs font-medium text-ink-muted">{t('farmer.findSubtitle')}</p>
               </div>
             </div>
 
@@ -815,28 +814,28 @@ export function FarmerHomePage() {
                 type="button"
                 onClick={() => void locate()}
                 disabled={geo.loading || geocoding}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#1c4d28] hover:bg-[#153b1e] text-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-sm transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-soft hover:shadow-lift transition-all duration-200 active:scale-95 disabled:opacity-70 cursor-pointer"
               >
-                <LocateFixed className="size-4 shrink-0 text-emerald-300" aria-hidden="true" />
+                <LocateFixed className="size-4 shrink-0 text-harvest-300" aria-hidden="true" />
                 <span>{geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}</span>
               </button>
 
-              <span className="text-xs font-semibold text-gray-400 px-1">or</span>
+              <span className="text-xs font-semibold text-ink-muted/70 px-1">or</span>
 
               <div className="w-auto">
                 <VoiceSearchButton
                   onVoiceResult={handleVoiceResult}
-                  className="!rounded-full !border !border-[#cbe9d4] !bg-[#eef8f1] !text-[#1c4d28] hover:!bg-[#e1f3e6] px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs min-h-11 cursor-pointer"
+                  className="!rounded-full !border !border-cream-300 !bg-cream-50 hover:!bg-leaf-50/60 !text-leaf-800 px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-2xs min-h-11 cursor-pointer transition-all duration-200"
                 />
               </div>
             </div>
           </div>
 
           {/* Right: Popular Crops Carousel Row */}
-          <div className="lg:col-span-5 lg:border-l lg:border-gray-200/80 lg:pl-6">
+          <div className="lg:col-span-5 lg:border-l lg:border-cream-200 lg:pl-6">
             <div className="flex items-center justify-between mb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider">
-                <Sprout className="size-4 text-emerald-700" />
+              <div className="flex items-center gap-1.5 text-xs font-bold text-ink-muted uppercase tracking-wider">
+                <Sprout className="size-4 text-leaf-700" />
                 <span>{t('ui.popularCrops')}</span>
               </div>
 
@@ -863,10 +862,10 @@ export function FarmerHomePage() {
                     key={key}
                     type="button"
                     onClick={() => handleQuickCrop(key)}
-                    className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl transition-all cursor-pointer ${
+                    className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl transition-all duration-200 cursor-pointer ${
                       isSelected
-                        ? 'ring-2 ring-emerald-600 bg-emerald-50 shadow-xs'
-                        : 'bg-gray-50/90 hover:bg-emerald-50/50 border border-gray-100 hover:border-emerald-200'
+                        ? 'ring-2 ring-leaf-700 bg-leaf-50/90 shadow-2xs'
+                        : 'bg-cream-50 hover:bg-leaf-50/50 border border-cream-200 hover:border-leaf-300'
                     }`}
                   >
                     <img
@@ -877,7 +876,7 @@ export function FarmerHomePage() {
                         e.currentTarget.src = cfg.fallbackImage
                       }}
                     />
-                    <span className="text-[11px] font-bold text-gray-700">
+                    <span className="text-[11px] font-semibold text-ink">
                       {t(`crop.${key}` as TranslationKey)}
                     </span>
                   </button>
@@ -887,7 +886,7 @@ export function FarmerHomePage() {
               <button
                 type="button"
                 onClick={() => setCropPickerOpen(true)}
-                className="size-8 rounded-full border border-gray-200 bg-white hover:bg-gray-100 shadow-2xs flex items-center justify-center text-gray-600 shrink-0 cursor-pointer transition-colors"
+                className="size-8 rounded-full border border-cream-300 bg-white hover:bg-cream-100 shadow-2xs flex items-center justify-center text-ink-muted hover:text-ink shrink-0 cursor-pointer transition-colors"
                 title={t('ui.showAllCrops')}
                 aria-label={t('ui.showAllCrops')}
               >
@@ -941,20 +940,20 @@ export function FarmerHomePage() {
             <button
               type="submit"
               disabled={searching}
-              className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-gray-200 hover:bg-[#1c4d28] hover:text-white text-gray-700 flex items-center justify-center transition-all shadow-xs cursor-pointer"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white flex items-center justify-center transition-all duration-200 shadow-soft hover:shadow-lift active:scale-95 cursor-pointer"
               aria-label={t('farmer.searchButton')}
             >
               <ArrowRight className="size-4.5" />
             </button>
           </form>
 
-          <p className="mt-2 pl-3 text-xs text-gray-400">
+          <p className="mt-2 pl-3 text-xs text-ink-muted">
             {t('ui.villageExample')}
           </p>
 
           {/* Quick select agricultural hubs */}
           <div className="mt-2 pl-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mr-1">
+            <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mr-1">
               Popular:
             </span>
             {[
@@ -979,7 +978,7 @@ export function FarmerHomePage() {
                   )
                   void runSearch(crop, loc.name, loc.dist)
                 }}
-                className="rounded-full border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 transition-colors shadow-2xs cursor-pointer"
+                className="rounded-full border border-cream-300 bg-cream-50 hover:bg-leaf-50/60 hover:border-leaf-300 px-2.5 py-0.5 text-xs font-semibold text-leaf-800 transition-colors shadow-2xs cursor-pointer"
               >
                 {loc.name}
               </button>
@@ -1090,57 +1089,57 @@ export function FarmerHomePage() {
       {/* 3. Dashboard Metrics & Recent Activity Row with Real Database Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Real Available Machines Count from Database */}
-        <div className="rounded-3xl bg-[#eaf7ee] border border-[#cbe9d4] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
-          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-emerald-700 mb-3 shadow-2xs">
+        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-200">
+          <div className="size-10 rounded-2xl bg-leaf-50 border border-leaf-200/60 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs">
             <Tractor className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
               {platformStats !== null ? platformStats.available_machines : '—'}
             </div>
-            <div className="text-xs font-semibold text-gray-600">{t('ui.machinesAvailable')}</div>
+            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.machinesAvailable')}</div>
           </div>
         </div>
 
         {/* 2. Real Registered Farmers / Users Count from Database */}
-        <div className="rounded-3xl bg-[#eaf3fc] border border-[#cde2f8] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
-          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-blue-600 mb-3 shadow-2xs">
+        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-200">
+          <div className="size-10 rounded-2xl bg-leaf-50 border border-leaf-200/60 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs">
             <Users className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
               {platformStats !== null ? (platformStats.total_farmers || platformStats.total_users) : '—'}
             </div>
-            <div className="text-xs font-semibold text-gray-600">{t('ui.happyFarmers')}</div>
+            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.happyFarmers')}</div>
           </div>
         </div>
 
         {/* 3. 100% Trusted Platform */}
-        <div className="rounded-3xl bg-[#fdf7ea] border border-[#f7e6c0] p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
-          <div className="size-10 rounded-2xl bg-white/80 flex items-center justify-center text-amber-600 mb-3 shadow-2xs">
+        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-harvest-300 transition-all duration-200">
+          <div className="size-10 rounded-2xl bg-harvest-100 border border-harvest-200/60 flex items-center justify-center text-harvest-700 mb-3 shadow-2xs">
             <ShieldCheck className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-gray-900">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
               {platformStats !== null ? platformStats.confirmed_bookings : '—'}
             </div>
-            <div className="text-xs font-semibold text-gray-600">{t('ui.confirmedBookings')}</div>
+            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.confirmedBookings')}</div>
           </div>
         </div>
 
         {/* 4. Recent Activity: Real Latest Machine from Database */}
-        <div className="rounded-3xl bg-white/95 backdrop-blur-md border border-white/70 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
-              <Activity className="size-4 text-emerald-600" />
-              <span>{t('ui.recentActivity')}</span>
+        <div className="rounded-3xl bg-white border border-cream-200 p-5 shadow-soft flex flex-col justify-between hover:shadow-lift transition-all duration-200">
+          <div className="flex items-center justify-between border-b border-cream-200 pb-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
+              <Activity className="size-4 text-leaf-700" />
+              <span className="font-display">{t('ui.recentActivity')}</span>
             </div>
             <button
               type="button"
               onClick={() => {
                 villageInputRef.current?.focus()
               }}
-              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-0.5 cursor-pointer"
+              className="text-xs font-semibold text-leaf-700 hover:text-leaf-800 flex items-center gap-0.5 cursor-pointer"
             >
               <span>{t('ui.viewAll')}</span>
               <ArrowRight className="size-3" />
@@ -1152,7 +1151,7 @@ export function FarmerHomePage() {
               to={`/farmer/machines/${latestActivity.id}`}
               className="mt-3 flex items-center gap-3 group text-left cursor-pointer"
             >
-              <div className="size-11 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-emerald-50 flex items-center justify-center text-emerald-700 shadow-2xs">
+              <div className="size-11 rounded-full overflow-hidden border border-cream-200 shrink-0 bg-leaf-50 flex items-center justify-center text-leaf-700 shadow-2xs">
                 {latestActivity.image_path ? (
                   <img
                     src={getMachineImageUrl(latestActivity.image_path) || undefined}
@@ -1167,12 +1166,12 @@ export function FarmerHomePage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">
+                <p className="text-xs font-bold text-ink truncate group-hover:text-leaf-800 transition-colors">
                   {latestActivity.village
                     ? `${t('ui.newMachineAdded')} · ${latestActivity.village}`
                     : t('ui.newMachineAdded')}
                 </p>
-                <p className="text-[11px] text-gray-500 truncate">
+                <p className="text-[11px] text-ink-muted truncate">
                   {latestActivity.model || t(machineTypeLabelKey(latestActivity.machine_type))}
                   {formatRelativeTime(latestActivity.created_at, t) ? ` • ${formatRelativeTime(latestActivity.created_at, t)}` : ''}
                 </p>

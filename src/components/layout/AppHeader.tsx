@@ -98,7 +98,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 transition-all border-b border-white/20 bg-white/45 backdrop-blur-md">
+    <header className="sticky top-0 z-30 transition-all border-b border-cream-200 bg-white/80 backdrop-blur-md">
       <div className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
         {/* Left: Sidebar Toggles & Search */}
         <div className="flex flex-1 items-center gap-2 sm:gap-3 max-w-xl">
@@ -106,7 +106,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleMobile}
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:hidden border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white cursor-pointer"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden border border-cream-200 bg-white text-ink-muted hover:text-ink hover:border-leaf-600 hover:bg-leaf-50/50 shadow-2xs active:scale-95 cursor-pointer"
             aria-label={t('ui.openSidebarMenu')}
           >
             <Menu className="size-5" />
@@ -116,7 +116,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="hidden size-10 shrink-0 items-center justify-center rounded-xl shadow-xs transition-colors lg:flex border border-white/60 bg-white/80 text-gray-700 backdrop-blur-md hover:bg-white cursor-pointer"
+            className="hidden size-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:flex border border-cream-200 bg-white text-ink-muted hover:text-ink hover:border-leaf-600 hover:bg-leaf-50/50 shadow-2xs active:scale-95 cursor-pointer"
             title={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
             aria-label={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
           >
@@ -127,7 +127,7 @@ export function AppHeader() {
           <div ref={searchContainerRef} className="relative flex-1 max-w-md">
             <form onSubmit={handleSearch} className="relative w-full">
               <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none text-gray-400"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none text-ink-muted"
                 aria-hidden="true"
               />
               <input
@@ -139,7 +139,7 @@ export function AppHeader() {
                   setDropdownOpen(true)
                 }}
                 placeholder={isOwnerRoute ? t('ui.searchPlaceholderOwner') : t('ui.searchPlaceholder')}
-                className="h-10 w-full pl-10 pr-9 text-xs sm:text-sm font-medium focus:outline-none transition-all rounded-full border border-white/70 bg-white/85 backdrop-blur-md text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+                className="h-10 w-full pl-10 pr-9 text-xs sm:text-sm font-medium focus:outline-none transition-all duration-200 rounded-full border border-cream-200 bg-cream-50/90 text-ink placeholder:text-ink-muted focus:bg-white focus:border-leaf-700 focus:ring-2 focus:ring-leaf-700/15 shadow-2xs"
               />
               {searchQuery ? (
                 <button
@@ -148,7 +148,7 @@ export function AppHeader() {
                     setSearchQuery('')
                     setSmartResult(null)
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink cursor-pointer"
                   aria-label={t('ui.clearSearch')}
                 >
                   <X className="size-3.5" />
@@ -158,7 +158,7 @@ export function AppHeader() {
 
             {/* Smart Interactive Search Dropdown */}
             {dropdownOpen ? (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-gray-200 bg-white/98 backdrop-blur-xl p-3 shadow-2xl space-y-3">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-3 shadow-lift space-y-3">
                 {/* 1. When search bar is empty: Show Suggested Queries */}
                 {!searchQuery.trim() ? (
                   <div className="space-y-2">
@@ -292,9 +292,9 @@ export function AppHeader() {
           ) : (
             <Link
               to="/login"
-              className="inline-flex min-h-10 items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-bold shadow-xs transition-colors rounded-full border border-white/60 bg-white/85 text-gray-800 backdrop-blur-md hover:bg-white"
+              className="inline-flex min-h-10 items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-semibold tracking-tight shadow-2xs transition-all duration-200 rounded-full border border-cream-200 bg-white text-ink hover:border-leaf-600 hover:text-leaf-800 hover:bg-leaf-50/60 active:scale-95"
             >
-              <User className="size-4 text-emerald-700" />
+              <User className="size-4 text-leaf-700" />
               <span>{t('ui.login')}</span>
             </Link>
           )}

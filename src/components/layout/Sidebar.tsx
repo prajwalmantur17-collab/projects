@@ -198,7 +198,7 @@ export function Sidebar() {
         aria-label={t('a11y.primaryNav')}
         inert={!isDesktop && !mobileOpen ? true : undefined}
         aria-hidden={!isDesktop && !mobileOpen ? 'true' : undefined}
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0e2114]/98 backdrop-blur-md border-r border-[#1a4128] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0B2618]/98 backdrop-blur-md border-r border-[#15462D] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           /* Mobile Drawer */
           mobileOpen ? 'translate-x-0 w-[280px] shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${
@@ -207,16 +207,16 @@ export function Sidebar() {
         }`}
       >
         {/* A. Branding Section */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#183b23] px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#15462D] px-4">
           <Link
             to={homePath}
             onClick={() => handleNavClick()}
             className="flex items-center gap-2.5 overflow-hidden group focus-visible:outline-none"
             aria-label={t('app.name')}
           >
-            <LogoMark className="size-8 shrink-0 transition-transform group-hover:scale-105" />
+            <LogoMark className="size-8 shrink-0 transition-transform duration-200 group-hover:scale-105" />
             <span
-              className={`font-bold text-lg tracking-tight text-white whitespace-nowrap transition-opacity duration-200 ${
+              className={`font-display font-bold text-lg tracking-tight text-white whitespace-nowrap transition-opacity duration-200 ${
                 collapsed ? 'lg:hidden opacity-0' : 'opacity-100'
               }`}
             >
@@ -228,7 +228,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className={`hidden lg:flex size-8 items-center justify-center rounded-lg text-[#8BCB73] hover:bg-[#163823] transition-colors ${
+            className={`hidden lg:flex size-8 items-center justify-center rounded-lg text-[#A9C7B6] hover:text-white hover:bg-[#133A26] transition-colors cursor-pointer ${
               collapsed ? 'mx-auto' : ''
             }`}
             title={collapsed ? t('ui.expandSidebar') : t('ui.collapseSidebar')}
@@ -241,7 +241,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="flex lg:hidden size-8 items-center justify-center rounded-lg text-[#8BCB73] hover:bg-[#163823]"
+            className="flex lg:hidden size-8 items-center justify-center rounded-lg text-[#A9C7B6] hover:text-white hover:bg-[#133A26] cursor-pointer"
             aria-label={t('ui.closeSidebar')}
           >
             <PanelLeftClose className="size-5" />
@@ -265,14 +265,14 @@ export function Sidebar() {
                   onClick={item.onClick ? item.onClick : () => handleNavClick()}
                   className={`flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
                     isItemActive
-                      ? 'bg-[#294C32] text-white font-bold shadow-inner'
-                      : 'text-[#a3bfa3] hover:bg-[#163823] hover:text-white'
+                      ? 'bg-[#176B45] text-white font-bold shadow-xs ring-1 ring-white/10'
+                      : 'text-[#A9C7B6] hover:bg-[#133A26] hover:text-white'
                   } ${collapsed ? 'lg:justify-center lg:gap-0 lg:px-0' : ''}`}
                   aria-current={isItemActive ? 'page' : undefined}
                 >
                   <Icon
                     className={`size-5 shrink-0 transition-colors ${
-                      isItemActive ? 'text-[#4ade80]' : 'text-[#8BCB73]/70 group-hover:text-[#4ade80]'
+                      isItemActive ? 'text-[#E8B84A]' : 'text-[#A9C7B6] group-hover:text-white'
                     }`}
                     aria-hidden="true"
                   />

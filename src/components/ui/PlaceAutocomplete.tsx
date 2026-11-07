@@ -151,12 +151,12 @@ export function PlaceAutocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="h-13 w-full rounded-full border border-gray-200 bg-gray-50/80 px-6 pr-28 text-sm sm:text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all"
+        className="h-13 w-full rounded-full border border-cream-300 bg-cream-50/80 px-6 pr-28 text-sm sm:text-base font-semibold text-ink placeholder:text-ink-muted focus:bg-white focus:border-leaf-700 focus:outline-none focus:ring-2 focus:ring-leaf-700/15 shadow-inner transition-all"
       />
 
       {loading ? (
         <Loader2
-          className="pointer-events-none absolute right-[6.5rem] top-1/2 size-4 -translate-y-1/2 animate-spin text-gray-400"
+          className="pointer-events-none absolute right-[6.5rem] top-1/2 size-4 -translate-y-1/2 animate-spin text-ink-muted"
           aria-hidden="true"
         />
       ) : null}
@@ -168,7 +168,7 @@ export function PlaceAutocomplete({
           className={`absolute right-14 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full transition-all active:scale-95 sm:size-10 ${
             listening
               ? 'animate-pulse bg-red-600 text-white ring-4 ring-red-200'
-              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+              : 'bg-leaf-100 text-leaf-800 hover:bg-leaf-200'
           }`}
           title={listening ? t('voice.listening') : t('voice.tapToSpeak')}
           aria-label={listening ? t('voice.listening') : t('voice.tapToSpeak')}
@@ -192,7 +192,7 @@ export function PlaceAutocomplete({
           id={listId}
           role="listbox"
           aria-label={t('ui.enterYourVillage')}
-          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-1.5 shadow-xl"
+          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-1.5 shadow-lift"
         >
           {options.map((option, index) => {
             const selected = index === active
@@ -206,30 +206,30 @@ export function PlaceAutocomplete({
                 onMouseDown={(event) => event.preventDefault()}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(option)}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 ${
-                  selected ? 'bg-emerald-50' : 'hover:bg-emerald-50/60'
+                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
+                  selected ? 'bg-leaf-50 text-leaf-900' : 'hover:bg-cream-100/70'
                 }`}
               >
                 {option.kind === 'locate' ? (
                   <>
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
                       <LocateFixed className="size-4" aria-hidden="true" />
                     </span>
-                    <span className="text-sm font-bold text-emerald-900">
+                    <span className="text-sm font-bold text-leaf-900">
                       {locating ? t('farmer.locationFinding') : t('farmer.useLocation')}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cream-100 text-leaf-700">
                       <MapPin className="size-4" aria-hidden="true" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-gray-900">
+                      <span className="block truncate text-sm font-bold text-ink">
                         {option.place.name}
                       </span>
                       {option.place.detail ? (
-                        <span className="block truncate text-xs text-gray-500">
+                        <span className="block truncate text-xs text-ink-muted">
                           {option.place.detail}
                         </span>
                       ) : null}
