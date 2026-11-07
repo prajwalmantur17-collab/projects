@@ -43,6 +43,8 @@ import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/Feedback'
 import { Input, Select } from '../../components/ui/Input'
+import { LocationDetectionModal } from '../../components/location/LocationDetectionModal'
+import type { LocationDetectionResult } from '../../components/location/LocationDetectionModal'
 import { PlaceAutocomplete } from '../../components/ui/PlaceAutocomplete'
 import { MachineCard } from '../../components/machine/MachineCard'
 import { MachineCardSkeleton } from '../../components/ui/Skeleton'
@@ -159,7 +161,6 @@ export function FarmerHomePage() {
   const [showFilters, setShowFilters] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [searching, setSearching] = useState(false)
-  const [geocoding, setGeocoding] = useState(false)
   const [detectedPlace, setDetectedPlace] = useState<{ place: string; district: string } | null>(null)
   const [locationWarning, setLocationWarning] = useState(false)
   const [searchError, setSearchError] = useState<TranslationKey | null>(null)
@@ -610,71 +611,39 @@ export function FarmerHomePage() {
     }
   }, [geo.coordinates, detectedPlace, language])
 
-  const locateSequenceRef = useRef(0)
-  const locateAbortControllerRef = useRef<AbortController | null>(null)
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
 
-  const locate = async () => {
-    const seq = ++locateSequenceRef.current
-    locateAbortControllerRef.current?.abort()
-    const controller = new AbortController()
-    locateAbortControllerRef.current = controller
+  const handleLocationConfirmed = (res: LocationDetectionResult) => {
+    setIsLocationModalOpen(false)
+    const targetVillage = res.village.trim()
+    const targetDistrict = res.district.trim()
+    const targetState = res.state.trim()
 
-    // Forget every earlier place so an old result can never be reused.
-    setDetectedPlace(null)
-    setPicked(null)
-    setVillage('')
-    setDistrict('')
-    setState('')
-    setLocationWarning(false)
-    setGeocoding(true)
-    try {
-      const fix = await geo.request()
-      if (!fix || seq !== locateSequenceRef.current) return
+    setVillage(targetVillage)
+    setDistrict(targetDistrict)
+    setState(targetState)
+    setDetectedPlace({
+      place: targetVillage || targetDistrict,
+      district: targetDistrict,
+    })
+    setPicked({
+      name: targetVillage || targetDistrict || t('ui.nearby'),
+      coords: res.coords,
+    })
+    const poor = res.accuracy ? res.accuracy > POOR_ACCURACY_M : false
+    setLocationWarning(poor)
 
-      const coords = { latitude: fix.latitude, longitude: fix.longitude }
-      setPicked({ name: t('ui.nearby'), coords })
-
-      // A very coarse fix (Wi-Fi/IP based) would show the wrong area, so ask the
-      // person to check it instead of searching with it.
-      const poor = fix.accuracy > POOR_ACCURACY_M
-      setLocationWarning(poor)
-
-      const geocoded = await reverseGeocode(coords, language, controller.signal)
-      if (seq !== locateSequenceRef.current) return
-
-      if (geocoded) {
-        setVillage(geocoded.village || '')
-        setDistrict(geocoded.district || '')
-        setState(geocoded.state || '')
-        setDetectedPlace({
-          place: geocoded.village,
-          district: geocoded.district,
-        })
-        setPicked({ name: geocoded.village, coords })
-
-        // Auto-scan only when the position is trustworthy.
-        if (!poor) {
-          void runSearch(crop, geocoded.village, geocoded.district)
-        }
-      } else {
-        // Geocoding timed out or failed, but GPS coords were found:
-        // Do not block the farmer! Provide a generic location found state and search.
-        const fallbackPlace = t('ui.nearby')
-        setVillage(fallbackPlace)
-        setDetectedPlace({
-          place: fallbackPlace,
-          district: '',
-        })
-        setPicked({ name: fallbackPlace, coords })
-        if (!poor) {
-          void runSearch(crop, '', '')
-        }
-      }
-    } finally {
-      if (seq === locateSequenceRef.current) {
-        setGeocoding(false)
-      }
+    // Only search for nearby machines after the user confirms the detected location.
+    if (!poor) {
+      void runSearch(crop, targetVillage, targetDistrict)
     }
+  }
+
+  const handleEnterVillageManually = () => {
+    setIsLocationModalOpen(false)
+    setTimeout(() => {
+      villageInputRef.current?.focus()
+    }, 80)
   }
 
   const mapMachines = useMemo<MapMachine[]>(() => {
@@ -812,12 +781,11 @@ export function FarmerHomePage() {
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
               <button
                 type="button"
-                onClick={() => void locate()}
-                disabled={geo.loading || geocoding}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-soft hover:shadow-lift transition-all duration-200 active:scale-95 disabled:opacity-70 cursor-pointer"
+                onClick={() => setIsLocationModalOpen(true)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-soft hover:shadow-lift transition-all duration-200 active:scale-95 cursor-pointer"
               >
                 <LocateFixed className="size-4 shrink-0 text-harvest-300" aria-hidden="true" />
-                <span>{geo.loading || geocoding ? t('farmer.locationFinding') : t('farmer.useLocation')}</span>
+                <span>{t('farmer.useLocation')}</span>
               </button>
 
               <span className="text-xs font-semibold text-ink-muted/70 px-1">or</span>
@@ -908,10 +876,10 @@ export function FarmerHomePage() {
               inputRef={villageInputRef}
               value={village}
               placeholder={t('ui.typeVillagePlaceholder')}
-              locating={geo.loading || geocoding}
+              locating={isLocationModalOpen}
               nearTo={originCoords}
               onVoiceResult={(guesses) => void handleVoicePlace(guesses)}
-              onUseCurrentLocation={() => void locate()}
+              onUseCurrentLocation={() => setIsLocationModalOpen(true)}
               onSelect={handlePlaceSelect}
               onChange={(val) => {
                 setVillage(val)
@@ -1273,7 +1241,7 @@ export function FarmerHomePage() {
           </div>
         ) : null}
 
-        {searching || geocoding ? (
+        {searching ? (
           /* Live Scanning State: Skeletons replacing radar block */
           <div>
             <div className="mb-4 flex items-center justify-between">
@@ -1433,6 +1401,14 @@ export function FarmerHomePage() {
 
       {/* Floating Kisan Voice Assistant for uneducated farmers & renters */}
       <KisanVoiceAssistant onVoiceSearch={handleVoiceResult} />
+
+      {/* Interactive Location Detection Modal */}
+      <LocationDetectionModal
+        open={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onConfirm={handleLocationConfirmed}
+        onEnterManually={handleEnterVillageManually}
+      />
     </div>
   )
 }
