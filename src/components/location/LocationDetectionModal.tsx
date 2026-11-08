@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useI18n } from '../../i18n'
+import { USABLE_ACCURACY_M } from '../../hooks/useGeolocation'
 import { reverseGeocode } from '../../services/geocode'
 import type { Coordinates } from '../../types'
 import { Button } from '../ui/Button'
@@ -59,13 +60,27 @@ export function LocationDetectionModal({
 
   const activeAbortRef = useRef<AbortController | null>(null)
   const timerRef = useRef<number | null>(null)
+  const refineTimerRef = useRef<number | null>(null)
   const watchIdRef = useRef<number | null>(null)
   const isMountedRef = useRef(true)
+  // Each detection run gets a number so late callbacks from an older run are ignored.
+  const runIdRef = useRef(0)
+  // Keep the latest values in refs so the detection callbacks stay stable between renders.
+  const languageRef = useRef(language)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    languageRef.current = language
+    onCloseRef.current = onClose
+  })
 
   const stopGps = useCallback(() => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
+    }
+    if (refineTimerRef.current !== null) {
+      window.clearTimeout(refineTimerRef.current)
+      refineTimerRef.current = null
     }
     if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current)
@@ -99,68 +114,86 @@ export function LocationDetectionModal({
     const controller = new AbortController()
     activeAbortRef.current = controller
 
-    // Timeout watchdog
-    timerRef.current = window.setTimeout(() => {
-      if (isMountedRef.current) {
-        setModalState('timeout')
-        cleanup()
-      }
-    }, timeoutMs)
-
+    const runId = ++runIdRef.current
+    const isCurrent = () => isMountedRef.current && runIdRef.current === runId
+    // Becomes true once this run has produced its final answer (found, denied, timed out...).
+    let settled = false
     let bestFix: { coords: Coordinates; accuracy: number } | null = null
 
-    const handlePosition = async (pos: GeolocationPosition) => {
+    // Timeout watchdog: no GPS fix at all within the time budget.
+    timerRef.current = window.setTimeout(() => {
+      if (!isCurrent() || settled || bestFix) return
+      settled = true
+      stopGps()
+      setModalState('timeout')
+    }, timeoutMs)
+
+    // Use the best fix we have, look up the place name, then show the result.
+    const finalize = async () => {
+      if (!isCurrent() || settled || !bestFix) return
+      settled = true
+      stopGps()
+      const fix = bestFix
+      setCoords(fix.coords)
+      setAccuracy(fix.accuracy)
+
+      try {
+        const geocoded = await reverseGeocode(fix.coords, languageRef.current, controller.signal)
+        if (!isCurrent()) return
+
+        if (geocoded) {
+          const v = (geocoded.village || geocoded.district || '').trim()
+          setDetectedVillage(v)
+          setDetectedDistrict((geocoded.district || '').trim())
+          setDetectedState((geocoded.state || '').trim())
+          setCustomVillage(v)
+        } else {
+          // No place name found: keep the GPS position and search by distance only.
+          setDetectedVillage('')
+          setDetectedDistrict('')
+          setDetectedState('')
+          setCustomVillage('')
+        }
+      } catch {
+        if (!isCurrent()) return
+        setDetectedVillage('')
+        setDetectedDistrict('')
+        setDetectedState('')
+        setCustomVillage('')
+      }
+      if (isCurrent()) setModalState('success')
+    }
+
+    const handlePosition = (pos: GeolocationPosition) => {
+      if (!isCurrent() || settled) return
       const acc = Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : 500
       const currentCoords: Coordinates = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
       }
-
       if (!bestFix || acc < bestFix.accuracy) {
         bestFix = { coords: currentCoords, accuracy: acc }
       }
 
-      if (!isMountedRef.current) return
-      setCoords(bestFix.coords)
-      setAccuracy(bestFix.accuracy)
-
-      // Stop watching GPS positions once fix is obtained, WITHOUT aborting the geocoding request!
-      stopGps()
-
-      try {
-        const geocoded = await reverseGeocode(bestFix.coords, language, activeAbortRef.current?.signal)
-        if (!isMountedRef.current) return
-
-        if (geocoded) {
-          const v = (geocoded.village || geocoded.district || '').trim()
-          const d = (geocoded.district || '').trim()
-          const s = (geocoded.state || '').trim()
-          setDetectedVillage(v)
-          setDetectedDistrict(d)
-          setDetectedState(s)
-          setCustomVillage(v)
-        } else {
-          // If geocoding returns no match, default to localized nearby label
-          const nearbyFallback = t('ui.nearby')
-          setDetectedVillage(nearbyFallback)
-          setDetectedDistrict('')
-          setDetectedState('')
-          setCustomVillage(nearbyFallback)
-        }
-        setModalState('success')
-      } catch {
-        if (isMountedRef.current) {
-          const nearbyFallback = t('ui.nearby')
-          setDetectedVillage(nearbyFallback)
-          setCustomVillage(nearbyFallback)
-          setModalState('success')
-        }
+      if (bestFix.accuracy <= USABLE_ACCURACY_M) {
+        void finalize()
+      } else if (refineTimerRef.current === null) {
+        // A rough fix: wait a moment for a better one, then use the best we have.
+        refineTimerRef.current = window.setTimeout(() => {
+          refineTimerRef.current = null
+          void finalize()
+        }, 3000)
       }
     }
 
     const handleError = (error: GeolocationPositionError) => {
-      if (!isMountedRef.current) return
-      cleanup()
+      if (!isCurrent() || settled) return
+      if (bestFix) {
+        void finalize()
+        return
+      }
+      settled = true
+      stopGps()
       if (error.code === 1) {
         // User denied geolocation permission
         setModalState('denied')
@@ -184,9 +217,10 @@ export function LocationDetectionModal({
         { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 30_000 },
       )
     } catch {
+      settled = true
       setModalState('unavailable')
     }
-  }, [cleanup, language, stopGps, t, timeoutMs])
+  }, [cleanup, stopGps, timeoutMs])
 
   // Trigger detection when modal opens
   useEffect(() => {
@@ -212,23 +246,27 @@ export function LocationDetectionModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
-        onClose()
+        onCloseRef.current()
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
+    closeRef.current?.focus()
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = originalOverflow
       prevActive?.focus()
     }
-  }, [open, onClose])
+    // Only depends on `open`: the parent passes a new onClose every render, and re-running this
+    // effect would restore the wrong body overflow and leave the page unable to scroll.
+  }, [open])
 
   if (!open) return null
 
   const handleConfirm = () => {
     if (!coords) return
-    const finalVillage = (customVillage || detectedVillage || detectedDistrict || t('ui.nearby')).trim()
+    // May be empty when no place name was found; the page then searches by GPS distance only.
+    const finalVillage = (customVillage || detectedVillage || detectedDistrict).trim()
     onConfirm({
       village: finalVillage,
       district: detectedDistrict,
@@ -247,7 +285,7 @@ export function LocationDetectionModal({
   return createPortal(
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-xs transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:animate-in motion-safe:fade-in sm:items-center sm:p-4"
+      className="hr-modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

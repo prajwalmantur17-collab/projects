@@ -615,17 +615,23 @@ export function FarmerHomePage() {
 
   const handleLocationConfirmed = (res: LocationDetectionResult) => {
     setIsLocationModalOpen(false)
-    const targetVillage = (res.village || res.district || t('ui.nearby')).trim()
+    // The place name can be empty when GPS worked but no village name was found.
+    // In that case search by GPS distance only, never for a village literally called "Nearby".
+    const targetVillage = (res.village || res.district || '').trim()
     const targetDistrict = res.district.trim()
     const targetState = res.state.trim()
 
     setVillage(targetVillage)
     setDistrict(targetDistrict)
     setState(targetState)
-    setDetectedPlace({
-      place: targetVillage,
-      district: targetDistrict,
-    })
+    setDetectedPlace(
+      targetVillage
+        ? {
+            place: targetVillage,
+            district: targetDistrict,
+          }
+        : null,
+    )
     setPicked({
       name: targetVillage,
       coords: res.coords,

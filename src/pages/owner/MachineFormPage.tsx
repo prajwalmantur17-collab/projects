@@ -253,8 +253,13 @@ export function MachineFormPage() {
   }
 
   const saveMachine = async (values: FormState): Promise<SaveResult> => {
-    const activeOwnerId = profile?.id ?? 'demo-owner'
     setFormError(null)
+    // Never save with a made-up owner id: wait for the signed-in profile.
+    if (!profile?.id) {
+      setFormError('error.unauthorized')
+      return { ok: false, key: 'error.unauthorized' }
+    }
+    const activeOwnerId = profile.id
 
     const validation = validateMachineForm(values)
     if (!validation.parsed) {

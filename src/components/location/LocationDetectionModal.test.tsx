@@ -220,7 +220,7 @@ describe('LocationDetectionModal Component', () => {
     vi.useRealTimers()
   })
 
-  it('supplies nearby fallback when reverse geocoding returns no match so location name is never blank', async () => {
+  it('confirms with empty village and valid coords when reverse geocoding returns no match so search is by distance only', async () => {
     let watchSuccess: ((pos: GeolocationPosition) => void) | null = null
     const mockWatch = vi.fn().mockImplementation((success) => {
       watchSuccess = success
@@ -275,7 +275,7 @@ describe('LocationDetectionModal Component', () => {
 
     expect(onConfirmMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        village: 'Nearby',
+        village: '',
         coords: { latitude: 15.0, longitude: 76.0 },
       }),
     )
