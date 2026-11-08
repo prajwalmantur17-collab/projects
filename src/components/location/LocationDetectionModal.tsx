@@ -66,7 +66,6 @@ export function LocationDetectionModal({
   const [customVillage, setCustomVillage] = useState('')
 
   // Visual enhancements state
-  const [bgLoaded, setBgLoaded] = useState(false)
   const [bgError, setBgError] = useState(false)
   const [statusIndex, setStatusIndex] = useState(0)
 
@@ -318,10 +317,17 @@ export function LocationDetectionModal({
       ? Math.min(124, Math.max(38, Math.round(36 + (accuracy / 150) * 76)))
       : 96
 
+  const imgDataState =
+    modalState === 'detecting'
+      ? 'detecting'
+      : modalState === 'success'
+        ? 'success'
+        : 'error'
+
   return createPortal(
     <div
       role="presentation"
-      className="hr-modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="hr-modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -332,44 +338,32 @@ export function LocationDetectionModal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-cream-200 bg-white p-6 shadow-lift transition-all motion-safe:animate-[modal-mobile-in_340ms_cubic-bezier(0.16,1,0.3,1)_both] sm:rounded-3xl sm:p-7 sm:motion-safe:animate-[modal-desktop-in_250ms_cubic-bezier(0.16,1,0.3,1)_both] dark:border-leaf-900/60 dark:bg-[#151d18]"
+        className="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-leaf-900/60 bg-ink p-6 shadow-lift transition-all motion-safe:animate-[modal-mobile-in_340ms_cubic-bezier(0.16,1,0.3,1)_both] sm:rounded-3xl sm:p-7 sm:motion-safe:animate-[modal-desktop-in_250ms_cubic-bezier(0.16,1,0.3,1)_both]"
       >
-        {/* Lazy-loaded map background with smooth fallback and WCAG AA brand gradient overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-t-3xl sm:rounded-3xl z-0"
-          aria-hidden="true"
-        >
+        {/* Background layer as FIRST child behind all content */}
+        <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-[inherit]">
           {!bgError && (
             <img
               src="/location-map-bg.webp"
               alt=""
-              loading="lazy"
+              loading="eager"
               decoding="async"
-              onLoad={() => setBgLoaded(true)}
+              data-state={imgDataState}
               onError={() => setBgError(true)}
-              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,filter,transform] duration-700 ${
-                bgLoaded ? 'opacity-30 dark:opacity-20' : 'opacity-0'
-              } ${
-                modalState === 'detecting'
-                  ? 'motion-safe:animate-[bg-drift-zoom_20s_ease-in-out_infinite_alternate]'
-                  : modalState === 'success'
-                    ? 'motion-safe:animate-[bg-success-zoom_600ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
-                    : 'filter grayscale brightness-75 opacity-15'
-              }`}
+              className="hr-map-bg h-full w-full object-cover opacity-40"
             />
           )}
-          {/* Soft gradient overlay (brand color at 60-80% opacity) guaranteeing text and buttons stay readable */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-cream-50/80 to-white/95 dark:from-ink/90 dark:via-[#131b16]/85 dark:to-ink/95" />
+          <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/60 to-ink/85" />
         </div>
 
-        {/* Modal Interactive Content */}
+        {/* Existing content wrapped in relative z-10 */}
         <div className="relative z-10">
           {/* Header with Title and Close Button */}
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h2
                 id={titleId}
-                className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-ink dark:text-cream-50"
+                className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-white"
               >
                 {modalState === 'detecting' && t('locModal.findingTitle')}
                 {modalState === 'success' && t('locModal.foundTitle')}
@@ -379,7 +373,7 @@ export function LocationDetectionModal({
               </h2>
               <p
                 id={descId}
-                className="mt-1 text-xs sm:text-sm text-ink-muted dark:text-cream-300 leading-relaxed"
+                className="mt-1 text-xs sm:text-sm text-cream-200 leading-relaxed"
               >
                 {modalState === 'detecting' && t('locModal.findingDesc')}
                 {modalState === 'success' && t('locModal.foundSubtitle')}
@@ -393,7 +387,7 @@ export function LocationDetectionModal({
               ref={closeRef}
               type="button"
               onClick={onClose}
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted dark:text-cream-300 transition-colors hover:bg-cream-100 dark:hover:bg-leaf-900/50 hover:text-ink dark:hover:text-cream-50 active:scale-95 cursor-pointer"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-cream-200 transition-colors hover:bg-white/10 hover:text-white active:scale-95 cursor-pointer"
               aria-label={t('common.cancel')}
             >
               <X className="size-5" aria-hidden="true" />
@@ -406,15 +400,15 @@ export function LocationDetectionModal({
           {modalState === 'detecting' && (
             <div className="py-5 sm:py-6 flex flex-col items-center">
               {/* Circular Radar Canvas */}
-              <div className="relative flex size-52 sm:size-58 items-center justify-center rounded-full bg-gradient-to-b from-cream-100/90 via-leaf-50/50 to-cream-100/90 dark:from-leaf-950/80 dark:via-leaf-900/50 dark:to-leaf-950/80 border border-leaf-200/80 dark:border-leaf-700/60 shadow-inner overflow-hidden">
+              <div className="relative flex size-52 sm:size-58 items-center justify-center rounded-full bg-gradient-to-b from-leaf-950/80 via-leaf-900/50 to-leaf-950/80 border border-leaf-700/60 shadow-inner overflow-hidden">
                 {/* Concentric grid lines */}
-                <div className="pointer-events-none absolute size-[86%] rounded-full border border-dashed border-leaf-300/40 dark:border-leaf-700/40" />
-                <div className="pointer-events-none absolute size-[58%] rounded-full border border-leaf-400/40 dark:border-leaf-600/40" />
-                <div className="pointer-events-none absolute size-[32%] rounded-full border border-leaf-500/50 bg-leaf-50/40 dark:border-leaf-500/40 dark:bg-leaf-900/30" />
+                <div className="pointer-events-none absolute size-[86%] rounded-full border border-dashed border-leaf-700/40" />
+                <div className="pointer-events-none absolute size-[58%] rounded-full border border-leaf-600/40" />
+                <div className="pointer-events-none absolute size-[32%] rounded-full border border-leaf-500/40 bg-leaf-900/30" />
 
                 {/* Lat/Long Crosshair axes */}
-                <div className="pointer-events-none absolute h-px w-full bg-leaf-200/60 dark:bg-leaf-800/60" />
-                <div className="pointer-events-none absolute h-full w-px bg-leaf-200/60 dark:bg-leaf-800/60" />
+                <div className="pointer-events-none absolute h-px w-full bg-leaf-800/60" />
+                <div className="pointer-events-none absolute h-full w-px bg-leaf-800/60" />
 
                 {/* 3 Soft Pulsing Radar Rings */}
                 <div className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/60 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]" />
@@ -432,7 +426,7 @@ export function LocationDetectionModal({
                   className="pointer-events-none absolute inset-0 rounded-full motion-safe:animate-[radar-sweep_4s_linear_infinite]"
                   style={{
                     background:
-                      'conic-gradient(from 0deg at 50% 50%, rgba(23, 107, 69, 0.25) 0deg, rgba(23, 107, 69, 0) 65deg, transparent 360deg)',
+                      'conic-gradient(from 0deg at 50% 50%, rgba(23, 107, 69, 0.28) 0deg, rgba(23, 107, 69, 0) 65deg, transparent 360deg)',
                   }}
                 />
 
@@ -492,7 +486,7 @@ export function LocationDetectionModal({
                 <div className="relative flex items-center justify-center z-10">
                   {/* Simulated Ground Shadow that expands and contracts */}
                   <span
-                    className="absolute -bottom-4 size-8 rounded-full bg-leaf-950/20 dark:bg-leaf-950/60 blur-xs motion-safe:animate-[pin-shadow_2.4s_ease-in-out_infinite]"
+                    className="absolute -bottom-4 size-8 rounded-full bg-leaf-950/60 blur-xs motion-safe:animate-[pin-shadow_2.4s_ease-in-out_infinite]"
                     aria-hidden="true"
                   />
 
@@ -512,23 +506,23 @@ export function LocationDetectionModal({
                 <div
                   className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold transition-colors duration-300 ${
                     accuracyTier === 'good'
-                      ? 'border-leaf-300/80 bg-leaf-50 text-leaf-800 dark:border-leaf-700/60 dark:bg-leaf-950/60 dark:text-leaf-200'
+                      ? 'border-leaf-500/50 bg-leaf-950/80 text-leaf-200'
                       : accuracyTier === 'okay'
-                        ? 'border-harvest-300/80 bg-harvest-50 text-harvest-800 dark:border-harvest-700/60 dark:bg-harvest-950/60 dark:text-harvest-200'
+                        ? 'border-harvest-500/50 bg-harvest-950/80 text-harvest-200'
                         : accuracyTier === 'poor'
-                          ? 'border-clay-300/80 bg-clay-50 text-clay-800 dark:border-clay-700/60 dark:bg-clay-950/60 dark:text-clay-200'
-                          : 'border-leaf-200/80 bg-leaf-50 text-leaf-800 dark:border-leaf-800/80 dark:bg-leaf-950/60 dark:text-leaf-300'
+                          ? 'border-clay-500/50 bg-clay-950/80 text-clay-200'
+                          : 'border-leaf-600/50 bg-leaf-950/80 text-leaf-200'
                   }`}
                 >
                   <span
                     className={`size-2 rounded-full ${
                       accuracyTier === 'good'
-                        ? 'bg-leaf-600 animate-pulse'
+                        ? 'bg-leaf-500 animate-pulse'
                         : accuracyTier === 'okay'
                           ? 'bg-harvest-500 animate-pulse'
                           : accuracyTier === 'poor'
                             ? 'bg-clay-500 animate-pulse'
-                            : 'bg-leaf-600 animate-pulse'
+                            : 'bg-leaf-500 animate-pulse'
                     }`}
                     aria-hidden="true"
                   />
@@ -543,7 +537,7 @@ export function LocationDetectionModal({
                 <div aria-live="polite" className="h-5 flex items-center justify-center">
                   <p
                     key={statusIndex}
-                    className="text-xs font-semibold tracking-wide text-leaf-800 dark:text-leaf-300 motion-safe:animate-[status-fade_2200ms_ease-in-out_both]"
+                    className="text-xs font-semibold tracking-wide text-leaf-200 motion-safe:animate-[status-fade_2200ms_ease-in-out_both]"
                   >
                     {(SEARCH_STATUS_STEPS[language] || SEARCH_STATUS_STEPS.en)[statusIndex]}
                   </p>
@@ -551,7 +545,7 @@ export function LocationDetectionModal({
 
                 {/* Smooth Filling Progress Bar */}
                 <div
-                  className="mt-1 w-48 sm:w-56 h-1 rounded-full bg-cream-200 dark:bg-leaf-950/80 overflow-hidden"
+                  className="mt-1 w-48 sm:w-56 h-1 rounded-full bg-leaf-950/90 border border-leaf-800/50 overflow-hidden"
                   role="progressbar"
                   aria-label="Detection progress"
                 >
@@ -570,7 +564,7 @@ export function LocationDetectionModal({
               <div className="relative flex items-center justify-center py-2">
                 {/* Short Ring Burst */}
                 <div
-                  className="pointer-events-none absolute size-16 rounded-full border-2 border-leaf-400/80 dark:border-leaf-300/80 motion-safe:animate-[ring-burst_600ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                  className="pointer-events-none absolute size-16 rounded-full border-2 border-leaf-300/80 motion-safe:animate-[ring-burst_600ms_cubic-bezier(0.16,1,0.3,1)_both]"
                   aria-hidden="true"
                 />
 
@@ -585,7 +579,7 @@ export function LocationDetectionModal({
                     style={{ '--confetti-xy': 'translate(-32px, -22px)' } as React.CSSProperties}
                   />
                   <span
-                    className="confetti-particle absolute size-2 rounded-full bg-leaf-600 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-400 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
                     style={{ '--confetti-xy': 'translate(32px, 18px)' } as React.CSSProperties}
                   />
                   <span
@@ -593,7 +587,7 @@ export function LocationDetectionModal({
                     style={{ '--confetti-xy': 'translate(-28px, 20px)' } as React.CSSProperties}
                   />
                   <span
-                    className="confetti-particle absolute size-2 rounded-full bg-leaf-400 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-300 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
                     style={{ '--confetti-xy': 'translate(0px, -36px)' } as React.CSSProperties}
                   />
                   <span
@@ -601,7 +595,7 @@ export function LocationDetectionModal({
                     style={{ '--confetti-xy': 'translate(0px, 34px)' } as React.CSSProperties}
                   />
                   <span
-                    className="confetti-particle absolute size-2 rounded-full bg-leaf-700 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-600 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
                     style={{ '--confetti-xy': 'translate(22px, 30px)' } as React.CSSProperties}
                   />
                   <span
@@ -611,36 +605,36 @@ export function LocationDetectionModal({
                 </div>
 
                 {/* Spring Bounce Check Circle */}
-                <div className="relative flex size-15 items-center justify-center rounded-2xl bg-leaf-100 dark:bg-leaf-900/60 text-leaf-800 dark:text-leaf-300 ring-8 ring-leaf-50 dark:ring-leaf-950/40 border border-leaf-200/80 dark:border-leaf-700/60 shadow-soft motion-safe:animate-[check-bounce_520ms_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                <div className="relative flex size-15 items-center justify-center rounded-2xl bg-leaf-900/70 text-leaf-300 ring-8 ring-leaf-950/50 border border-leaf-700/70 shadow-soft motion-safe:animate-[check-bounce_520ms_cubic-bezier(0.34,1.56,0.64,1)_both]">
                   <CheckCircle2 className="size-8 stroke-[2.5]" aria-hidden="true" />
                 </div>
               </div>
 
               {/* Location Details Card */}
-              <div className="rounded-2xl border border-cream-200 dark:border-leaf-900/60 bg-cream-50/80 dark:bg-leaf-950/40 p-4.5 sm:p-5 motion-safe:animate-[content-slide-up_450ms_cubic-bezier(0.16,1,0.3,1)_120ms_both]">
+              <div className="rounded-2xl border border-leaf-800/60 bg-leaf-950/70 backdrop-blur-xs p-4.5 sm:p-5 motion-safe:animate-[content-slide-up_450ms_cubic-bezier(0.16,1,0.3,1)_120ms_both]">
                 <div className="flex items-start gap-3.5">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-leaf-700 text-white shadow-soft">
                     <MapPin className="size-5" aria-hidden="true" />
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted dark:text-cream-300">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-cream-300">
                       {t('locModal.villageLabel')}
                     </span>
 
-                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-leaf-950 dark:text-cream-50 truncate mt-0.5">
+                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-white truncate mt-0.5">
                       {customVillage || detectedVillage || t('ui.nearby')}
                     </h3>
 
                     {(detectedDistrict || detectedState) && (
-                      <p className="text-xs sm:text-sm font-medium text-ink-muted dark:text-cream-300 mt-1 truncate">
+                      <p className="text-xs sm:text-sm font-medium text-cream-200 mt-1 truncate">
                         {[detectedDistrict, detectedState].filter(Boolean).join(', ')}
                       </p>
                     )}
 
                     {typeof accuracy === 'number' && (
-                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-leaf-900/70 border border-cream-200 dark:border-leaf-800 px-2.5 py-0.5 text-[11px] font-semibold text-leaf-800 dark:text-leaf-200 shadow-2xs">
-                        <Compass className="size-3 text-leaf-600 dark:text-leaf-400" aria-hidden="true" />
+                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-leaf-900/90 border border-leaf-700 px-2.5 py-0.5 text-[11px] font-semibold text-leaf-200 shadow-2xs">
+                        <Compass className="size-3 text-leaf-400" aria-hidden="true" />
                         <span>{t('locModal.accuracy', { meters: Math.round(accuracy) })}</span>
                       </div>
                     )}
@@ -665,7 +659,7 @@ export function LocationDetectionModal({
                   fullWidth
                   size="md"
                   onClick={handleEnterManually}
-                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100/70 dark:hover:bg-leaf-900/40"
+                  className="min-h-11 border-cream-200/30 text-white hover:bg-white/10 hover:border-cream-200/50"
                 >
                   {t('locModal.changeLocation')}
                 </Button>
@@ -679,15 +673,15 @@ export function LocationDetectionModal({
           {modalState === 'denied' && (
             <div className="py-4 space-y-4">
               <div className="flex items-center justify-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-8 ring-amber-50/50 dark:ring-amber-950/20 border border-amber-200/60 dark:border-amber-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-950/60 text-amber-300 ring-8 ring-amber-950/30 border border-amber-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
                   <MapPinOff className="size-7" aria-hidden="true" />
                 </div>
               </div>
 
               {/* Step-by-step permission instructions */}
-              <div className="rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/60 dark:bg-amber-950/30 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_80ms_both]">
-                <p className="font-bold text-amber-900 dark:text-amber-200">{t('locModal.howToEnable')}</p>
-                <ul className="space-y-1 text-amber-800 dark:text-amber-300/90 font-medium">
+              <div className="rounded-2xl border border-amber-800/60 bg-amber-950/50 p-4 text-xs text-amber-200 space-y-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_80ms_both]">
+                <p className="font-bold text-amber-200">{t('locModal.howToEnable')}</p>
+                <ul className="space-y-1 text-amber-100/90 font-medium">
                   <li>{t('locModal.enableStep1')}</li>
                   <li>{t('locModal.enableStep2')}</li>
                   <li>{t('locModal.enableStep3')}</li>
@@ -712,7 +706,7 @@ export function LocationDetectionModal({
                   fullWidth
                   size="md"
                   onClick={handleEnterManually}
-                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                  className="min-h-11 border-cream-200/30 text-white hover:bg-white/10 hover:border-cream-200/50"
                 >
                   {t('locModal.enterManually')}
                 </Button>
@@ -726,7 +720,7 @@ export function LocationDetectionModal({
           {modalState === 'timeout' && (
             <div className="py-4 space-y-4">
               <div className="flex items-center justify-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-harvest-50 dark:bg-harvest-950/40 text-harvest-700 dark:text-harvest-300 ring-8 ring-harvest-50/60 dark:ring-harvest-950/20 border border-harvest-200/80 dark:border-harvest-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-harvest-950/60 text-harvest-300 ring-8 ring-harvest-950/30 border border-harvest-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
                   <Compass className="size-7 animate-pulse" aria-hidden="true" />
                 </div>
               </div>
@@ -749,7 +743,7 @@ export function LocationDetectionModal({
                   fullWidth
                   size="md"
                   onClick={handleEnterManually}
-                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                  className="min-h-11 border-cream-200/30 text-white hover:bg-white/10 hover:border-cream-200/50"
                 >
                   {t('locModal.enterManually')}
                 </Button>
@@ -759,7 +753,7 @@ export function LocationDetectionModal({
                   fullWidth
                   size="sm"
                   onClick={onClose}
-                  className="text-ink-muted dark:text-cream-300 hover:text-ink dark:hover:text-cream-50"
+                  className="text-cream-200 hover:text-white hover:bg-white/10"
                 >
                   {t('locModal.cancel')}
                 </Button>
@@ -773,7 +767,7 @@ export function LocationDetectionModal({
           {modalState === 'unavailable' && (
             <div className="py-4 space-y-4">
               <div className="flex items-center justify-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-cream-100 dark:bg-leaf-950/40 text-ink-muted dark:text-cream-300 ring-8 ring-cream-50 dark:ring-leaf-950/20 border border-cream-200 dark:border-leaf-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-leaf-950/60 text-cream-200 ring-8 ring-leaf-950/30 border border-leaf-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
                   <AlertCircle className="size-7" aria-hidden="true" />
                 </div>
               </div>
@@ -796,7 +790,7 @@ export function LocationDetectionModal({
                   size="md"
                   onClick={startDetection}
                   icon={<RefreshCw className="size-4" />}
-                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                  className="min-h-11 border-cream-200/30 text-white hover:bg-white/10 hover:border-cream-200/50"
                 >
                   {t('locModal.tryAgain')}
                 </Button>
