@@ -37,6 +37,13 @@ export interface LocationDetectionModalProps {
 
 type ModalState = 'detecting' | 'success' | 'denied' | 'timeout' | 'unavailable'
 
+const SEARCH_STATUS_STEPS: Record<string, [string, string, string]> = {
+  en: ['Finding satellites…', 'Getting your location…', 'Finding your village…'],
+  kn: ['ಉಪಗ್ರಹಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…', 'ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ…', 'ನಿಮ್ಮ ಗ್ರಾಮವನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…'],
+  hi: ['उपग्रह खोज रहे हैं…', 'आपका स्थान प्राप्त कर रहे हैं…', 'आपका गांव खोज रहे हैं…'],
+  ta: ['செயற்கைக்கோள்களைத் தேடுகிறது…', 'உங்கள் இருப்பிடத்தைப் பெறுகிறது…', 'உங்கள் கிராமத்தைத் தேடுகிறது…'],
+}
+
 export function LocationDetectionModal({
   open,
   onClose,
@@ -58,6 +65,11 @@ export function LocationDetectionModal({
   const [detectedState, setDetectedState] = useState('')
   const [customVillage, setCustomVillage] = useState('')
 
+  // Visual enhancements state
+  const [bgLoaded, setBgLoaded] = useState(false)
+  const [bgError, setBgError] = useState(false)
+  const [statusIndex, setStatusIndex] = useState(0)
+
   const activeAbortRef = useRef<AbortController | null>(null)
   const timerRef = useRef<number | null>(null)
   const refineTimerRef = useRef<number | null>(null)
@@ -72,6 +84,15 @@ export function LocationDetectionModal({
     languageRef.current = language
     onCloseRef.current = onClose
   })
+
+  // Cycle search status text during detecting state
+  useEffect(() => {
+    if (modalState !== 'detecting') return
+    const interval = window.setInterval(() => {
+      setStatusIndex((prev) => (prev + 1) % 3)
+    }, 2200)
+    return () => window.clearInterval(interval)
+  }, [modalState])
 
   const stopGps = useCallback(() => {
     if (timerRef.current !== null) {
@@ -99,6 +120,7 @@ export function LocationDetectionModal({
   const startDetection = useCallback(() => {
     cleanup()
     setModalState('detecting')
+    setStatusIndex(0)
     setCoords(null)
     setAccuracy(null)
     setDetectedVillage('')
@@ -282,10 +304,24 @@ export function LocationDetectionModal({
     onEnterManually?.()
   }
 
+  const accuracyTier: 'none' | 'good' | 'okay' | 'poor' =
+    accuracy == null
+      ? 'none'
+      : accuracy <= 50
+        ? 'good'
+        : accuracy <= 150
+          ? 'okay'
+          : 'poor'
+
+  const accuracyRingPx =
+    accuracy != null
+      ? Math.min(124, Math.max(38, Math.round(36 + (accuracy / 150) * 76)))
+      : 96
+
   return createPortal(
     <div
       role="presentation"
-      className="hr-modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      className="hr-modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -296,321 +332,478 @@ export function LocationDetectionModal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="w-full max-w-md overflow-hidden rounded-t-3xl border border-cream-200 bg-white p-6 shadow-lift transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:animate-[apple-sheet-in_320ms_cubic-bezier(0.16,1,0.3,1)] sm:rounded-3xl sm:p-7"
+        className="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-cream-200 bg-white p-6 shadow-lift transition-all motion-safe:animate-[modal-mobile-in_340ms_cubic-bezier(0.16,1,0.3,1)_both] sm:rounded-3xl sm:p-7 sm:motion-safe:animate-[modal-desktop-in_250ms_cubic-bezier(0.16,1,0.3,1)_both] dark:border-leaf-900/60 dark:bg-[#151d18]"
       >
-        {/* Header with Title and Close Button */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 id={titleId} className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-ink">
-              {modalState === 'detecting' && t('locModal.findingTitle')}
-              {modalState === 'success' && t('locModal.foundTitle')}
-              {modalState === 'denied' && t('locModal.deniedTitle')}
-              {modalState === 'timeout' && t('locModal.timeoutTitle')}
-              {modalState === 'unavailable' && t('farmer.locationUnsupported')}
-            </h2>
-            <p id={descId} className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
-              {modalState === 'detecting' && t('locModal.findingDesc')}
-              {modalState === 'success' && t('locModal.foundSubtitle')}
-              {modalState === 'denied' && t('locModal.deniedDesc')}
-              {modalState === 'timeout' && t('locModal.timeoutDesc')}
-              {modalState === 'unavailable' && t('farmer.locationUnsupported')}
-            </p>
-          </div>
-
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-cream-100 hover:text-ink active:scale-95 cursor-pointer"
-            aria-label={t('common.cancel')}
-          >
-            <X className="size-5" aria-hidden="true" />
-          </button>
+        {/* Lazy-loaded map background with smooth fallback and WCAG AA brand gradient overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-t-3xl sm:rounded-3xl z-0"
+          aria-hidden="true"
+        >
+          {!bgError && (
+            <img
+              src="/location-map-bg.webp"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setBgLoaded(true)}
+              onError={() => setBgError(true)}
+              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,filter,transform] duration-700 ${
+                bgLoaded ? 'opacity-30 dark:opacity-20' : 'opacity-0'
+              } ${
+                modalState === 'detecting'
+                  ? 'motion-safe:animate-[bg-drift-zoom_20s_ease-in-out_infinite_alternate]'
+                  : modalState === 'success'
+                    ? 'motion-safe:animate-[bg-success-zoom_600ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
+                    : 'filter grayscale brightness-75 opacity-15'
+              }`}
+            />
+          )}
+          {/* Soft gradient overlay (brand color at 60-80% opacity) guaranteeing text and buttons stay readable */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-cream-50/80 to-white/95 dark:from-ink/90 dark:via-[#131b16]/85 dark:to-ink/95" />
         </div>
 
-        {/* ------------------------------------------------------------- */}
-        {/* STATE 1: DETECTING (Animated Radar GPS Tech Illustration)     */}
-        {/* ------------------------------------------------------------- */}
-        {modalState === 'detecting' && (
-          <div className="py-6 sm:py-7 flex flex-col items-center">
-            {/* Circular Radar Canvas */}
-            <div className="relative flex size-52 sm:size-60 items-center justify-center rounded-full bg-gradient-to-b from-cream-100/90 via-leaf-50/50 to-cream-100/90 border border-leaf-200/80 shadow-inner overflow-hidden">
-              {/* Concentric rings */}
-              <div className="absolute size-[86%] rounded-full border border-dashed border-leaf-300/40" />
-              <div className="absolute size-[58%] rounded-full border border-leaf-400/40" />
-              <div className="absolute size-[32%] rounded-full border border-leaf-500/50 bg-leaf-50/40" />
+        {/* Modal Interactive Content */}
+        <div className="relative z-10">
+          {/* Header with Title and Close Button */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2
+                id={titleId}
+                className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-ink dark:text-cream-50"
+              >
+                {modalState === 'detecting' && t('locModal.findingTitle')}
+                {modalState === 'success' && t('locModal.foundTitle')}
+                {modalState === 'denied' && t('locModal.deniedTitle')}
+                {modalState === 'timeout' && t('locModal.timeoutTitle')}
+                {modalState === 'unavailable' && t('farmer.locationUnsupported')}
+              </h2>
+              <p
+                id={descId}
+                className="mt-1 text-xs sm:text-sm text-ink-muted dark:text-cream-300 leading-relaxed"
+              >
+                {modalState === 'detecting' && t('locModal.findingDesc')}
+                {modalState === 'success' && t('locModal.foundSubtitle')}
+                {modalState === 'denied' && t('locModal.deniedDesc')}
+                {modalState === 'timeout' && t('locModal.timeoutDesc')}
+                {modalState === 'unavailable' && t('farmer.locationUnsupported')}
+              </p>
+            </div>
 
-              {/* Lat/Long Crosshair axes */}
-              <div className="absolute h-px w-full bg-leaf-200/60" />
-              <div className="absolute h-full w-px bg-leaf-200/60" />
+            <button
+              ref={closeRef}
+              type="button"
+              onClick={onClose}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted dark:text-cream-300 transition-colors hover:bg-cream-100 dark:hover:bg-leaf-900/50 hover:text-ink dark:hover:text-cream-50 active:scale-95 cursor-pointer"
+              aria-label={t('common.cancel')}
+            >
+              <X className="size-5" aria-hidden="true" />
+            </button>
+          </div>
 
-              {/* Rotating Radar Sweep Cone */}
-              <div
-                className="pointer-events-none absolute inset-0 rounded-full motion-safe:animate-[radar-sweep_3.5s_linear_infinite]"
-                style={{
-                  background:
-                    'conic-gradient(from 0deg at 50% 50%, rgba(23, 107, 69, 0.22) 0deg, rgba(23, 107, 69, 0) 65deg, transparent 360deg)',
-                }}
-              />
+          {/* ------------------------------------------------------------- */}
+          {/* STATE 1: DETECTING (Animated Radar GPS Tech Illustration)     */}
+          {/* ------------------------------------------------------------- */}
+          {modalState === 'detecting' && (
+            <div className="py-5 sm:py-6 flex flex-col items-center">
+              {/* Circular Radar Canvas */}
+              <div className="relative flex size-52 sm:size-58 items-center justify-center rounded-full bg-gradient-to-b from-cream-100/90 via-leaf-50/50 to-cream-100/90 dark:from-leaf-950/80 dark:via-leaf-900/50 dark:to-leaf-950/80 border border-leaf-200/80 dark:border-leaf-700/60 shadow-inner overflow-hidden">
+                {/* Concentric grid lines */}
+                <div className="pointer-events-none absolute size-[86%] rounded-full border border-dashed border-leaf-300/40 dark:border-leaf-700/40" />
+                <div className="pointer-events-none absolute size-[58%] rounded-full border border-leaf-400/40 dark:border-leaf-600/40" />
+                <div className="pointer-events-none absolute size-[32%] rounded-full border border-leaf-500/50 bg-leaf-50/40 dark:border-leaf-500/40 dark:bg-leaf-900/30" />
 
-              {/* Expanding Ripple Waves */}
-              <div className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/60 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]" />
-              <div
-                className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/50 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]"
-                style={{ animationDelay: '900ms' }}
-              />
-              <div
-                className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/40 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]"
-                style={{ animationDelay: '1800ms' }}
-              />
+                {/* Lat/Long Crosshair axes */}
+                <div className="pointer-events-none absolute h-px w-full bg-leaf-200/60 dark:bg-leaf-800/60" />
+                <div className="pointer-events-none absolute h-full w-px bg-leaf-200/60 dark:bg-leaf-800/60" />
 
-              {/* Surrounding Location Dots (Simulating nearby village points) */}
-              <span
-                className="absolute top-10 left-12 size-2.5 rounded-full bg-harvest-400 shadow-xs motion-safe:animate-[satellite-pulse_2.2s_ease-in-out_infinite]"
-                style={{ animationDelay: '300ms' }}
-                aria-hidden="true"
-              />
-              <span
-                className="absolute bottom-11 right-12 size-2 rounded-full bg-leaf-600 shadow-xs motion-safe:animate-[satellite-pulse_2.2s_ease-in-out_infinite]"
-                style={{ animationDelay: '800ms' }}
-                aria-hidden="true"
-              />
-              <span
-                className="absolute top-14 right-10 size-1.5 rounded-full bg-leaf-700 shadow-xs motion-safe:animate-[satellite-pulse_2.2s_ease-in-out_infinite]"
-                style={{ animationDelay: '1400ms' }}
-                aria-hidden="true"
-              />
-              <span
-                className="absolute bottom-14 left-10 size-2 rounded-full bg-harvest-500 shadow-xs motion-safe:animate-[satellite-pulse_2.2s_ease-in-out_infinite]"
-                style={{ animationDelay: '1900ms' }}
-                aria-hidden="true"
-              />
+                {/* 3 Soft Pulsing Radar Rings */}
+                <div className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/60 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]" />
+                <div
+                  className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/50 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]"
+                  style={{ animationDelay: '900ms' }}
+                />
+                <div
+                  className="pointer-events-none absolute size-28 rounded-full border border-leaf-500/40 motion-safe:animate-[radar-ripple_2.8s_cubic-bezier(0.16,1,0.3,1)_infinite]"
+                  style={{ animationDelay: '1800ms' }}
+                />
 
-              {/* Center Beacon Disk with Elevation & Shadow */}
-              <div className="relative flex items-center justify-center z-10">
-                {/* Simulated 3D Ground Shadow */}
+                {/* Rotating Radar Sweep Cone */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-full motion-safe:animate-[radar-sweep_4s_linear_infinite]"
+                  style={{
+                    background:
+                      'conic-gradient(from 0deg at 50% 50%, rgba(23, 107, 69, 0.25) 0deg, rgba(23, 107, 69, 0) 65deg, transparent 360deg)',
+                  }}
+                />
+
+                {/* Dynamic Accuracy Ring shrinking smoothly as GPS fix sharpens */}
+                <div
+                  className="pointer-events-none absolute rounded-full border border-dashed transition-[width,height,border-color,background-color] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{
+                    width: `${accuracyRingPx}px`,
+                    height: `${accuracyRingPx}px`,
+                    borderColor:
+                      accuracyTier === 'good'
+                        ? 'rgba(34, 128, 83, 0.7)'
+                        : accuracyTier === 'okay'
+                          ? 'rgba(232, 184, 74, 0.75)'
+                          : accuracyTier === 'poor'
+                            ? 'rgba(239, 68, 68, 0.65)'
+                            : 'rgba(34, 128, 83, 0.45)',
+                    backgroundColor:
+                      accuracyTier === 'good'
+                        ? 'rgba(34, 128, 83, 0.08)'
+                        : accuracyTier === 'okay'
+                          ? 'rgba(232, 184, 74, 0.08)'
+                          : accuracyTier === 'poor'
+                            ? 'rgba(239, 68, 68, 0.08)'
+                            : 'transparent',
+                  }}
+                />
+
+                {/* Staggered Nearby Village Dots appearing one by one */}
                 <span
-                  className="absolute -bottom-4 size-8 rounded-full bg-leaf-950/20 blur-xs motion-safe:animate-[pin-shadow_2.4s_ease-in-out_infinite]"
+                  className="absolute top-10 left-12 size-2.5 rounded-full bg-harvest-400 shadow-xs motion-safe:animate-[village-dot-appear_3.2s_ease-in-out_infinite]"
+                  style={{ animationDelay: '400ms' }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute top-14 right-11 size-2 rounded-full bg-leaf-500 shadow-xs motion-safe:animate-[village-dot-appear_3.2s_ease-in-out_infinite]"
+                  style={{ animationDelay: '1200ms' }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute bottom-12 right-14 size-2.5 rounded-full bg-harvest-500 shadow-xs motion-safe:animate-[village-dot-appear_3.2s_ease-in-out_infinite]"
+                  style={{ animationDelay: '2000ms' }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute bottom-14 left-10 size-2 rounded-full bg-leaf-600 shadow-xs motion-safe:animate-[village-dot-appear_3.2s_ease-in-out_infinite]"
+                  style={{ animationDelay: '2800ms' }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute top-24 left-7 size-1.5 rounded-full bg-leaf-400 shadow-xs motion-safe:animate-[village-dot-appear_3.2s_ease-in-out_infinite]"
+                  style={{ animationDelay: '3600ms' }}
                   aria-hidden="true"
                 />
 
-                {/* Floating GPS Teardrop Pin */}
-                <div className="motion-safe:animate-[pin-float_2.4s_ease-in-out_infinite] flex flex-col items-center">
-                  <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-leaf-700 to-leaf-900 text-white shadow-lift ring-4 ring-leaf-600/30">
-                    <Navigation2 className="size-5 text-harvest-300" aria-hidden="true" />
+                {/* Center Beacon Disk with Elevation & Shadow */}
+                <div className="relative flex items-center justify-center z-10">
+                  {/* Simulated Ground Shadow that expands and contracts */}
+                  <span
+                    className="absolute -bottom-4 size-8 rounded-full bg-leaf-950/20 dark:bg-leaf-950/60 blur-xs motion-safe:animate-[pin-shadow_2.4s_ease-in-out_infinite]"
+                    aria-hidden="true"
+                  />
+
+                  {/* Floating GPS Teardrop Pin */}
+                  <div className="motion-safe:animate-[pin-float_2.4s_ease-in-out_infinite] flex flex-col items-center">
+                    <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-leaf-700 to-leaf-900 text-white shadow-lift ring-4 ring-leaf-600/30">
+                      <Navigation2 className="size-5 text-harvest-300" aria-hidden="true" />
+                    </div>
+                    <div className="size-2 rounded-full bg-leaf-800 -mt-1" />
                   </div>
-                  <div className="size-2 rounded-full bg-leaf-800 -mt-1" />
+                </div>
+              </div>
+
+              {/* Status & Accuracy Feedback */}
+              <div className="mt-5 flex flex-col items-center gap-2">
+                {/* Live GPS / Accuracy Badge */}
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold transition-colors duration-300 ${
+                    accuracyTier === 'good'
+                      ? 'border-leaf-300/80 bg-leaf-50 text-leaf-800 dark:border-leaf-700/60 dark:bg-leaf-950/60 dark:text-leaf-200'
+                      : accuracyTier === 'okay'
+                        ? 'border-harvest-300/80 bg-harvest-50 text-harvest-800 dark:border-harvest-700/60 dark:bg-harvest-950/60 dark:text-harvest-200'
+                        : accuracyTier === 'poor'
+                          ? 'border-clay-300/80 bg-clay-50 text-clay-800 dark:border-clay-700/60 dark:bg-clay-950/60 dark:text-clay-200'
+                          : 'border-leaf-200/80 bg-leaf-50 text-leaf-800 dark:border-leaf-800/80 dark:bg-leaf-950/60 dark:text-leaf-300'
+                  }`}
+                >
+                  <span
+                    className={`size-2 rounded-full ${
+                      accuracyTier === 'good'
+                        ? 'bg-leaf-600 animate-pulse'
+                        : accuracyTier === 'okay'
+                          ? 'bg-harvest-500 animate-pulse'
+                          : accuracyTier === 'poor'
+                            ? 'bg-clay-500 animate-pulse'
+                            : 'bg-leaf-600 animate-pulse'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {accuracy != null
+                      ? `Accuracy ±${Math.round(accuracy)} m`
+                      : t('locModal.gpsActive')}
+                  </span>
+                </div>
+
+                {/* Status Text Fading Smoothly Between Steps */}
+                <div aria-live="polite" className="h-5 flex items-center justify-center">
+                  <p
+                    key={statusIndex}
+                    className="text-xs font-semibold tracking-wide text-leaf-800 dark:text-leaf-300 motion-safe:animate-[status-fade_2200ms_ease-in-out_both]"
+                  >
+                    {(SEARCH_STATUS_STEPS[language] || SEARCH_STATUS_STEPS.en)[statusIndex]}
+                  </p>
+                </div>
+
+                {/* Smooth Filling Progress Bar */}
+                <div
+                  className="mt-1 w-48 sm:w-56 h-1 rounded-full bg-cream-200 dark:bg-leaf-950/80 overflow-hidden"
+                  role="progressbar"
+                  aria-label="Detection progress"
+                >
+                  <div className="h-full rounded-full bg-gradient-to-r from-leaf-500 via-harvest-400 to-leaf-600 motion-safe:animate-[radar-progress_9s_cubic-bezier(0.1,0.5,0.2,1)_forwards]" />
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Live GPS Status Pill */}
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-leaf-50 border border-leaf-200/80 px-3.5 py-1 text-xs font-bold text-leaf-800">
-              <span className="size-2 rounded-full bg-leaf-600 animate-pulse" aria-hidden="true" />
-              <span>{t('locModal.gpsActive')}</span>
-            </div>
-          </div>
-        )}
+          {/* ------------------------------------------------------------- */}
+          {/* STATE 2: SUCCESS (Location Resolved & Reviewable)              */}
+          {/* ------------------------------------------------------------- */}
+          {modalState === 'success' && (
+            <div className="py-4 space-y-4">
+              {/* Visual Success Indicator with Spring Bounce, Ring Burst, and Confetti Dots */}
+              <div className="relative flex items-center justify-center py-2">
+                {/* Short Ring Burst */}
+                <div
+                  className="pointer-events-none absolute size-16 rounded-full border-2 border-leaf-400/80 dark:border-leaf-300/80 motion-safe:animate-[ring-burst_600ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                  aria-hidden="true"
+                />
 
-        {/* ------------------------------------------------------------- */}
-        {/* STATE 2: SUCCESS (Location Resolved & Reviewable)              */}
-        {/* ------------------------------------------------------------- */}
-        {modalState === 'success' && (
-          <div className="py-4 space-y-4 motion-safe:animate-[success-pop_380ms_cubic-bezier(0.16,1,0.3,1)]">
-            {/* Visual Success Indicator */}
-            <div className="flex items-center justify-center">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-leaf-100 text-leaf-800 ring-8 ring-leaf-50">
-                <CheckCircle2 className="size-7 stroke-[2.5]" aria-hidden="true" />
+                {/* Confetti Dots Burst */}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                  <span
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-500 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(30px, -24px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-1.5 rounded-full bg-harvest-400 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(-32px, -22px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-600 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(32px, 18px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-1.5 rounded-full bg-harvest-500 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(-28px, 20px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-400 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(0px, -36px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-1.5 rounded-full bg-harvest-300 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(0px, 34px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-2 rounded-full bg-leaf-700 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(22px, 30px)' } as React.CSSProperties}
+                  />
+                  <span
+                    className="confetti-particle absolute size-1.5 rounded-full bg-harvest-600 motion-safe:animate-[confetti-burst_650ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                    style={{ '--confetti-xy': 'translate(-24px, -32px)' } as React.CSSProperties}
+                  />
+                </div>
+
+                {/* Spring Bounce Check Circle */}
+                <div className="relative flex size-15 items-center justify-center rounded-2xl bg-leaf-100 dark:bg-leaf-900/60 text-leaf-800 dark:text-leaf-300 ring-8 ring-leaf-50 dark:ring-leaf-950/40 border border-leaf-200/80 dark:border-leaf-700/60 shadow-soft motion-safe:animate-[check-bounce_520ms_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                  <CheckCircle2 className="size-8 stroke-[2.5]" aria-hidden="true" />
+                </div>
               </div>
-            </div>
 
-            {/* Location Details Card */}
-            <div className="rounded-2xl border border-cream-200 bg-cream-50/70 p-4.5 sm:p-5">
-              <div className="flex items-start gap-3.5">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-leaf-700 text-white shadow-soft">
-                  <MapPin className="size-5" aria-hidden="true" />
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted">
-                    {t('locModal.villageLabel')}
+              {/* Location Details Card */}
+              <div className="rounded-2xl border border-cream-200 dark:border-leaf-900/60 bg-cream-50/80 dark:bg-leaf-950/40 p-4.5 sm:p-5 motion-safe:animate-[content-slide-up_450ms_cubic-bezier(0.16,1,0.3,1)_120ms_both]">
+                <div className="flex items-start gap-3.5">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-leaf-700 text-white shadow-soft">
+                    <MapPin className="size-5" aria-hidden="true" />
                   </span>
 
-                  <h3 className="font-display text-lg sm:text-xl font-extrabold text-leaf-950 truncate mt-0.5">
-                    {customVillage || detectedVillage || t('ui.nearby')}
-                  </h3>
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted dark:text-cream-300">
+                      {t('locModal.villageLabel')}
+                    </span>
 
-                  {(detectedDistrict || detectedState) && (
-                    <p className="text-xs sm:text-sm font-medium text-ink-muted mt-1 truncate">
-                      {[detectedDistrict, detectedState].filter(Boolean).join(', ')}
-                    </p>
-                  )}
+                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-leaf-950 dark:text-cream-50 truncate mt-0.5">
+                      {customVillage || detectedVillage || t('ui.nearby')}
+                    </h3>
 
-                  {typeof accuracy === 'number' && (
-                    <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white border border-cream-200 px-2.5 py-0.5 text-[11px] font-semibold text-leaf-800 shadow-2xs">
-                      <Compass className="size-3 text-leaf-600" aria-hidden="true" />
-                      <span>{t('locModal.accuracy', { meters: Math.round(accuracy) })}</span>
-                    </div>
-                  )}
+                    {(detectedDistrict || detectedState) && (
+                      <p className="text-xs sm:text-sm font-medium text-ink-muted dark:text-cream-300 mt-1 truncate">
+                        {[detectedDistrict, detectedState].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+
+                    {typeof accuracy === 'number' && (
+                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-leaf-900/70 border border-cream-200 dark:border-leaf-800 px-2.5 py-0.5 text-[11px] font-semibold text-leaf-800 dark:text-leaf-200 shadow-2xs">
+                        <Compass className="size-3 text-leaf-600 dark:text-leaf-400" aria-hidden="true" />
+                        <span>{t('locModal.accuracy', { meters: Math.round(accuracy) })}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-2 pt-2">
-              <Button
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={handleConfirm}
-                className="min-h-12 text-base font-bold shadow-soft"
-              >
-                {t('locModal.confirm')}
-              </Button>
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2 motion-safe:animate-[content-slide-up_450ms_cubic-bezier(0.16,1,0.3,1)_200ms_both]">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={handleConfirm}
+                  className="min-h-12 text-base font-bold shadow-soft"
+                >
+                  {t('locModal.confirm')}
+                </Button>
 
-              <Button
-                variant="outline"
-                fullWidth
-                size="md"
-                onClick={handleEnterManually}
-                className="min-h-11 border-cream-200 text-ink hover:bg-cream-100/70"
-              >
-                {t('locModal.changeLocation')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------- */}
-        {/* STATE 3: PERMISSION DENIED                                    */}
-        {/* ------------------------------------------------------------- */}
-        {modalState === 'denied' && (
-          <div className="py-4 space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 ring-8 ring-amber-50/50 border border-amber-200/60">
-                <MapPinOff className="size-7" aria-hidden="true" />
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="md"
+                  onClick={handleEnterManually}
+                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100/70 dark:hover:bg-leaf-900/40"
+                >
+                  {t('locModal.changeLocation')}
+                </Button>
               </div>
             </div>
+          )}
 
-            {/* Step-by-step permission instructions */}
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-amber-950 space-y-2">
-              <p className="font-bold text-amber-900">{t('locModal.howToEnable')}</p>
-              <ul className="space-y-1 text-amber-800 font-medium">
-                <li>{t('locModal.enableStep1')}</li>
-                <li>{t('locModal.enableStep2')}</li>
-                <li>{t('locModal.enableStep3')}</li>
-              </ul>
-            </div>
+          {/* ------------------------------------------------------------- */}
+          {/* STATE 3: PERMISSION DENIED                                    */}
+          {/* ------------------------------------------------------------- */}
+          {modalState === 'denied' && (
+            <div className="py-4 space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-8 ring-amber-50/50 dark:ring-amber-950/20 border border-amber-200/60 dark:border-amber-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                  <MapPinOff className="size-7" aria-hidden="true" />
+                </div>
+              </div>
 
-            {/* Actions */}
-            <div className="space-y-2 pt-2">
-              <Button
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={startDetection}
-                icon={<RefreshCw className="size-4" />}
-                className="min-h-12 text-base font-bold shadow-soft"
-              >
-                {t('locModal.tryAgain')}
-              </Button>
+              {/* Step-by-step permission instructions */}
+              <div className="rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/60 dark:bg-amber-950/30 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_80ms_both]">
+                <p className="font-bold text-amber-900 dark:text-amber-200">{t('locModal.howToEnable')}</p>
+                <ul className="space-y-1 text-amber-800 dark:text-amber-300/90 font-medium">
+                  <li>{t('locModal.enableStep1')}</li>
+                  <li>{t('locModal.enableStep2')}</li>
+                  <li>{t('locModal.enableStep3')}</li>
+                </ul>
+              </div>
 
-              <Button
-                variant="outline"
-                fullWidth
-                size="md"
-                onClick={handleEnterManually}
-                className="min-h-11 border-cream-200 text-ink hover:bg-cream-100"
-              >
-                {t('locModal.enterManually')}
-              </Button>
-            </div>
-          </div>
-        )}
+              {/* Actions */}
+              <div className="space-y-2 pt-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_160ms_both]">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={startDetection}
+                  icon={<RefreshCw className="size-4" />}
+                  className="min-h-12 text-base font-bold shadow-soft"
+                >
+                  {t('locModal.tryAgain')}
+                </Button>
 
-        {/* ------------------------------------------------------------- */}
-        {/* STATE 4: TIMEOUT                                              */}
-        {/* ------------------------------------------------------------- */}
-        {modalState === 'timeout' && (
-          <div className="py-4 space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-harvest-50 text-harvest-700 ring-8 ring-harvest-50/60 border border-harvest-200/80">
-                <Compass className="size-7 animate-pulse" aria-hidden="true" />
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="md"
+                  onClick={handleEnterManually}
+                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                >
+                  {t('locModal.enterManually')}
+                </Button>
               </div>
             </div>
+          )}
 
-            {/* Actions */}
-            <div className="space-y-2 pt-2">
-              <Button
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={startDetection}
-                icon={<RefreshCw className="size-4" />}
-                className="min-h-12 text-base font-bold shadow-soft"
-              >
-                {t('locModal.tryAgain')}
-              </Button>
+          {/* ------------------------------------------------------------- */}
+          {/* STATE 4: TIMEOUT                                              */}
+          {/* ------------------------------------------------------------- */}
+          {modalState === 'timeout' && (
+            <div className="py-4 space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-harvest-50 dark:bg-harvest-950/40 text-harvest-700 dark:text-harvest-300 ring-8 ring-harvest-50/60 dark:ring-harvest-950/20 border border-harvest-200/80 dark:border-harvest-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                  <Compass className="size-7 animate-pulse" aria-hidden="true" />
+                </div>
+              </div>
 
-              <Button
-                variant="outline"
-                fullWidth
-                size="md"
-                onClick={handleEnterManually}
-                className="min-h-11 border-cream-200 text-ink hover:bg-cream-100"
-              >
-                {t('locModal.enterManually')}
-              </Button>
+              {/* Actions */}
+              <div className="space-y-2 pt-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_120ms_both]">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={startDetection}
+                  icon={<RefreshCw className="size-4" />}
+                  className="min-h-12 text-base font-bold shadow-soft"
+                >
+                  {t('locModal.tryAgain')}
+                </Button>
 
-              <Button
-                variant="ghost"
-                fullWidth
-                size="sm"
-                onClick={onClose}
-                className="text-ink-muted hover:text-ink"
-              >
-                {t('locModal.cancel')}
-              </Button>
-            </div>
-          </div>
-        )}
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="md"
+                  onClick={handleEnterManually}
+                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                >
+                  {t('locModal.enterManually')}
+                </Button>
 
-        {/* ------------------------------------------------------------- */}
-        {/* STATE 5: UNAVAILABLE                                          */}
-        {/* ------------------------------------------------------------- */}
-        {modalState === 'unavailable' && (
-          <div className="py-4 space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-cream-100 text-ink-muted ring-8 ring-cream-50 border border-cream-200">
-                <AlertCircle className="size-7" aria-hidden="true" />
+                <Button
+                  variant="ghost"
+                  fullWidth
+                  size="sm"
+                  onClick={onClose}
+                  className="text-ink-muted dark:text-cream-300 hover:text-ink dark:hover:text-cream-50"
+                >
+                  {t('locModal.cancel')}
+                </Button>
               </div>
             </div>
+          )}
 
-            {/* Actions */}
-            <div className="space-y-2 pt-2">
-              <Button
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={handleEnterManually}
-                className="min-h-12 text-base font-bold shadow-soft"
-              >
-                {t('locModal.enterManually')}
-              </Button>
+          {/* ------------------------------------------------------------- */}
+          {/* STATE 5: UNAVAILABLE                                          */}
+          {/* ------------------------------------------------------------- */}
+          {modalState === 'unavailable' && (
+            <div className="py-4 space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-cream-100 dark:bg-leaf-950/40 text-ink-muted dark:text-cream-300 ring-8 ring-cream-50 dark:ring-leaf-950/20 border border-cream-200 dark:border-leaf-800/60 motion-safe:animate-[soft-shake_400ms_ease-in-out_both]">
+                  <AlertCircle className="size-7" aria-hidden="true" />
+                </div>
+              </div>
 
-              <Button
-                variant="outline"
-                fullWidth
-                size="md"
-                onClick={startDetection}
-                icon={<RefreshCw className="size-4" />}
-                className="min-h-11 border-cream-200 text-ink hover:bg-cream-100"
-              >
-                {t('locModal.tryAgain')}
-              </Button>
+              {/* Actions */}
+              <div className="space-y-2 pt-2 motion-safe:animate-[content-slide-up_350ms_cubic-bezier(0.16,1,0.3,1)_120ms_both]">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={handleEnterManually}
+                  className="min-h-12 text-base font-bold shadow-soft"
+                >
+                  {t('locModal.enterManually')}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="md"
+                  onClick={startDetection}
+                  icon={<RefreshCw className="size-4" />}
+                  className="min-h-11 border-cream-200 dark:border-leaf-800 text-ink dark:text-cream-100 hover:bg-cream-100 dark:hover:bg-leaf-900/40"
+                >
+                  {t('locModal.tryAgain')}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>,
     document.body,

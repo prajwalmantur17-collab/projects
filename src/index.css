@@ -579,6 +579,194 @@ a[role="button"]:active:not(:disabled) {
   }
 }
 
+/* Mobile bottom-sheet entrance with slight overshoot */
+@keyframes modal-mobile-in {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  75% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Desktop modal entrance with scale & subtle fade */
+@keyframes modal-desktop-in {
+  0% {
+    transform: scale(0.93);
+    opacity: 0;
+  }
+  75% {
+    transform: scale(1.01);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Background image slow camera drift & zoom */
+@keyframes bg-drift-zoom {
+  0% {
+    transform: scale(1.04) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate(-1.5%, -1%);
+  }
+  100% {
+    transform: scale(1.08) translate(1%, -1.5%);
+  }
+}
+
+/* Background image success zoom & sharpen */
+@keyframes bg-success-zoom {
+  0% {
+    transform: scale(1.08);
+    filter: brightness(1) contrast(1);
+  }
+  50% {
+    transform: scale(1.2);
+    filter: brightness(1.1) contrast(1.06);
+  }
+  100% {
+    transform: scale(1.16);
+    filter: brightness(1.04) contrast(1.02);
+  }
+}
+
+/* Success checkmark spring bounce */
+@keyframes check-bounce {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Success ring burst */
+@keyframes ring-burst {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Confetti particles burst */
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: var(--confetti-xy) scale(0.65);
+    opacity: 0;
+  }
+}
+
+/* Soft shake on error icons */
+@keyframes soft-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-4px);
+  }
+  40%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Content slide-up & fade-in */
+@keyframes content-slide-up {
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Status text crossfade */
+@keyframes status-fade {
+  0% {
+    transform: translateY(3px);
+    opacity: 0;
+  }
+  15%, 85% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-3px);
+    opacity: 0;
+  }
+}
+
+/* Radar search progress bar */
+@keyframes radar-progress {
+  0% {
+    width: 4%;
+  }
+  30% {
+    width: 42%;
+  }
+  65% {
+    width: 76%;
+  }
+  100% {
+    width: 96%;
+  }
+}
+
+/* Village satellite dots appearing in sequence */
+@keyframes village-dot-appear {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  75% {
+    transform: scale(1.2);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
 /* Global Accessibility: Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -588,5 +776,9 @@ a[role="button"]:active:not(:disabled) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .confetti-particle {
+    display: none !important;
   }
 }
