@@ -267,49 +267,64 @@ export async function reverseGeocode(
     const acceptLang = language === 'kn' ? 'kn,en' : language === 'hi' ? 'hi,en' : 'en'
     const bdcLang = language === 'kn' ? 'kn' : language === 'hi' ? 'hi' : 'en'
 
-    // 1. Try OpenStreetMap Nominatim with 2.5s timeout
-    let nominatimResult: ReverseGeocodeResult | null = null
-    const nomController = new AbortController()
-    const onAbortNom = () => nomController.abort()
-    signal?.addEventListener('abort', onAbortNom, { once: true })
-    const nomTimer = setTimeout(() => nomController.abort(), 2500)
+    // 1. Primary: Try serverless /api/geocode endpoint in browser, or direct Nominatim OSM
+    let primaryResult: ReverseGeocodeResult | null = null
+    const primaryController = new AbortController()
+    const onAbortPrimary = () => primaryController.abort()
+    signal?.addEventListener('abort', onAbortPrimary, { once: true })
+    const primaryTimer = setTimeout(() => primaryController.abort(), 3500)
 
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=${acceptLang}`
+      // In browser: call same-origin /api/geocode (runs on server without CORS/403 blocks)
+      // In tests/Node: call Nominatim directly or test mock
+      const isClientBrowser = typeof window !== 'undefined' && Boolean(window.location?.host)
+      const url = isClientBrowser
+        ? `/api/geocode?lat=${latitude}&lon=${longitude}&lang=${language}`
+        : `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=${acceptLang}`
+
       const res = await fetch(url, {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'HarvestRentalsApp/1.0',
-          'Accept-Language': acceptLang,
-        },
-        signal: nomController.signal,
+        headers: { Accept: 'application/json' },
+        signal: primaryController.signal,
       })
 
       if (res.ok) {
         const data = await res.json()
-        const addr = data.address || {}
-        const rawVillage =
-          addr.village ||
-          addr.hamlet ||
-          addr.isolated_dwelling ||
-          addr.neighbourhood ||
-          addr.residential ||
-          addr.quarter ||
-          addr.suburb ||
-          addr.locality ||
-          addr.town ||
-          addr.city_district ||
-          addr.city ||
-          addr.county ||
-          ''
-        const rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
-        const rawState = addr.state || ''
+        let rawVillage = ''
+        let rawDistrict = ''
+        let rawState = ''
+
+        if (data && typeof data === 'object') {
+          if ('address' in data && data.address) {
+            const addr = data.address as Record<string, string>
+            rawVillage =
+              addr.village ||
+              addr.hamlet ||
+              addr.isolated_dwelling ||
+              addr.neighbourhood ||
+              addr.residential ||
+              addr.quarter ||
+              addr.suburb ||
+              addr.locality ||
+              addr.town ||
+              addr.city_district ||
+              addr.city ||
+              addr.county ||
+              ''
+            rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
+            rawState = addr.state || ''
+          } else if ('village' in data || 'district' in data) {
+            const d = data as { village?: string; district?: string; state?: string }
+            rawVillage = d.village || d.district || ''
+            rawDistrict = cleanDistrict(d.district || d.village || '')
+            rawState = d.state || ''
+          }
+        }
 
         if (rawVillage || rawDistrict) {
           const village = normalizePlaceName(rawVillage || rawDistrict, language)
           const district = normalizePlaceName(rawDistrict || rawVillage, language)
           const state = normalizePlaceName(rawState, language)
-          nominatimResult = {
+          primaryResult = {
             village: village || district,
             district: district || village,
             state,
@@ -319,17 +334,17 @@ export async function reverseGeocode(
     } catch {
       // Fall through to secondary provider
     } finally {
-      clearTimeout(nomTimer)
-      signal?.removeEventListener('abort', onAbortNom)
+      clearTimeout(primaryTimer)
+      signal?.removeEventListener('abort', onAbortPrimary)
     }
 
-    if (nominatimResult) {
+    if (primaryResult) {
       if (reverseGeocodeCache.size >= REVERSE_CACHE_MAX) {
         const first = reverseGeocodeCache.keys().next().value
         if (first) reverseGeocodeCache.delete(first)
       }
-      reverseGeocodeCache.set(cacheKey, nominatimResult)
-      return nominatimResult
+      reverseGeocodeCache.set(cacheKey, primaryResult)
+      return primaryResult
     }
 
     if (signal?.aborted) return null
