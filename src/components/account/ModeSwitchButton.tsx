@@ -14,6 +14,7 @@ import {
   verifyPattern,
 } from '../../lib/patternLock'
 import { toast } from '../../lib/toast'
+import { speakAloud } from '../../lib/voice'
 import { setUserRole } from '../../services/profiles'
 import type { UserRole } from '../../types'
 import { Alert } from '../ui/Alert'
@@ -36,7 +37,7 @@ export function ModeSwitchButton({
   onAfterSwitch?: () => void
 }) {
   const { profile, refreshProfile, signOut } = useAuth()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const navigate = useNavigate()
   const busyRef = useRef(false)
   const statusTimerRef = useRef<number | undefined>(undefined)
@@ -87,6 +88,18 @@ export function ModeSwitchButton({
     setSwitching(true)
     setError(null)
     try {
+      // Speak "Switching to … mode…" before the API call
+      const spokenRole = t(target === 'owner' ? 'role.owner' : 'role.farmer')
+      const switchingMsg =
+        language === 'kn'
+          ? `${spokenRole} ಮೋಡ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗುತ್ತಿದೆ...`
+          : language === 'hi'
+            ? `${spokenRole} मोड में बदला जा रहा है...`
+            : language === 'ta'
+              ? `${spokenRole} பயன்முறைக்கு மாற்றப்படுகிறது...`
+              : `Switching to ${spokenRole} mode...`
+      void speakAloud(switchingMsg, language)
+
       await setUserRole(target)
       const updated = await refreshProfile()
       // setUserRole can fall back silently, so confirm with the server's copy.
@@ -94,7 +107,10 @@ export function ModeSwitchButton({
         setError('mode.error')
         return
       }
-      toast.success(t('mode.switched', { role: targetLabel }))
+      const successMsg = t('mode.switched', { role: targetLabel })
+      toast.success(successMsg)
+      // Speak "Now in … mode." after successful switch
+      void speakAloud(successMsg, language)
       busyRef.current = false
       setSwitching(false)
       setOpen(false)
@@ -149,40 +165,40 @@ export function ModeSwitchButton({
               type="button"
               onClick={openDialog}
               title={switchLabel}
-              className="flex size-11 items-center justify-center rounded-2xl bg-[#143d26] border border-[#235338] text-white hover:bg-[#1a4d30] hover:scale-105 transition-all shadow-md active:scale-95 cursor-pointer"
+              className="flex size-10 items-center justify-center rounded-xl bg-[#123624] border border-[#1E4D34] text-white hover:bg-[#19462F] hover:border-[#4ADE80]/40 transition-all shadow-sm active:scale-95 cursor-pointer"
               aria-label={switchLabel}
             >
-              <ArrowLeftRight className="size-5 text-[#E8B84A]" aria-hidden="true" />
+              <ArrowLeftRight className="size-4 text-[#E8B84A]" aria-hidden="true" />
             </button>
             <div
               role="tooltip"
-              className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden rounded-md bg-[#0a180f] px-2.5 py-1 text-xs font-semibold text-white shadow-xl ring-1 ring-[#234D2C] whitespace-nowrap group-hover:lg:block"
+              className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden rounded-md bg-[#071F14] px-2.5 py-1 text-xs font-semibold text-white shadow-xl ring-1 ring-[#1E4D34] whitespace-nowrap group-hover:lg:block"
             >
               {switchLabel}
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#214f32] bg-gradient-to-br from-[#103520] to-[#0a2215] p-3 text-white shadow-md">
+          <div className="rounded-xl border border-[#1B4A31] bg-gradient-to-br from-[#0E3522] to-[#082216] p-2.5 text-white shadow-sm">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="flex size-7 items-center justify-center rounded-xl bg-emerald-500/20 text-[#8BCB73] ring-1 ring-emerald-500/30 shrink-0">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/20 text-[#8BCB73] ring-1 ring-emerald-500/30 shrink-0">
                   {profile.role === 'owner' ? (
-                    <Tractor className="size-4 text-[#E8B84A]" aria-hidden="true" />
+                    <Tractor className="size-3.5 text-[#E8B84A]" aria-hidden="true" />
                   ) : (
-                    <Sprout className="size-4 text-[#8BCB73]" aria-hidden="true" />
+                    <Sprout className="size-3.5 text-[#8BCB73]" aria-hidden="true" />
                   )}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#A9C7B6]">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8FB8A0]/80 leading-none">
                     {t('mode.current')}
                   </p>
-                  <p className="truncate text-xs font-black text-white">
+                  <p className="truncate text-xs font-bold text-white mt-0.5">
                     {currentLabel}
                   </p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-600/50 px-2 py-0.5 text-[10px] font-bold text-[#8BCB73]">
-                <span className="size-1.5 rounded-full bg-[#4ade80] animate-pulse" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 text-[9px] font-bold text-[#4ADE80]">
+                <span className="size-1.5 rounded-full bg-[#4ADE80] animate-pulse" aria-hidden="true" />
                 Active
               </span>
             </div>
@@ -190,7 +206,7 @@ export function ModeSwitchButton({
             <button
               type="button"
               onClick={openDialog}
-              className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#176B45] hover:bg-[#1a7a4f] text-white px-3 py-2 text-xs font-bold transition-all shadow-sm active:scale-98 border border-white/10 hover:border-white/20"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#168052] hover:bg-[#19925E] text-white px-2.5 py-1.5 text-xs font-bold transition-all shadow-xs active:scale-98 border border-white/10 hover:border-white/20"
             >
               <ArrowLeftRight className="size-3.5 text-[#E8B84A] shrink-0" aria-hidden="true" />
               <span className="truncate">{switchLabel}</span>

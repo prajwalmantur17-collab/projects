@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Inbox, Mic, Phone, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -39,8 +40,26 @@ export function OwnerBookingsPage() {
   const { profile } = useAuth()
   const { t, language } = useI18n()
   const ownerId = profile?.id
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab') as Filter | null
 
-  const [filter, setFilter] = useState<Filter>('pending')
+  const [filter, setFilterState] = useState<Filter>(() => {
+    if (tabParam && ['pending', 'confirmed', 'completed', 'closed'].includes(tabParam)) {
+      return tabParam
+    }
+    return 'pending'
+  })
+
+  const setFilter = (next: Filter) => {
+    setFilterState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
+
+  useEffect(() => {
+    if (tabParam && ['pending', 'confirmed', 'completed', 'closed'].includes(tabParam) && tabParam !== filter) {
+      setFilterState(tabParam)
+    }
+  }, [tabParam, filter])
   const [target, setTarget] = useState<{ booking: BookingWithRelations; decision: Decision } | null>(
     null,
   )

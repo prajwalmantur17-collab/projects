@@ -3,10 +3,11 @@ import { loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import speechHandler from './api/speech.ts'
+import geocodeHandler from './api/geocode.ts'
 
-function devApiSpeechPlugin(): Plugin {
+function devApiHandlersPlugin(): Plugin {
   return {
-    name: 'dev-api-speech',
+    name: 'dev-api-handlers',
     config(_config, { mode }) {
       const env = loadEnv(mode, process.cwd(), '')
       Object.assign(process.env, env)
@@ -22,6 +23,15 @@ function devApiSpeechPlugin(): Plugin {
               res.end(JSON.stringify({ error: 'internal_dev_error', message: String(err) }))
             }
           }
+        } else if (req.url && (req.url === '/api/geocode' || req.url.startsWith('/api/geocode?'))) {
+          try {
+            await geocodeHandler(req, res)
+          } catch (err) {
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'internal_dev_error', message: String(err) }))
+            }
+          }
         } else {
           next()
         }
@@ -31,7 +41,7 @@ function devApiSpeechPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), devApiSpeechPlugin()],
+  plugins: [react(), tailwindcss(), devApiHandlersPlugin()],
   server: {
     port: 5173,
     strictPort: true,

@@ -53,7 +53,97 @@ export function resolveAccuratePlaceName(
     return 'REVA University'
   }
 
-  // 2. High-precision local community / neighbourhood / village / hamlet
+  // 2. Proximity check for REVA University (covers 1.2km radius around campus center, main gate, hostel blocks)
+  const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
+  if (dReva <= 1.2) {
+    return 'REVA University'
+  }
+
+  // 3. Proximity & keyword check for Bhartiya City & Nikoo Homes
+  const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+  if (dBhartiya <= 1.5 || /bhartiya/i.test(rawName) || /bhartiya/i.test(addr.neighbourhood || '') || /nikoo/i.test(rawName) || /nikoo/i.test(addr.road || '')) {
+    return 'Bhartiya City'
+  }
+
+  // 4. Specific village / neighbourhood name match
+  if (/kattigenahalli/i.test(rawName) || /kattigenahalli/i.test(addr.village || '') || /kattigenahalli/i.test(addr.neighbourhood || '')) {
+    return 'Kattigenahalli'
+  }
+  if (/bellahalli/i.test(rawName) || /bellahalli/i.test(addr.village || '') || /bellahalli/i.test(addr.neighbourhood || '')) {
+    return 'Bellahalli'
+  }
+  if (/chokkanahalli/i.test(rawName) || /chokkanahalli/i.test(addr.village || '') || /chokkanahalli/i.test(addr.neighbourhood || '')) {
+    return 'Chokkanahalli'
+  }
+  if (/kannuru/i.test(rawName) || /kannuru/i.test(addr.village || '') || /kannuru/i.test(addr.neighbourhood || '')) {
+    return 'Kannuru'
+  }
+  if (/thanisandra/i.test(rawName) || /thanisandra/i.test(addr.suburb || '') || /thanisandra/i.test(addr.neighbourhood || '')) {
+    return 'Thanisandra'
+  }
+  if (/toravi/i.test(rawName) || /toravi/i.test(addr.village || '')) {
+    return 'Toravi'
+  }
+  if (/tikota/i.test(rawName) || /tikota/i.test(addr.village || '') || /tikkota/i.test(rawName)) {
+    return 'Tikota'
+  }
+
+  const dKattigenahalli = getDistanceKm(latitude, longitude, 13.1205, 77.6300)
+  if (dKattigenahalli <= 1.2) {
+    return 'Kattigenahalli'
+  }
+
+  const dBellahalli = getDistanceKm(latitude, longitude, 13.1100, 77.6420)
+  if (dBellahalli <= 1.2) {
+    return 'Bellahalli'
+  }
+
+  const dChokkanahalli = getDistanceKm(latitude, longitude, 13.0950, 77.6320)
+  if (dChokkanahalli <= 1.2) {
+    return 'Chokkanahalli'
+  }
+
+  const dKannuru = getDistanceKm(latitude, longitude, 13.0906, 77.6534)
+  if (dKannuru <= 1.3) {
+    return 'Kannuru'
+  }
+
+  const dSampigehalli = getDistanceKm(latitude, longitude, 13.0880, 77.6180)
+  if (dSampigehalli <= 1.2) {
+    return 'Sampigehalli'
+  }
+
+  const dHegdeNagar = getDistanceKm(latitude, longitude, 13.0645, 77.6270)
+  if (dHegdeNagar <= 1.2) {
+    return 'Hegde Nagar'
+  }
+
+  const dThanisandra = getDistanceKm(latitude, longitude, 13.0549, 77.6322)
+  if (dThanisandra <= 1.5) {
+    return 'Thanisandra'
+  }
+
+  const dJakkur = getDistanceKm(latitude, longitude, 13.0783, 77.6074)
+  if (dJakkur <= 1.5) {
+    return 'Jakkur'
+  }
+
+  const dToravi = getDistanceKm(latitude, longitude, 16.8180, 75.6620)
+  if (dToravi <= 2.5) {
+    return 'Toravi'
+  }
+
+  const dTikota = getDistanceKm(latitude, longitude, 16.8286, 75.5412)
+  if (dTikota <= 2.5) {
+    return 'Tikota'
+  }
+
+  const dBabaleshwar = getDistanceKm(latitude, longitude, 16.6500, 75.6000)
+  if (dBabaleshwar <= 2.5) {
+    return 'Babaleshwar'
+  }
+
+  // 3. High-precision local community / neighbourhood / village / hamlet
   let candidate =
     addr.village ||
     addr.hamlet ||
@@ -62,22 +152,20 @@ export function resolveAccuratePlaceName(
     addr.residential ||
     ''
 
-  // 3. Proximity check for REVA University (covers 550m radius around campus center and main gate)
-  const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
-  if (dReva <= 0.6) {
-    return 'REVA University'
-  }
-
-  // 4. Proximity check for Bhartiya City (covers 650m radius around center and Nikoo Homes)
-  const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
-  if (dBhartiya <= 0.65) {
-    return 'Bhartiya City'
+  // 4. Strict Kogilu bounding box guard:
+  // True Kogilu village is at 13.1039, 77.6167. OSM's 25 sq-km relation falsely tags huge swathes
+  // of North Bengaluru as Kogilu. If candidate contains Kogilu but distance > 1.2 km, DISCARD IT.
+  const dKogilu = getDistanceKm(latitude, longitude, 13.1039, 77.6167)
+  if (/kogilu/i.test(candidate) && dKogilu > 1.2) {
+    candidate = ''
   }
 
   // 5. Named educational / civic / community landmark (excluding generic roads)
   if (!candidate && rawName && data.category !== 'highway' && rawName !== addr.road) {
     if (data.category === 'amenity' || data.type === 'university' || data.type === 'college' || addr.amenity) {
-      candidate = rawName
+      if (!/kogilu/i.test(rawName) || dKogilu <= 1.2) {
+        candidate = rawName
+      }
     }
   }
 
@@ -85,46 +173,28 @@ export function resolveAccuratePlaceName(
   if (!candidate && addr.road) {
     const roadPrefix = addr.road.replace(/\s+(main\s+road|road|cross|layout|street|way)$/i, '').trim()
     if (roadPrefix && roadPrefix !== addr.road && roadPrefix.length >= 3) {
-      if (/^(bellahalli|kattigenahalli|nikoo homes|thanisandra|toravi|chokkanahalli|sampigehalli)$/i.test(roadPrefix)) {
+      if (/^(bellahalli|kattigenahalli|nikoo homes|thanisandra|toravi|chokkanahalli|sampigehalli|hegde nagar|kannuru)$/i.test(roadPrefix)) {
         candidate = roadPrefix
       }
     }
   }
 
-  // 7. Guard against OSM's oversized 25 sq-km "Kogilu" bounding box relation (19884610):
-  // True Kogilu village is at 13.1039, 77.6167. If candidate is Kogilu or empty,
-  // but coordinate is > 1.3 km away from Kogilu village, check neighbouring true localities.
-  const dKogilu = getDistanceKm(latitude, longitude, 13.1039, 77.6167)
-  const dKattigenahalli = getDistanceKm(latitude, longitude, 13.1205, 77.6300)
-  const dBellahalli = getDistanceKm(latitude, longitude, 13.1100, 77.6420)
-  const dChokkanahalli = getDistanceKm(latitude, longitude, 13.0950, 77.6320)
-
-  if (dKattigenahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
-    return 'Kattigenahalli'
-  }
-  if (dBellahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
-    return 'Bellahalli'
-  }
-  if (dChokkanahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
-    return 'Chokkanahalli'
-  }
-
-  // 8. Broad suburb, quarter, town, locality fallback
+  // 7. Broad suburb, quarter, town, locality fallback (strictly filtering out Kogilu if outside village bounds)
   if (!candidate) {
-    if (addr.suburb && addr.suburb.toLowerCase() === 'kogilu' && dKogilu > 1.4) {
-      // Too far from Kogilu village — fallback to city or city district
-      candidate = addr.city_district || addr.city || ''
-    } else {
-      candidate =
-        addr.quarter ||
-        addr.suburb ||
-        addr.locality ||
-        addr.town ||
-        addr.city_district ||
-        addr.city ||
-        addr.county ||
-        ''
-    }
+    const suburb = (!/kogilu/i.test(addr.suburb || '') || dKogilu <= 1.2) ? addr.suburb : ''
+    candidate =
+      addr.quarter ||
+      suburb ||
+      addr.locality ||
+      addr.town ||
+      addr.city_district ||
+      addr.city ||
+      addr.county ||
+      ''
+  }
+
+  if (/kogilu/i.test(candidate) && dKogilu > 1.2) {
+    candidate = addr.city_district || addr.city || 'Bengaluru'
   }
 
   return candidate
@@ -247,14 +317,53 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         }
       }
 
-      // Check proximity guards even for BigDataCloud
+      // High-precision proximity overrides for BigDataCloud fallback
       const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
-      if (dReva <= 0.6) {
+      const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+      const dKattigenahalli = getDistanceKm(latitude, longitude, 13.1205, 77.6300)
+      const dBellahalli = getDistanceKm(latitude, longitude, 13.1100, 77.6420)
+      const dChokkanahalli = getDistanceKm(latitude, longitude, 13.0950, 77.6320)
+      const dKannuru = getDistanceKm(latitude, longitude, 13.0906, 77.6534)
+      const dSampigehalli = getDistanceKm(latitude, longitude, 13.0880, 77.6180)
+      const dHegdeNagar = getDistanceKm(latitude, longitude, 13.0645, 77.6270)
+      const dThanisandra = getDistanceKm(latitude, longitude, 13.0549, 77.6322)
+      const dJakkur = getDistanceKm(latitude, longitude, 13.0783, 77.6074)
+      const dToravi = getDistanceKm(latitude, longitude, 16.8180, 75.6620)
+      const dTikota = getDistanceKm(latitude, longitude, 16.8286, 75.5412)
+      const dBabaleshwar = getDistanceKm(latitude, longitude, 16.6500, 75.6000)
+      const dKogilu = getDistanceKm(latitude, longitude, 13.1039, 77.6167)
+
+      if (dReva <= 1.2 || /reva/i.test(rawVillage)) {
         rawVillage = 'REVA University'
-      } else {
-        const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
-        if (dBhartiya <= 0.65) {
-          rawVillage = 'Bhartiya City'
+      } else if (dBhartiya <= 1.5 || /bhartiya|nikoo/i.test(rawVillage)) {
+        rawVillage = 'Bhartiya City'
+      } else if (dKattigenahalli <= 1.2) {
+        rawVillage = 'Kattigenahalli'
+      } else if (dBellahalli <= 1.2) {
+        rawVillage = 'Bellahalli'
+      } else if (dChokkanahalli <= 1.2) {
+        rawVillage = 'Chokkanahalli'
+      } else if (dKannuru <= 1.3) {
+        rawVillage = 'Kannuru'
+      } else if (dSampigehalli <= 1.2) {
+        rawVillage = 'Sampigehalli'
+      } else if (dHegdeNagar <= 1.2) {
+        rawVillage = 'Hegde Nagar'
+      } else if (dThanisandra <= 1.5) {
+        rawVillage = 'Thanisandra'
+      } else if (dJakkur <= 1.5) {
+        rawVillage = 'Jakkur'
+      } else if (dToravi <= 2.5) {
+        rawVillage = 'Toravi'
+      } else if (dTikota <= 2.5) {
+        rawVillage = 'Tikota'
+      } else if (dBabaleshwar <= 2.5) {
+        rawVillage = 'Babaleshwar'
+      } else if (/kogilu/i.test(rawVillage) && dKogilu > 1.2) {
+        // Discard broad BDC Kogilu adminLevel tag
+        rawVillage = data.locality || data.city || ''
+        if (/kogilu/i.test(rawVillage)) {
+          rawVillage = data.city || 'Bengaluru'
         }
       }
 

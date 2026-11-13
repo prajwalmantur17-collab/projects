@@ -157,9 +157,38 @@ describe('reverseGeocode caching, deduplication, and resilience', () => {
     expect(res?.district).toBe('Bengaluru')
   })
 
+  it('accurately resolves Bhartiya City for exact live coordinates (13.0845493, 77.6410401) even if BDC or OSM returns Kogilu', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({
+        locality: 'Yelahanka',
+        localityInfo: {
+          administrative: [
+            { adminLevel: 5, name: 'Bengaluru Urban district' },
+            { adminLevel: 10, name: 'Kogilu' },
+          ],
+        },
+        principalSubdivision: 'Karnataka',
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await reverseGeocode({ latitude: 13.0845493, longitude: 77.6410401 }, 'en')
+    expect(res?.village).toBe('Bhartiya City')
+    expect(res?.district).toBe('Bengaluru')
+    expect(res?.state).toBe('Karnataka')
+  })
+
   it('translates REVA University to Kannada, Hindi, and Tamil', () => {
     expect(normalizePlaceName('REVA University', 'kn')).toBe('ರೇವಾ ಯೂನಿವರ್ಸಿಟಿ')
     expect(normalizePlaceName('REVA University', 'hi')).toBe('रेवा यूनिवर्सिटी')
     expect(normalizePlaceName('REVA University', 'ta')).toBe('ரேவா பல்கலைக்கழகம்')
+  })
+
+  it('translates Bhartiya City to Kannada, Hindi, and Tamil', () => {
+    expect(normalizePlaceName('Bhartiya City', 'kn')).toBe('ಭಾರತೀಯ ಸಿಟಿ')
+    expect(normalizePlaceName('Bhartiya City', 'hi')).toBe('भारतीय सिटी')
+    expect(normalizePlaceName('Bhartiya City', 'ta')).toBe('பாரதிய சிட்டி')
   })
 })
