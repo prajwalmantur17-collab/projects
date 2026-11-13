@@ -13,6 +13,7 @@ import type { TranslationKey } from '../i18n'
 import { logError, mapErrorToKey } from '../lib/errors'
 import { env } from '../lib/env'
 import { requireSupabase, supabase } from '../lib/supabase'
+import { markUnlocked } from '../lib/patternLock'
 import { clearHiddenBookingsForUser } from '../services/bookings'
 import { ensureProfile, getProfile, updateProfile } from '../services/profiles'
 import type { Language, Profile } from '../types'
@@ -162,7 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session?.user.id])
 
   const signInWithPassword = useCallback(async (email: string, password: string) => {
-    const { error } = await requireSupabase().auth.signInWithPassword({ email, password })
+    const result = await requireSupabase().auth.signInWithPassword({ email, password })
+    const error = result.error
+    // A fresh password sign-in already proves who the user is, so skip the pattern once.
+    if (!error && result.data.user) markUnlocked(result.data.user.id)
     if (error) throw error
   }, [])
 
@@ -187,7 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updatePassword = useCallback(async (password: string) => {
-    const { error } = await requireSupabase().auth.updateUser({ password })
+    const result = await requireSupabase().auth.updateUser({ password })
+    const error = result.error
+    if (!error && result.data.user) markUnlocked(result.data.user.id)
     if (error) throw error
     setRecovering(false)
   }, [])

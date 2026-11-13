@@ -83,7 +83,7 @@ export function RoleSelectionPage() {
       </div>
 
       <p className="mx-auto mt-6 max-w-xl text-center text-sm font-medium text-white/80 drop-shadow-xs">
-        {t('role.lockedNote')}
+        {t('mode.changeLaterNote')}
       </p>
     </div>
   )

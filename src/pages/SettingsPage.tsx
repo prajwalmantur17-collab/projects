@@ -20,6 +20,8 @@ import { Input } from '../components/ui/Input'
 import { LanguageSelector } from '../components/ui/LanguageSelector'
 import { PageHeader } from '../components/ui/PageHeader'
 import { ProfilePhotoCard } from '../components/profile/ProfilePhotoCard'
+import { ModeSwitchButton } from '../components/account/ModeSwitchButton'
+import { PatternSetupCard } from '../components/security/PatternSetupCard'
 
 export function SettingsPage() {
   const { profile, refreshProfile, signOut } = useAuth()
@@ -236,10 +238,15 @@ export function SettingsPage() {
             {isFarmer ? t('settings.roleFarmerHelp') : t('settings.roleOwnerHelp')}
           </span>
         </div>
-        <p className="mt-2 text-xs text-ink-muted">{t('settings.accountLocked')}</p>
+        <p className="mt-2 text-xs text-ink-muted">{t('mode.hint')}</p>
+        <div className="mt-3">
+          <ModeSwitchButton />
+        </div>
       </Card>
 
-            <Card className="mt-4 p-5 sm:p-6">
+      <PatternSetupCard />
+
+      <Card className="mt-4 p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold">{t('record.title')}</h2>

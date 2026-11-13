@@ -15,6 +15,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import { LogoMark } from '../brand/Logo'
 import { Avatar } from '../ui/Avatar'
+import { ModeSwitchButton } from '../account/ModeSwitchButton'
 import { avatarUrl } from '../../services/avatars'
 import { usePendingRequests } from '../../hooks/usePendingRequests'
 import { useNotifications } from '../../hooks/useNotifications'
@@ -424,6 +425,9 @@ export function Sidebar() {
               <span className={collapsed ? 'lg:hidden' : 'block'}>{t('ui.login')}</span>
             </Link>
           )}
+
+          {/* Switch between Farmer and Owner mode */}
+          {session && profile ? <ModeSwitchButton variant="sidebar" collapsed={collapsed} /> : null}
 
           {/* Promotional Mini Card matching reference mockup */}
           <div
