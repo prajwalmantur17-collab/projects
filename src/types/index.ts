@@ -12,6 +12,10 @@ export type NotificationKind =
   | 'work_started'
   | 'work_completed'
   | 'machine_free'
+  | 'driver_request_created'
+  | 'driver_request_accepted'
+  | 'driver_request_declined'
+  | 'driver_request_cancelled'
 
 export type MachineType =
   | 'combine_harvester'
@@ -169,6 +173,11 @@ export interface NotificationPayload {
   machine_id?: string
   amount?: number | null
   payment_method?: PaymentMethod | null
+  /** Driver hire notifications: who the notification is meant for. */
+  audience?: 'driver' | 'requester'
+  request_id?: string
+  requester_name?: string
+  driver_name?: string
 }
 
 export interface AppNotification {
@@ -217,6 +226,108 @@ export interface CreateBookingInput {
   crop: CropKey
   contactPhone: string
   notes?: string
+}
+
+export type DriverRateUnit = 'per_acre' | 'per_hour' | 'per_day'
+
+export type DriverRequestStatus = 'pending' | 'accepted' | 'declined' | 'cancelled'
+
+/** A driver listing as returned by search_drivers / get_driver. */
+export interface DriverCard {
+  user_id: string
+  full_name: string
+  avatar_path: string | null
+  experience_years: number
+  machine_types: MachineType[]
+  crops: CropKey[]
+  village: string
+  district: string
+  state: string
+  rate_amount: number | null
+  rate_unit: DriverRateUnit | null
+  bio: string | null
+  is_available: boolean
+  phone: string | null
+  rating_avg: number | null
+  rating_count: number
+  jobs_done: number
+}
+
+/** The signed-in person's own driver profile row. */
+export interface DriverProfile {
+  user_id: string
+  experience_years: number
+  machine_types: MachineType[]
+  crops: CropKey[]
+  village: string
+  district: string
+  state: string
+  phone: string
+  rate_amount: number | null
+  rate_unit: DriverRateUnit | null
+  bio: string | null
+  is_active: boolean
+  is_available: boolean
+  phone_public: boolean
+}
+
+export interface DriverProfileInput {
+  experienceYears: number
+  machineTypes: MachineType[]
+  crops: CropKey[]
+  village: string
+  district: string
+  state: string
+  phone: string
+  rateAmount: number | null
+  rateUnit: DriverRateUnit | null
+  bio: string | null
+  isActive: boolean
+  isAvailable: boolean
+  phonePublic: boolean
+}
+
+export interface DriverSearchFilters {
+  village?: string
+  district?: string
+  state?: string
+  machineType?: MachineType | ''
+  crop?: CropKey | ''
+  minExperience?: number
+  limit?: number
+  offset?: number
+}
+
+export interface DriverRequestRow {
+  id: string
+  driver_id: string
+  requester_id: string
+  machine_type: MachineType
+  service_date: string
+  days: number
+  village: string
+  crop: string | null
+  contact_phone: string
+  notes: string | null
+  status: DriverRequestStatus
+  driver_note: string | null
+  created_at: string
+  responded_at: string | null
+  other_name: string
+  other_avatar_path: string | null
+  other_phone: string | null
+  rating_stars: number | null
+}
+
+export interface CreateDriverRequestInput {
+  driverId: string
+  machineType: MachineType
+  serviceDate: string
+  days: number
+  village: string
+  crop: CropKey | null
+  contactPhone: string
+  notes: string | null
 }
 
 export interface Coordinates {

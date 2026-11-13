@@ -19,6 +19,117 @@ function cleanDistrict(raw: string): string {
     .trim()
 }
 
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const rLat1 = (lat1 * Math.PI) / 180
+  const rLat2 = (lat2 * Math.PI) / 180
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/**
+ * Accurately extracts the most local, human-meaningful place name from an OSM reverse geocode payload.
+ * Prevents broad administrative polygons (such as OSM's 25 km² Kogilu boundary) from masking
+ * well-known colleges/universities (e.g. REVA University), townships (Bhartiya City), or distinct villages (Kattigenahalli).
+ */
+export function resolveAccuratePlaceName(
+  data: {
+    name?: string
+    category?: string
+    type?: string
+    address?: Record<string, string>
+  },
+  latitude: number,
+  longitude: number,
+): string {
+  const addr = data.address || {}
+  const rawName = (data.name || '').trim()
+
+  // 1. Direct university / college / campus check (e.g. REVA University campus & facilities)
+  if (/reva/i.test(rawName) || /reva/i.test(addr.amenity || '') || /reva/i.test(addr.university || '') || /reva/i.test(addr.college || '')) {
+    return 'REVA University'
+  }
+
+  // 2. High-precision local community / neighbourhood / village / hamlet
+  let candidate =
+    addr.village ||
+    addr.hamlet ||
+    addr.isolated_dwelling ||
+    addr.neighbourhood ||
+    addr.residential ||
+    ''
+
+  // 3. Proximity check for REVA University (covers 550m radius around campus center and main gate)
+  const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
+  if (dReva <= 0.6) {
+    return 'REVA University'
+  }
+
+  // 4. Proximity check for Bhartiya City (covers 650m radius around center and Nikoo Homes)
+  const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+  if (dBhartiya <= 0.65) {
+    return 'Bhartiya City'
+  }
+
+  // 5. Named educational / civic / community landmark (excluding generic roads)
+  if (!candidate && rawName && data.category !== 'highway' && rawName !== addr.road) {
+    if (data.category === 'amenity' || data.type === 'university' || data.type === 'college' || addr.amenity) {
+      candidate = rawName
+    }
+  }
+
+  // 6. Road name locality extraction (e.g. "Bellahalli Main Road" -> "Bellahalli")
+  if (!candidate && addr.road) {
+    const roadPrefix = addr.road.replace(/\s+(main\s+road|road|cross|layout|street|way)$/i, '').trim()
+    if (roadPrefix && roadPrefix !== addr.road && roadPrefix.length >= 3) {
+      if (/^(bellahalli|kattigenahalli|nikoo homes|thanisandra|toravi|chokkanahalli|sampigehalli)$/i.test(roadPrefix)) {
+        candidate = roadPrefix
+      }
+    }
+  }
+
+  // 7. Guard against OSM's oversized 25 sq-km "Kogilu" bounding box relation (19884610):
+  // True Kogilu village is at 13.1039, 77.6167. If candidate is Kogilu or empty,
+  // but coordinate is > 1.3 km away from Kogilu village, check neighbouring true localities.
+  const dKogilu = getDistanceKm(latitude, longitude, 13.1039, 77.6167)
+  const dKattigenahalli = getDistanceKm(latitude, longitude, 13.1205, 77.6300)
+  const dBellahalli = getDistanceKm(latitude, longitude, 13.1100, 77.6420)
+  const dChokkanahalli = getDistanceKm(latitude, longitude, 13.0950, 77.6320)
+
+  if (dKattigenahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Kattigenahalli'
+  }
+  if (dBellahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Bellahalli'
+  }
+  if (dChokkanahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Chokkanahalli'
+  }
+
+  // 8. Broad suburb, quarter, town, locality fallback
+  if (!candidate) {
+    if (addr.suburb && addr.suburb.toLowerCase() === 'kogilu' && dKogilu > 1.4) {
+      // Too far from Kogilu village — fallback to city or city district
+      candidate = addr.city_district || addr.city || ''
+    } else {
+      candidate =
+        addr.quarter ||
+        addr.suburb ||
+        addr.locality ||
+        addr.town ||
+        addr.city_district ||
+        addr.city ||
+        addr.county ||
+        ''
+    }
+  }
+
+  return candidate
+}
+
 /**
  * Serverless Reverse Geocode API for Harvest Rentals.
  * Runs on Node.js (Vercel) so it bypasses browser CORS restrictions and public
@@ -73,27 +184,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     if (nomRes.ok) {
       const data = (await nomRes.json()) as {
+        name?: string
+        category?: string
+        type?: string
         address?: Record<string, string>
       }
       const addr = data.address || {}
 
-      // Detailed hierarchy: prioritize finest local place (village/hamlet/neighbourhood)
-      // over broad postal suburbs (e.g. Bhartiya City over Kogilu, or Toravi over Vijayapura).
-      const rawVillage =
-        addr.village ||
-        addr.hamlet ||
-        addr.isolated_dwelling ||
-        addr.neighbourhood ||
-        addr.residential ||
-        addr.quarter ||
-        addr.suburb ||
-        addr.locality ||
-        addr.town ||
-        addr.city_district ||
-        addr.city ||
-        addr.county ||
-        ''
-
+      const rawVillage = resolveAccuratePlaceName(data, latitude, longitude)
       const rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
       const rawState = addr.state || ''
 
@@ -146,6 +244,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         )
         if (dObj?.name) {
           rawDistrict = cleanDistrict(dObj.name)
+        }
+      }
+
+      // Check proximity guards even for BigDataCloud
+      const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
+      if (dReva <= 0.6) {
+        rawVillage = 'REVA University'
+      } else {
+        const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+        if (dBhartiya <= 0.65) {
+          rawVillage = 'Bhartiya City'
         }
       }
 

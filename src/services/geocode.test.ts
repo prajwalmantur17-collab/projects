@@ -110,4 +110,56 @@ describe('reverseGeocode caching, deduplication, and resilience', () => {
     expect(res?.district).toBe('Bengaluru')
     expect(res?.state).toBe('Karnataka')
   })
+
+  it('accurately resolves REVA University on campus even when OSM tags Kogilu as suburb', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        name: 'Reva Health Centre',
+        category: 'amenity',
+        type: 'clinic',
+        addresstype: 'amenity',
+        address: {
+          amenity: 'Reva Health Centre',
+          road: 'Bellahalli Main Road',
+          suburb: 'Kogilu',
+          state_district: 'Bengaluru Urban',
+          state: 'Karnataka',
+        },
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await reverseGeocode({ latitude: 13.1154, longitude: 77.6358 }, 'en')
+    expect(res?.village).toBe('REVA University')
+    expect(res?.district).toBe('Bengaluru')
+  })
+
+  it('resolves REVA University at the gate on Bellahalli Main Road rather than broad Kogilu', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        name: 'Bellahalli Main Road',
+        category: 'highway',
+        type: 'primary',
+        address: {
+          road: 'Bellahalli Main Road',
+          suburb: 'Kogilu',
+          state_district: 'Bengaluru Urban',
+          state: 'Karnataka',
+        },
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await reverseGeocode({ latitude: 13.1132, longitude: 77.6345 }, 'en')
+    expect(res?.village).toBe('REVA University')
+    expect(res?.district).toBe('Bengaluru')
+  })
+
+  it('translates REVA University to Kannada, Hindi, and Tamil', () => {
+    expect(normalizePlaceName('REVA University', 'kn')).toBe('ರೇವಾ ಯೂನಿವರ್ಸಿಟಿ')
+    expect(normalizePlaceName('REVA University', 'hi')).toBe('रेवा यूनिवर्सिटी')
+    expect(normalizePlaceName('REVA University', 'ta')).toBe('ரேவா பல்கலைக்கழகம்')
+  })
 })

@@ -36,6 +36,29 @@ export function notificationText(
           ? t(machineTypeLabelKey(notification.payload.machine_type))
           : t('common.unknown'),
       })
+    case 'driver_request_created':
+      return t('notif.driverRequested', {
+        name: notification.payload.requester_name ?? t('common.unknown'),
+        date,
+      })
+    case 'driver_request_accepted':
+      return t('notif.driverAccepted', {
+        name: notification.payload.driver_name ?? t('common.unknown'),
+        date,
+      })
+    case 'driver_request_declined':
+      return t('notif.driverDeclined', {
+        name: notification.payload.driver_name ?? t('common.unknown'),
+        date,
+      })
+    case 'driver_request_cancelled':
+      return t('notif.driverCancelled', {
+        name:
+          (notification.payload.audience === 'driver'
+            ? notification.payload.requester_name
+            : notification.payload.driver_name) ?? t('common.unknown'),
+        date,
+      })
     default:
       return t('notif.title')
   }
@@ -46,6 +69,9 @@ export function notificationTarget(
   notification: AppNotification,
   role: 'farmer' | 'owner' | null | undefined,
 ): string {
+  if (notification.kind.startsWith('driver_request_')) {
+    return notification.payload.audience === 'driver' ? '/driver' : '/drivers/requests'
+  }
   if (notification.kind === 'machine_free' && notification.payload.machine_id) {
     return `/farmer/machines/${notification.payload.machine_id}`
   }

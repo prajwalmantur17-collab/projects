@@ -14,6 +14,117 @@ interface PlaceNames {
   en: string
   kn: string
   hi: string
+  ta?: string
+}
+
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const rLat1 = (lat1 * Math.PI) / 180
+  const rLat2 = (lat2 * Math.PI) / 180
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/**
+ * Accurately extracts the most local, human-meaningful place name from an OSM reverse geocode payload.
+ * Prevents broad administrative polygons (such as OSM's 25 km² Kogilu boundary) from masking
+ * well-known colleges/universities (e.g. REVA University), townships (Bhartiya City), or distinct villages (Kattigenahalli).
+ */
+export function resolveAccuratePlaceName(
+  data: {
+    name?: string
+    category?: string
+    type?: string
+    address?: Record<string, string>
+  },
+  latitude: number,
+  longitude: number,
+): string {
+  const addr = data.address || {}
+  const rawName = (data.name || '').trim()
+
+  // 1. Direct university / college / campus check (e.g. REVA University campus & facilities)
+  if (/reva/i.test(rawName) || /reva/i.test(addr.amenity || '') || /reva/i.test(addr.university || '') || /reva/i.test(addr.college || '')) {
+    return 'REVA University'
+  }
+
+  // 2. High-precision local community / neighbourhood / village / hamlet
+  let candidate =
+    addr.village ||
+    addr.hamlet ||
+    addr.isolated_dwelling ||
+    addr.neighbourhood ||
+    addr.residential ||
+    ''
+
+  // 3. Proximity check for REVA University (covers 550m radius around campus center and main gate)
+  const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
+  if (dReva <= 0.6) {
+    return 'REVA University'
+  }
+
+  // 4. Proximity check for Bhartiya City (covers 650m radius around center and Nikoo Homes)
+  const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+  if (dBhartiya <= 0.65) {
+    return 'Bhartiya City'
+  }
+
+  // 5. Named educational / civic / community landmark (excluding generic roads)
+  if (!candidate && rawName && data.category !== 'highway' && rawName !== addr.road) {
+    if (data.category === 'amenity' || data.type === 'university' || data.type === 'college' || addr.amenity) {
+      candidate = rawName
+    }
+  }
+
+  // 6. Road name locality extraction (e.g. "Bellahalli Main Road" -> "Bellahalli")
+  if (!candidate && addr.road) {
+    const roadPrefix = addr.road.replace(/\s+(main\s+road|road|cross|layout|street|way)$/i, '').trim()
+    if (roadPrefix && roadPrefix !== addr.road && roadPrefix.length >= 3) {
+      if (/^(bellahalli|kattigenahalli|nikoo homes|thanisandra|toravi|chokkanahalli|sampigehalli)$/i.test(roadPrefix)) {
+        candidate = roadPrefix
+      }
+    }
+  }
+
+  // 7. Guard against OSM's oversized 25 sq-km "Kogilu" bounding box relation:
+  // True Kogilu village is at 13.1039, 77.6167. If candidate is Kogilu or empty,
+  // but coordinate is > 1.3 km away from Kogilu village, check neighbouring true localities.
+  const dKogilu = getDistanceKm(latitude, longitude, 13.1039, 77.6167)
+  const dKattigenahalli = getDistanceKm(latitude, longitude, 13.1205, 77.6300)
+  const dBellahalli = getDistanceKm(latitude, longitude, 13.1100, 77.6420)
+  const dChokkanahalli = getDistanceKm(latitude, longitude, 13.0950, 77.6320)
+
+  if (dKattigenahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Kattigenahalli'
+  }
+  if (dBellahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Bellahalli'
+  }
+  if (dChokkanahalli <= 1.0 && (!candidate || candidate.toLowerCase() === 'kogilu') && dKogilu > 1.3) {
+    return 'Chokkanahalli'
+  }
+
+  // 8. Broad suburb, quarter, town, locality fallback
+  if (!candidate) {
+    if (addr.suburb && addr.suburb.toLowerCase() === 'kogilu' && dKogilu > 1.4) {
+      candidate = addr.city_district || addr.city || ''
+    } else {
+      candidate =
+        addr.quarter ||
+        addr.suburb ||
+        addr.locality ||
+        addr.town ||
+        addr.city_district ||
+        addr.city ||
+        addr.county ||
+        ''
+    }
+  }
+
+  return candidate
 }
 
 const DISTRICT_NAMES: PlaceNames[] = [
@@ -56,26 +167,31 @@ const DISTRICT_NAMES: PlaceNames[] = [
 ]
 
 const COMMON_PLACES: PlaceNames[] = [
-  { en: 'Bhartiya City', kn: 'ಭಾರತೀಯ ಸಿಟಿ', hi: 'भारतीय सिटी' },
-  { en: 'Nikoo Homes', kn: 'ನಿಕೂ ಹೋಮ್ಸ್', hi: 'निकू होम्स' },
-  { en: 'Thanisandra', kn: 'ತಾನಿಸಂದ್ರ', hi: 'थानिसांद्रा' },
-  { en: 'Kannuru', kn: 'ಕಣ್ಣೂರು', hi: 'कन्नूरु' },
-  { en: 'Chokkanahalli', kn: 'ಚೊಕ್ಕನಹಳ್ಳಿ', hi: 'चोकनहल्ली' },
-  { en: 'Kogilu', kn: 'ಕೋಗಿಲು', hi: 'कोगिलु' },
-  { en: 'Yelahanka', kn: 'ಯಲಹಂಕ', hi: 'यलहंका' },
-  { en: 'Allalasandra', kn: 'ಅಲ್ಲಾಲಸಂದ್ರ', hi: 'अल्लालसंद्रा' },
-  { en: 'Hebbal', kn: 'ಹೆಬ್ಬಾಳ', hi: 'हेब्बल' },
-  { en: 'Jalahalli', kn: 'ಜಾಲಹಳ್ಳಿ', hi: 'जालहल्ली' },
-  { en: 'Tikota', kn: 'ಟಿಕೋಟ', hi: 'टिकोता' },
-  { en: 'Tikota', kn: 'ತಿಕ್ಕೋಟ', hi: 'टिकोता' },
-  { en: 'Babaleshwar', kn: 'ಬಬಲೇಶ್ವರ', hi: 'बाबलेश्वर' },
-  { en: 'Hubballi', kn: 'ಹುಬ್ಬಳ್ಳಿ', hi: 'हुबली' },
-  { en: 'Ranebennur', kn: 'ರಾಣೆಬೆನ್ನೂರು', hi: 'राणेबेन्नूर' },
-  { en: 'Sirsi', kn: 'ಶಿರಸಿ', hi: 'सिरसी' },
-  { en: 'Sindhanur', kn: 'ಸಿಂಧನೂರು', hi: 'सिंधानूर' },
-  { en: 'Gangavathi', kn: 'ಗಂಗಾವತಿ', hi: 'गंगावती' },
-  { en: 'Karnataka', kn: 'ಕರ್ನಾಟಕ', hi: 'कर्नाटक' },
-  { en: 'India', kn: 'ಭಾರತ', hi: 'भारत' },
+  { en: 'REVA University', kn: 'ರೇವಾ ಯೂನಿವರ್ಸಿಟಿ', hi: 'रेवा यूनिवर्सिटी', ta: 'ரேவா பல்கலைக்கழகம்' },
+  { en: 'REVA College', kn: 'ರೇವಾ ಕಾಲೇಜು', hi: 'रेवा कॉलेज', ta: 'ரேவா கல்லூரி' },
+  { en: 'Kattigenahalli', kn: 'ಕಟ್ಟಿಗೇನಹಳ್ಳಿ', hi: 'कट्टीगेनहल्ली', ta: 'கட்டிகேனஹள்ளி' },
+  { en: 'Bellahalli', kn: 'ಬೆಳ್ಳಹಳ್ಳಿ', hi: 'बेल्लाहल्ली', ta: 'பெல்லஹள்ளி' },
+  { en: 'Bhartiya City', kn: 'ಭಾರತೀಯ ಸಿಟಿ', hi: 'भारतीय सिटी', ta: 'பாரதிய சிட்டி' },
+  { en: 'Nikoo Homes', kn: 'ನಿಕೂ ಹೋಮ್ಸ್', hi: 'निकू होम्स', ta: 'நிகூ ஹோம்ஸ்' },
+  { en: 'Thanisandra', kn: 'ತಾನಿಸಂದ್ರ', hi: 'थानिसांद्रा', ta: 'தானிசந்திரா' },
+  { en: 'Kannuru', kn: 'ಕಣ್ಣೂರು', hi: 'कन्नूरु', ta: 'கண்ணூர்' },
+  { en: 'Chokkanahalli', kn: 'ಚೊಕ್ಕನಹಳ್ಳಿ', hi: 'चोकनहल्ली', ta: 'சொக்கனஹள்ளி' },
+  { en: 'Kogilu', kn: 'ಕೋಗಿಲು', hi: 'कोगिलु', ta: 'கோகிலு' },
+  { en: 'Yelahanka', kn: 'ಯಲಹಂಕ', hi: 'यलहंका', ta: 'யலஹங்கா' },
+  { en: 'Allalasandra', kn: 'ಅಲ್ಲಾಲಸಂದ್ರ', hi: 'अल्लालसंद्रा', ta: 'அல்லாலசந்திரா' },
+  { en: 'Hebbal', kn: 'ಹೆಬ್ಬಾಳ', hi: 'हेब्बल', ta: 'ஹெப்பால்' },
+  { en: 'Jalahalli', kn: 'ಜಾಲಹಳ್ಳಿ', hi: 'जालहल्ली', ta: 'ஜாலஹள்ளி' },
+  { en: 'Toravi', kn: 'ತೊರವಿ', hi: 'तोरवी', ta: 'தொரவி' },
+  { en: 'Tikota', kn: 'ಟಿಕೋಟ', hi: 'टिकोता', ta: 'டிகோடா' },
+  { en: 'Tikota', kn: 'ತಿಕ್ಕೋಟ', hi: 'टिकोता', ta: 'டிகோடா' },
+  { en: 'Babaleshwar', kn: 'ಬಬಲೇಶ್ವರ', hi: 'बाबलेश्वर', ta: 'பபலேஷ்வர்' },
+  { en: 'Hubballi', kn: 'ಹುಬ್ಬಳ್ಳಿ', hi: 'हुबली', ta: 'ஹுப்பள்ளி' },
+  { en: 'Ranebennur', kn: 'ರಾಣೆಬೆನ್ನೂರು', hi: 'राणेबेन्नूर', ta: 'ராணேபென்னூர்' },
+  { en: 'Sirsi', kn: 'ಶಿರಸಿ', hi: 'सिरसी', ta: 'சிரசி' },
+  { en: 'Sindhanur', kn: 'ಸಿಂಧನೂರು', hi: 'सिंधानूर', ta: 'சிந்தனூர்' },
+  { en: 'Gangavathi', kn: 'ಗಂಗಾವತಿ', hi: 'गंगावती', ta: 'கங்காவதி' },
+  { en: 'Karnataka', kn: 'ಕರ್ನಾಟಕ', hi: 'कर्नाटक', ta: 'கர்நாடகா' },
+  { en: 'India', kn: 'ಭಾರತ', hi: 'भारत', ta: 'இந்தியா' },
 ]
 
 const ALL_PLACES = [...DISTRICT_NAMES, ...COMMON_PLACES]
@@ -83,18 +199,24 @@ const ALL_PLACES = [...DISTRICT_NAMES, ...COMMON_PLACES]
 // Fast lookup maps
 const KN_TO_EN = new Map<string, string>()
 const HI_TO_EN = new Map<string, string>()
+const TA_TO_EN = new Map<string, string>()
 const EN_TO_KN = new Map<string, string>()
 const EN_TO_HI = new Map<string, string>()
+const EN_TO_TA = new Map<string, string>()
 
 for (const p of ALL_PLACES) {
   const knKey = p.kn.trim().toLowerCase()
   const hiKey = p.hi.trim().toLowerCase()
   const enKey = p.en.trim().toLowerCase()
+  const taKey = p.ta?.trim().toLowerCase()
 
   if (!KN_TO_EN.has(knKey)) KN_TO_EN.set(knKey, p.en)
   if (!HI_TO_EN.has(hiKey)) HI_TO_EN.set(hiKey, p.en)
+  if (taKey && !TA_TO_EN.has(taKey)) TA_TO_EN.set(taKey, p.en)
+
   if (!EN_TO_KN.has(enKey)) EN_TO_KN.set(enKey, p.kn)
   if (!EN_TO_HI.has(enKey)) EN_TO_HI.set(enKey, p.hi)
+  if (p.ta && !EN_TO_TA.has(enKey)) EN_TO_TA.set(enKey, p.ta)
 }
 
 // -----------------------------------------------------------------------------
@@ -160,22 +282,29 @@ function hasKannadaChars(str: string): boolean {
 }
 
 /**
- * Normalizes any place or district name to the target language (en, kn, hi).
+ * Normalizes any place or district name to the target language (en, kn, hi, ta).
  */
 export function normalizePlaceName(rawName: string, targetLanguage: Language = 'en'): string {
   const trimmed = rawName.trim()
   if (!trimmed) return ''
 
-  const lower = trimmed.toLowerCase()
+  // Standardize common aliases (e.g. clinic/health centre inside REVA)
+  let standardName = trimmed
+  if (/reva/i.test(trimmed)) {
+    standardName = 'REVA University'
+  }
+
+  const lower = standardName.toLowerCase()
 
   // 1. Target: English
   if (targetLanguage === 'en') {
     if (KN_TO_EN.has(lower)) return KN_TO_EN.get(lower)!
     if (HI_TO_EN.has(lower)) return HI_TO_EN.get(lower)!
-    if (hasKannadaChars(trimmed)) {
-      return transliterateKnToEn(trimmed)
+    if (TA_TO_EN.has(lower)) return TA_TO_EN.get(lower)!
+    if (hasKannadaChars(standardName)) {
+      return transliterateKnToEn(standardName)
     }
-    return trimmed
+    return standardName
   }
 
   // 2. Target: Kannada
@@ -185,7 +314,11 @@ export function normalizePlaceName(rawName: string, targetLanguage: Language = '
       const en = HI_TO_EN.get(lower)!.toLowerCase()
       if (EN_TO_KN.has(en)) return EN_TO_KN.get(en)!
     }
-    return trimmed
+    if (TA_TO_EN.has(lower)) {
+      const en = TA_TO_EN.get(lower)!.toLowerCase()
+      if (EN_TO_KN.has(en)) return EN_TO_KN.get(en)!
+    }
+    return standardName
   }
 
   // 3. Target: Hindi
@@ -195,10 +328,28 @@ export function normalizePlaceName(rawName: string, targetLanguage: Language = '
       const en = KN_TO_EN.get(lower)!.toLowerCase()
       if (EN_TO_HI.has(en)) return EN_TO_HI.get(en)!
     }
-    return trimmed
+    if (TA_TO_EN.has(lower)) {
+      const en = TA_TO_EN.get(lower)!.toLowerCase()
+      if (EN_TO_HI.has(en)) return EN_TO_HI.get(en)!
+    }
+    return standardName
   }
 
-  return trimmed
+  // 4. Target: Tamil
+  if (targetLanguage === 'ta') {
+    if (EN_TO_TA.has(lower)) return EN_TO_TA.get(lower)!
+    if (KN_TO_EN.has(lower)) {
+      const en = KN_TO_EN.get(lower)!.toLowerCase()
+      if (EN_TO_TA.has(en)) return EN_TO_TA.get(en)!
+    }
+    if (HI_TO_EN.has(lower)) {
+      const en = HI_TO_EN.get(lower)!.toLowerCase()
+      if (EN_TO_TA.has(en)) return EN_TO_TA.get(en)!
+    }
+    return standardName
+  }
+
+  return standardName
 }
 
 function cleanDistrict(raw: string): string {
@@ -296,20 +447,11 @@ export async function reverseGeocode(
         if (data && typeof data === 'object') {
           if ('address' in data && data.address) {
             const addr = data.address as Record<string, string>
-            rawVillage =
-              addr.village ||
-              addr.hamlet ||
-              addr.isolated_dwelling ||
-              addr.neighbourhood ||
-              addr.residential ||
-              addr.quarter ||
-              addr.suburb ||
-              addr.locality ||
-              addr.town ||
-              addr.city_district ||
-              addr.city ||
-              addr.county ||
-              ''
+            rawVillage = resolveAccuratePlaceName(
+              data as { name?: string; category?: string; type?: string; address?: Record<string, string> },
+              latitude,
+              longitude,
+            )
             rawDistrict = cleanDistrict(addr.state_district || addr.county || '')
             rawState = addr.state || ''
           } else if ('village' in data || 'district' in data) {
@@ -382,6 +524,18 @@ export async function reverseGeocode(
             rawDistrict = cleanDistrict(dObj.name)
           }
         }
+
+        // Apply proximity overrides for known institutions / townships
+        const dReva = getDistanceKm(latitude, longitude, 13.1154, 77.6358)
+        if (dReva <= 0.6) {
+          rawVillage = 'REVA University'
+        } else {
+          const dBhartiya = getDistanceKm(latitude, longitude, 13.0845, 77.6410)
+          if (dBhartiya <= 0.65) {
+            rawVillage = 'Bhartiya City'
+          }
+        }
+
         const rawState = data.principalSubdivision || ''
         if (rawVillage || rawDistrict) {
           const village = normalizePlaceName(rawVillage || rawDistrict, language)
@@ -419,6 +573,10 @@ export async function reverseGeocode(
 }
 
 const KNOWN_PLACE_COORDINATES: Record<string, Coordinates> = {
+  'reva university': { latitude: 13.1154, longitude: 77.6358 },
+  'reva college': { latitude: 13.1154, longitude: 77.6358 },
+  reva: { latitude: 13.1154, longitude: 77.6358 },
+  bellahalli: { latitude: 13.1100, longitude: 77.6420 },
   'bhartiya city': { latitude: 13.0845, longitude: 77.6410 },
   'nikoo homes': { latitude: 13.0855, longitude: 77.6405 },
   thanisandra: { latitude: 13.0549, longitude: 77.6322 },

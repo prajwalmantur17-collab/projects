@@ -59,8 +59,22 @@ const IGNORED_CATEGORIES = new Set([
   'emergency',
 ])
 
+/** Major civic/educational amenities that serve as legitimate geographic search landmarks. */
+const ALLOWED_AMENITY_TYPES = new Set([
+  'university',
+  'college',
+  'school',
+  'hospital',
+  'marketplace',
+  'community_centre',
+  'research_institute',
+])
+
 /** Used when the network is down so the dropdown still helps for the common places. */
 const LOCAL_PLACES: Array<[name: string, district: string, lat: number, lon: number]> = [
+  ['REVA University', 'Bengaluru', 13.1154, 77.6358],
+  ['Kattigenahalli', 'Bengaluru', 13.1186, 77.6320],
+  ['Bellahalli', 'Bengaluru', 13.1105, 77.6420],
   ['Bhartiya City', 'Bengaluru', 13.0845, 77.6410],
   ['Thanisandra', 'Bengaluru', 13.0549, 77.6322],
   ['Kannuru', 'Bengaluru', 13.0906, 77.6534],
@@ -190,7 +204,10 @@ async function fetchPhoton(
       const p = feature.properties
       if (!p?.name) continue
       if (p.countrycode && p.countrycode.toUpperCase() !== 'IN') continue
-      if (p.osm_key && IGNORED_CATEGORIES.has(p.osm_key)) continue
+      if (p.osm_key && IGNORED_CATEGORIES.has(p.osm_key)) {
+        const isAllowedAmenity = p.osm_key === 'amenity' && p.type && ALLOWED_AMENITY_TYPES.has(p.type)
+        if (!isAllowedAmenity) continue
+      }
       if (p.type && ['house', 'street', 'country', 'state'].includes(p.type)) continue
 
       const [lon, lat] = feature.geometry?.coordinates ?? []
@@ -228,6 +245,7 @@ interface NominatimItem {
   lon?: string
   name?: string
   category?: string
+  type?: string
   address?: Record<string, string>
 }
 
@@ -257,7 +275,10 @@ async function fetchNominatim(
 
     const out: PlaceSuggestion[] = []
     for (const item of data as NominatimItem[]) {
-      if (item.category && IGNORED_CATEGORIES.has(item.category)) continue
+      if (item.category && IGNORED_CATEGORIES.has(item.category)) {
+        const isAllowedAmenity = item.category === 'amenity' && item.type && ALLOWED_AMENITY_TYPES.has(item.type)
+        if (!isAllowedAmenity) continue
+      }
       const addr = item.address ?? {}
       const rawName =
         item.name ||

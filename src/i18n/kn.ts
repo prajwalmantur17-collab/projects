@@ -8,6 +8,7 @@ import { cropPhotoKn } from './cropPhoto'
 import { uiKn } from './ui'
 import { fixKn } from './fixes'
 import { modeKn } from './mode'
+import { driversKn } from './drivers'
 import type { TranslationKey } from './en'
 
 export const kn: Record<TranslationKey, string> = {
@@ -21,6 +22,7 @@ export const kn: Record<TranslationKey, string> = {
   ...uiKn,
   ...fixKn,
   ...modeKn,
+  ...driversKn,
   'app.name': 'ಹಾರ್ವೆಸ್ಟ್ ರೆಂಟಲ್ಸ್',
   'app.tagline': 'ನಿಮ್ಮ ಹಳ್ಳಿಯ ಸಮೀಪದಲ್ಲಿ ಕೊಯ್ಲು ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
   'app.description':

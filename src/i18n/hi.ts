@@ -8,6 +8,7 @@ import { cropPhotoHi } from './cropPhoto'
 import { uiHi } from './ui'
 import { fixHi } from './fixes'
 import { modeHi } from './mode'
+import { driversHi } from './drivers'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
@@ -21,6 +22,7 @@ export const hi: Record<TranslationKey, string> = {
   ...uiHi,
   ...fixHi,
   ...modeHi,
+  ...driversHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास हार्वेस्टर मशीनें खोजें।',
   'app.description':
