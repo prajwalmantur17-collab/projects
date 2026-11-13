@@ -56,6 +56,11 @@ const DISTRICT_NAMES: PlaceNames[] = [
 ]
 
 const COMMON_PLACES: PlaceNames[] = [
+  { en: 'Bhartiya City', kn: 'ಭಾರತೀಯ ಸಿಟಿ', hi: 'भारतीय सिटी' },
+  { en: 'Nikoo Homes', kn: 'ನಿಕೂ ಹೋಮ್ಸ್', hi: 'निकू होम्स' },
+  { en: 'Thanisandra', kn: 'ತಾನಿಸಂದ್ರ', hi: 'थानिसांद्रा' },
+  { en: 'Kannuru', kn: 'ಕಣ್ಣೂರು', hi: 'कन्नूरु' },
+  { en: 'Chokkanahalli', kn: 'ಚೊಕ್ಕನಹಳ್ಳಿ', hi: 'चोकनहल्ली' },
   { en: 'Kogilu', kn: 'ಕೋಗಿಲು', hi: 'कोगिलु' },
   { en: 'Yelahanka', kn: 'ಯಲಹಂಕ', hi: 'यलहंका' },
   { en: 'Allalasandra', kn: 'ಅಲ್ಲಾಲಸಂದ್ರ', hi: 'अल्लालसंद्रा' },
@@ -286,9 +291,11 @@ export async function reverseGeocode(
         const rawVillage =
           addr.village ||
           addr.hamlet ||
-          addr.suburb ||
-          addr.quarter ||
+          addr.isolated_dwelling ||
           addr.neighbourhood ||
+          addr.residential ||
+          addr.quarter ||
+          addr.suburb ||
           addr.locality ||
           addr.town ||
           addr.city_district ||
@@ -342,12 +349,19 @@ export async function reverseGeocode(
 
       if (res.ok) {
         const data = await res.json()
-        const rawVillage = data.locality || data.city || ''
+        let rawVillage = data.locality || data.city || ''
         let rawDistrict = ''
         if (Array.isArray(data.localityInfo?.administrative)) {
+          const fineObj = [...data.localityInfo.administrative]
+            .reverse()
+            .find((a: { adminLevel?: number; name?: string }) => (a.adminLevel ?? 0) >= 8 && a.name)
+          if (fineObj?.name && !rawVillage) {
+            rawVillage = fineObj.name
+          }
+
           const dObj = data.localityInfo.administrative.find(
             (a: { adminLevel?: number; name?: string }) =>
-              a.adminLevel === 6 || (a.name && /district/i.test(a.name)),
+              a.adminLevel === 5 || a.adminLevel === 6 || (a.name && /district/i.test(a.name)),
           )
           if (dObj?.name) {
             rawDistrict = cleanDistrict(dObj.name)
@@ -390,6 +404,11 @@ export async function reverseGeocode(
 }
 
 const KNOWN_PLACE_COORDINATES: Record<string, Coordinates> = {
+  'bhartiya city': { latitude: 13.0845, longitude: 77.6410 },
+  'nikoo homes': { latitude: 13.0855, longitude: 77.6405 },
+  thanisandra: { latitude: 13.0549, longitude: 77.6322 },
+  kannuru: { latitude: 13.0906, longitude: 77.6534 },
+  chokkanahalli: { latitude: 13.0784, longitude: 77.6253 },
   kogilu: { latitude: 13.1067, longitude: 77.6174 },
   yelahanka: { latitude: 13.1007, longitude: 77.5963 },
   sampigehalli: { latitude: 13.0844, longitude: 77.6326 },

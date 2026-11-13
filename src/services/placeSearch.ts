@@ -61,6 +61,9 @@ const IGNORED_CATEGORIES = new Set([
 
 /** Used when the network is down so the dropdown still helps for the common places. */
 const LOCAL_PLACES: Array<[name: string, district: string, lat: number, lon: number]> = [
+  ['Bhartiya City', 'Bengaluru', 13.0845, 77.6410],
+  ['Thanisandra', 'Bengaluru', 13.0549, 77.6322],
+  ['Kannuru', 'Bengaluru', 13.0906, 77.6534],
   ['Bengaluru', 'Bengaluru', 12.9716, 77.5946],
   ['Yelahanka', 'Bengaluru', 13.1007, 77.5963],
   ['Kogilu', 'Bengaluru', 13.1067, 77.6174],

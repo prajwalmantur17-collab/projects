@@ -88,4 +88,26 @@ describe('reverseGeocode caching, deduplication, and resilience', () => {
     expect(res?.village).toBe('Tikota')
     expect(res?.district).toBe('Vijayapura')
   })
+
+  it('prioritizes neighbourhood (e.g. Bhartiya City) over broader suburb (e.g. Kogilu)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        address: {
+          office: 'DigiKey',
+          road: 'Nikoo Homes Road',
+          neighbourhood: 'Bhartiya City',
+          suburb: 'Kogilu',
+          state_district: 'Bengaluru Urban',
+          state: 'Karnataka',
+        },
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await reverseGeocode({ latitude: 13.0845, longitude: 77.6410 }, 'en')
+    expect(res?.village).toBe('Bhartiya City')
+    expect(res?.district).toBe('Bengaluru')
+    expect(res?.state).toBe('Karnataka')
+  })
 })
