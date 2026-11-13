@@ -246,26 +246,29 @@ export function Sidebar() {
         {/* ============================================================= */}
         {/* SECTION 1: BRAND HEADER                                       */}
         {/* ============================================================= */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#15462D] px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#15462D] px-3.5">
           <Link
             to={homePath}
             onClick={() => handleNavClick()}
-            className="flex items-center gap-3 overflow-hidden group focus-visible:outline-none"
+            className="flex items-center gap-2.5 overflow-hidden group focus-visible:outline-none"
             aria-label="HarvestRent"
           >
-            <LogoMark className="size-8 shrink-0 transition-transform duration-200 group-hover:scale-105" />
-            <div
-              className={`flex flex-col transition-[opacity,transform] duration-200 ${
-                collapsed ? 'lg:hidden opacity-0 -translate-x-2' : 'opacity-100 translate-x-0'
-              }`}
-            >
-              <span className="font-display font-extrabold text-base tracking-tight text-white whitespace-nowrap leading-tight">
-                HarvestRent
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase text-[#8FB8A0]/80">
-                AgriTech Platform
-              </span>
-            </div>
+            {collapsed ? (
+              <LogoMark className="size-9 shrink-0 transition-transform duration-200 group-hover:scale-105" />
+            ) : (
+              <div className="flex items-center">
+                <img
+                  src="/brand/logo-full-dark.webp"
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    if (!target.src.endsWith('.png')) target.src = '/brand/logo-full-dark.png'
+                  }}
+                  alt="HarvestRent"
+                  className="h-10 w-auto max-w-[190px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                />
+                <span className="sr-only">HarvestRent</span>
+              </div>
+            )}
           </Link>
 
           {/* Desktop Collapse / Expand Toggle */}

@@ -9,6 +9,7 @@ import { isValidEmail, normalizeWhitespace } from '../lib/validation'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { LogoLockup } from '../components/brand/Logo'
 type Mode = 'signin' | 'signup' | 'forgot'
 
 interface FieldErrors {
@@ -92,6 +93,9 @@ export function LoginPage() {
   return (
     <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-6">
+          <LogoLockup variant="light" markClassName="h-12 w-auto" />
+        </div>
             {noticeEmail || resetSentTo ? (
               <div className="card-surface p-6 text-center sm:p-8">
                 <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
