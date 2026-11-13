@@ -773,6 +773,67 @@ a[role="button"]:active:not(:disabled) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Dashboard Photographic Cards & Hero Section Visual Styling & Motion        */
+/* -------------------------------------------------------------------------- */
+
+@keyframes photo-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes stat-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-photo-fade-in {
+  animation: photo-fade-in 800ms var(--ease-out-soft) forwards;
+}
+
+.animate-stat-card-0 {
+  animation: stat-card-reveal 450ms var(--ease-out-soft) 50ms both;
+}
+
+.animate-stat-card-1 {
+  animation: stat-card-reveal 450ms var(--ease-out-soft) 120ms both;
+}
+
+.animate-stat-card-2 {
+  animation: stat-card-reveal 450ms var(--ease-out-soft) 190ms both;
+}
+
+.animate-stat-card-3 {
+  animation: stat-card-reveal 450ms var(--ease-out-soft) 260ms both;
+}
+
+/* Glassmorphism instruction cards */
+.glass-instruction-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 20px -2px rgba(11, 43, 30, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.glass-instruction-card:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 30px -4px rgba(11, 43, 30, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
+}
+
 /* Global Accessibility: Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,

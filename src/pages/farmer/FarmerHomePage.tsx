@@ -1118,47 +1118,107 @@ export function FarmerHomePage() {
 
       {/* 3. Dashboard Metrics & Recent Activity Row with Real Database Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Real Available Machines Count from Database */}
-        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-200">
-          <div className="size-10 rounded-2xl bg-leaf-50 border border-leaf-200/60 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs">
+        {/* 1. Real Available Machines Count from Database - Photographically Art Directed */}
+        <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-0 flex flex-col justify-between p-5 min-h-[160px]">
+          {/* Background photograph with responsive positioning & zoom */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
+            style={{
+              backgroundImage: 'url(/images/dashboard/machines-available.webp), url(/images/dashboard/machines-available.jpg)',
+              backgroundPosition: '65% center',
+            }}
+            aria-hidden="true"
+          />
+          {/* Subtle white-to-transparent & light forest green gradient overlay for perfect readability */}
+          <div
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/80 to-white/40 group-hover:via-white/75 transition-colors duration-300 pointer-events-none"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute inset-0 z-0 bg-leaf-900/10 mix-blend-multiply pointer-events-none"
+            aria-hidden="true"
+          />
+
+          {/* Card Content */}
+          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
             <Tractor className="size-5" />
           </div>
-          <div>
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+          <div className="relative z-10">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
               {platformStats !== null ? platformStats.available_machines : '—'}
             </div>
-            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.machinesAvailable')}</div>
+            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.machinesAvailable')}</div>
           </div>
         </div>
 
-        {/* 2. Real Registered Farmers / Users Count from Database */}
-        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-200">
-          <div className="size-10 rounded-2xl bg-leaf-50 border border-leaf-200/60 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs">
+        {/* 2. Real Registered Farmers / Users Count from Database - Photographically Art Directed */}
+        <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-1 flex flex-col justify-between p-5 min-h-[160px]">
+          {/* Background photograph with responsive positioning preserving both farmers' faces */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
+            style={{
+              backgroundImage: 'url(/images/dashboard/happy-farmers.webp), url(/images/dashboard/happy-farmers.jpg)',
+              backgroundPosition: '70% center',
+            }}
+            aria-hidden="true"
+          />
+          {/* Soft white-green gradient overlay preserving natural skin tones */}
+          <div
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/78 to-white/35 group-hover:via-white/72 transition-colors duration-300 pointer-events-none"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute inset-0 z-0 bg-leaf-800/8 mix-blend-multiply pointer-events-none"
+            aria-hidden="true"
+          />
+
+          {/* Card Content */}
+          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
             <Users className="size-5" />
           </div>
-          <div>
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+          <div className="relative z-10">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
               {platformStats !== null ? (platformStats.total_farmers || platformStats.total_users) : '—'}
             </div>
-            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.happyFarmers')}</div>
+            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.happyFarmers')}</div>
           </div>
         </div>
 
-        {/* 3. 100% Trusted Platform */}
-        <div className="rounded-3xl bg-white border border-cream-200 p-5 flex flex-col justify-between shadow-soft hover:shadow-lift hover:border-harvest-300 transition-all duration-200">
-          <div className="size-10 rounded-2xl bg-harvest-100 border border-harvest-200/60 flex items-center justify-center text-harvest-700 mb-3 shadow-2xs">
+        {/* 3. Confirmed Bookings / Trusted Platform - Photographically Art Directed */}
+        <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-harvest-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-2 flex flex-col justify-between p-5 min-h-[160px]">
+          {/* Background photograph with farmer & combine harvester in paddy field */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
+            style={{
+              backgroundImage: 'url(/images/dashboard/confirmed-bookings.webp), url(/images/dashboard/confirmed-bookings.jpg)',
+              backgroundPosition: '70% center',
+            }}
+            aria-hidden="true"
+          />
+          {/* Subtle golden-green gradient overlay ensuring crisp typography */}
+          <div
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/80 to-amber-50/40 group-hover:via-white/75 transition-colors duration-300 pointer-events-none"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute inset-0 z-0 bg-harvest-800/10 mix-blend-multiply pointer-events-none"
+            aria-hidden="true"
+          />
+
+          {/* Card Content */}
+          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-harvest-200/80 flex items-center justify-center text-harvest-700 mb-3 shadow-2xs group-hover:bg-harvest-50 group-hover:border-harvest-300 transition-colors duration-200">
             <ShieldCheck className="size-5" />
           </div>
-          <div>
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+          <div className="relative z-10">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
               {platformStats !== null ? platformStats.confirmed_bookings : '—'}
             </div>
-            <div className="text-xs font-medium text-ink-muted mt-0.5">{t('ui.confirmedBookings')}</div>
+            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.confirmedBookings')}</div>
           </div>
         </div>
 
         {/* 4. Recent Activity: Real Latest Machine from Database */}
-        <div className="rounded-3xl bg-white border border-cream-200 p-5 shadow-soft flex flex-col justify-between hover:shadow-lift transition-all duration-200">
+        <div className="rounded-3xl bg-white border border-cream-200 p-5 shadow-soft flex flex-col justify-between hover:shadow-lift transition-all duration-300 hover:-translate-y-1 animate-stat-card-3 min-h-[160px]">
           <div className="flex items-center justify-between border-b border-cream-200 pb-2.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
               <Activity className="size-4 text-leaf-700" />
@@ -1414,47 +1474,79 @@ export function FarmerHomePage() {
 
           </div>
         ) : (
-          /* Initial Display: Ready to Scan (NO machines shown before entering details) */
-          <div className="rounded-2xl border border-cream-200 bg-gradient-to-b from-white to-cream-50 p-6 text-center shadow-soft sm:p-10">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-leaf-100 text-leaf-700 shadow-sm">
-              <Tractor className="size-8" aria-hidden="true" />
-            </div>
-            <h3 className="mt-4 text-2xl font-extrabold text-ink">
-              {t('farmer.readyToScanTitle')}
-            </h3>
-            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-ink-muted">
-              {t('farmer.enterDetailsToScan')}
-            </p>
+          /* Initial Display: Ready to Scan (NO machines shown before entering details) - Photographically Art Directed */
+          <div className="relative overflow-hidden rounded-3xl border border-leaf-800/40 p-6 text-center shadow-lift sm:p-12 transition-all duration-300">
+            {/* Background combine harvester photograph in golden paddy field */}
+            <div
+              className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-1000 ease-out hover:scale-[1.02] pointer-events-none"
+              style={{
+                backgroundImage: 'url(/images/dashboard/harvester-hero.webp), url(/images/dashboard/harvester-hero.jpg)',
+                backgroundPosition: 'center 55%',
+              }}
+              aria-hidden="true"
+            />
 
-            <div className="mx-auto mt-8 grid max-w-2xl gap-4 text-left sm:grid-cols-3">
-              <div className="rounded-xl border border-cream-200 bg-white p-4 shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
-                  1
-                </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step1Title')}</h4>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {t('ui.step1Body')}
-                </p>
+            {/* Sophisticated Multi-stop Forest Green Gradient Overlay */}
+            {/* Left: Deep forest green, Middle: Semi-transparent emerald green, Right: Lighter luminous tint */}
+            <div
+              className="absolute inset-0 z-0 bg-gradient-to-r from-[#0B2B1E]/95 via-[#0E3D27]/85 to-[#176B45]/70 pointer-events-none"
+              aria-hidden="true"
+            />
+            {/* Vertical vignette gradient to focus content and soften top/bottom borders */}
+            <div
+              className="absolute inset-0 z-0 bg-gradient-to-b from-[#0B2B1E]/50 via-transparent to-[#072417]/80 pointer-events-none"
+              aria-hidden="true"
+            />
+
+            {/* Content Container */}
+            <div className="relative z-10 mx-auto max-w-3xl">
+              {/* Badge Icon */}
+              <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-soft transition-transform duration-300 hover:scale-105">
+                <Tractor className="size-8" aria-hidden="true" />
               </div>
 
-              <div className="rounded-xl border border-cream-200 bg-white p-4 shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
-                  2
-                </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step2Title')}</h4>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {t('ui.step2Body')}
-                </p>
-              </div>
+              {/* Headings */}
+              <h3 className="mt-5 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-sm">
+                {t('farmer.readyToScanTitle')}
+              </h3>
+              <p className="mx-auto mt-2.5 max-w-xl text-sm sm:text-base leading-relaxed text-leaf-100/90 font-medium drop-shadow-xs">
+                {t('farmer.enterDetailsToScan')}
+              </p>
 
-              <div className="rounded-xl border border-cream-200 bg-white p-4 shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-leaf-50 text-sm font-bold text-leaf-700">
-                  3
+              {/* Three Translucent Glassmorphic Step Cards */}
+              <div className="mx-auto mt-8 sm:mt-10 grid gap-4 text-left sm:grid-cols-3">
+                {/* Step 1: Enter Location */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
+                    1
+                  </div>
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step1Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step1Body')}
+                  </p>
                 </div>
-                <h4 className="mt-2 text-sm font-bold text-ink">{t('ui.step3Title')}</h4>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {t('ui.step3Body')}
-                </p>
+
+                {/* Step 2: Find Machines */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
+                    2
+                  </div>
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step2Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step2Body')}
+                  </p>
+                </div>
+
+                {/* Step 3: Contact Directly */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
+                    3
+                  </div>
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step3Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step3Body')}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
