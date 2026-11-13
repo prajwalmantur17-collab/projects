@@ -1185,23 +1185,23 @@ export function FarmerHomePage() {
         </div>
 
         {/* 3. Confirmed Bookings / Trusted Platform - Photographically Art Directed */}
-        <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-harvest-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-2 flex flex-col justify-between p-5 min-h-[160px]">
-          {/* Background photograph with farmer & combine harvester in paddy field */}
+        <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-2 flex flex-col justify-between p-5 min-h-[160px]">
+          {/* Background photograph with authentic farmer & machine owner shaking hands beside modern harvester */}
           <div
             className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
             style={{
               backgroundImage: 'url(/images/dashboard/confirmed-bookings.webp), url(/images/dashboard/confirmed-bookings.jpg)',
-              backgroundPosition: '70% center',
+              backgroundPosition: '72% center',
             }}
             aria-hidden="true"
           />
-          {/* Subtle golden-green gradient overlay ensuring crisp typography */}
+          {/* Subtle white-to-transparent gradient and very light forest-green tint preserving natural tones & handshake */}
           <div
-            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/80 to-amber-50/40 group-hover:via-white/75 transition-colors duration-300 pointer-events-none"
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/78 to-white/35 group-hover:via-white/72 transition-colors duration-300 pointer-events-none"
             aria-hidden="true"
           />
           <div
-            className="absolute inset-0 z-0 bg-harvest-800/10 mix-blend-multiply pointer-events-none"
+            className="absolute inset-0 z-0 bg-leaf-900/8 mix-blend-multiply pointer-events-none"
             aria-hidden="true"
           />
 
