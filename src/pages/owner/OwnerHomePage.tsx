@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   CalendarClock,
   ChevronRight,
@@ -29,15 +29,68 @@ import {
 } from '../../services/machines'
 import type { MachineCard } from '../../types'
 import { BookingMachineThumb } from '../../components/booking/BookingMachineThumb'
+import { KisanVoiceAssistant } from '../../components/voice/KisanVoiceAssistant'
+import { speakAloud } from '../../lib/voice'
+import { toast } from '../../lib/toast'
+import { setUserRole } from '../../services/profiles'
+import type { UserRole } from '../../types'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Spinner } from '../../components/ui/Feedback'
 
 export function OwnerHomePage() {
-  const { profile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const { t, language } = useI18n()
+  const navigate = useNavigate()
   const ownerId = profile?.id
+
+  /**
+   * Called when the owner uses voice to switch back to farmer mode.
+   * Switches immediately via voice without modal blockers.
+   */
+  const handleVoiceModeSwitch = useCallback(
+    async (targetRole?: 'owner' | 'farmer' | 'toggle') => {
+      const nextRole: UserRole =
+        targetRole === 'owner'
+          ? 'owner'
+          : targetRole === 'farmer'
+            ? 'farmer'
+            : profile?.role === 'owner'
+              ? 'farmer'
+              : 'owner'
+
+      if (profile?.role === nextRole) {
+        const msg = t('mode.switched', { role: t(nextRole === 'owner' ? 'role.owner' : 'role.farmer') })
+        toast.success(msg)
+        void speakAloud(msg, language)
+        return
+      }
+
+      try {
+        const spokenRole = t(nextRole === 'owner' ? 'role.owner' : 'role.farmer')
+        const switchingMsg =
+          language === 'kn'
+            ? `${spokenRole} ಮೋಡ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗುತ್ತಿದೆ...`
+            : language === 'hi'
+              ? `${spokenRole} मोड में बदला जा रहा है...`
+              : language === 'ta'
+                ? `${spokenRole} பயன்முறைக்கு மாற்றப்படுகிறது...`
+                : `Switching to ${spokenRole} mode...`
+        void speakAloud(switchingMsg, language)
+
+        await setUserRole(nextRole)
+        await refreshProfile()
+        const successMsg = t('mode.switched', { role: spokenRole })
+        toast.success(successMsg)
+        navigate(nextRole === 'owner' ? '/owner' : '/farmer', { replace: true })
+      } catch (caught) {
+        logError('voice.modeSwitch', caught)
+        toast.error(t('mode.error'))
+      }
+    },
+    [profile?.role, refreshProfile, navigate, t, language],
+  )
 
   const [busyMachineId, setBusyMachineId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MachineCard | null>(null)
@@ -483,6 +536,12 @@ export function OwnerHomePage() {
         cancelLabel={t('common.cancel')}
         danger
         loading={deleting}
+      />
+
+      {/* Floating Voice Assistant for 1-tap or voice mode switching */}
+      <KisanVoiceAssistant
+        onModeSwitch={handleVoiceModeSwitch}
+        currentRole="owner"
       />
     </div>
   )

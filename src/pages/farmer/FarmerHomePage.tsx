@@ -1,6 +1,6 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
   ArrowRight,
@@ -36,6 +36,7 @@ import type { PlatformStats, LatestActivity } from '../../services/platformStats
 import { getBusyMachines } from '../../services/workStatus'
 import { deduplicateMachines } from '../../services/store'
 import { resolveVillageCoordinates, reverseGeocode } from '../../services/geocode'
+import { setUserRole } from '../../services/profiles'
 import { searchPlaces } from '../../services/placeSearch'
 import type { PlaceSuggestion } from '../../services/placeSearch'
 import type { Coordinates, CropKey, MachineCard as MachineCardType } from '../../types'
@@ -72,7 +73,8 @@ function MapSkeleton({ className = 'h-72 sm:h-96' }: { className?: string }) {
 }
 import { machineTypeLabelKey } from '../../lib/labels'
 import { KisanVoiceAssistant } from '../../components/voice/KisanVoiceAssistant'
-import type { VoiceQueryResult } from '../../lib/voice'
+import { speakAloud, type VoiceQueryResult } from '../../lib/voice'
+import type { UserRole } from '../../types'
 
 interface SearchSnapshot {
   village: string
@@ -105,8 +107,9 @@ function formatRelativeTime(
 }
 
 export function FarmerHomePage() {
-  const { profile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const { t, language } = useI18n()
+  const navigate = useNavigate()
   const geo = useGeolocation()
 
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null)
@@ -495,7 +498,62 @@ export function FarmerHomePage() {
     }
   }, [])
 
+  /**
+   * Called when the user says a mode-switch phrase via voice (e.g. "switch to owner mode").
+   * Switches mode immediately by voice without modal blockers.
+   */
+  const handleVoiceModeSwitch = useCallback(
+    async (target: 'owner' | 'farmer' | 'toggle') => {
+      const nextRole: UserRole =
+        target === 'owner'
+          ? 'owner'
+          : target === 'farmer'
+            ? 'farmer'
+            : profile?.role === 'owner'
+              ? 'farmer'
+              : 'owner'
+
+      if (profile?.role === nextRole) {
+        const msg = t('mode.switched', { role: t(nextRole === 'owner' ? 'role.owner' : 'role.farmer') })
+        toast.success(msg)
+        void speakAloud(msg, language)
+        return
+      }
+
+      try {
+        const spokenRole = t(nextRole === 'owner' ? 'role.owner' : 'role.farmer')
+        const switchingMsg =
+          language === 'kn'
+            ? `${spokenRole} ಮೋಡ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗುತ್ತಿದೆ...`
+            : language === 'hi'
+              ? `${spokenRole} मोड में बदला जा रहा है...`
+              : language === 'ta'
+                ? `${spokenRole} பயன்முறைக்கு மாற்றப்படுகிறது...`
+                : `Switching to ${spokenRole} mode...`
+        void speakAloud(switchingMsg, language)
+
+        await setUserRole(nextRole)
+        await refreshProfile()
+        const successMsg = t('mode.switched', { role: spokenRole })
+        toast.success(successMsg)
+        navigate(nextRole === 'owner' ? '/owner' : '/farmer', { replace: true })
+      } catch (caught) {
+        logError('voice.modeSwitch', caught)
+        toast.error(t('mode.error'))
+      }
+    },
+    [profile?.role, refreshProfile, navigate, t, language],
+  )
+
   const handleVoiceResult = (result: VoiceQueryResult) => {
+    if (result.isModeSwitch) {
+      const target =
+        result.switchTarget === 'toggle'
+          ? (profile?.role === 'owner' ? 'farmer' : 'owner')
+          : result.switchTarget || (profile?.role === 'owner' ? 'farmer' : 'owner')
+      void handleVoiceModeSwitch(target)
+      return
+    }
     if (result.village) setVillage(result.village)
     if (result.crop) setCrop(result.crop)
     if (result.acreage) setAcreage(result.acreage)
@@ -1404,7 +1462,11 @@ export function FarmerHomePage() {
       </section>
 
       {/* Floating Kisan Voice Assistant for uneducated farmers & renters */}
-      <KisanVoiceAssistant onVoiceSearch={handleVoiceResult} />
+      <KisanVoiceAssistant
+        onVoiceSearch={handleVoiceResult}
+        onModeSwitch={handleVoiceModeSwitch}
+        currentRole="farmer"
+      />
 
       {/* Interactive Location Detection Modal */}
       <LocationDetectionModal

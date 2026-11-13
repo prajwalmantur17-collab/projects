@@ -249,6 +249,17 @@ export function Sidebar() {
           </button>
         </div>
 
+        {/* Mode Switch Card in Sidebar */}
+        {session && profile ? (
+          <div className="shrink-0 p-3 border-b border-[#15462D]/60">
+            <ModeSwitchButton
+              variant="sidebar"
+              collapsed={collapsed}
+              onAfterSwitch={() => setMobileOpen(false)}
+            />
+          </div>
+        ) : null}
+
         {/* B. Main Navigation List */}
         <nav
           aria-label={t('a11y.primaryNav')}
@@ -398,6 +409,16 @@ export function Sidebar() {
 
                   <div className="my-1 border-t border-[#1e4128]" />
 
+                  <ModeSwitchButton
+                    variant="menu-item"
+                    onAfterSwitch={() => {
+                      setProfileMenuOpen(false)
+                      setMobileOpen(false)
+                    }}
+                  />
+
+                  <div className="my-1 border-t border-[#1e4128]" />
+
                   <button
                     type="button"
                     onClick={() => {
@@ -425,9 +446,6 @@ export function Sidebar() {
               <span className={collapsed ? 'lg:hidden' : 'block'}>{t('ui.login')}</span>
             </Link>
           )}
-
-          {/* Switch between Farmer and Owner mode */}
-          {session && profile ? <ModeSwitchButton variant="sidebar" collapsed={collapsed} /> : null}
 
           {/* Promotional Mini Card matching reference mockup */}
           <div

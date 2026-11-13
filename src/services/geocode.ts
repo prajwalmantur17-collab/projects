@@ -219,9 +219,7 @@ export function clearReverseGeocodeCache(): void {
 }
 
 function getGeocodeCacheKey(coords: Coordinates, lang: Language): string {
-  // toFixed(4) ≈ 11 m resolution — fine enough to avoid serving a stale wrong-village result
-  // when the GPS fix improves slightly after the first call.
-  return `${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)},${lang}`
+  return `${coords.latitude.toFixed(3)},${coords.longitude.toFixed(3)},${lang}`
 }
 
 /**

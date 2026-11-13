@@ -5,6 +5,10 @@ export interface VoiceQueryResult {
   village?: string
   crop?: CropKey
   acreage?: string
+  /** Set when the user says a mode-switch phrase like "switch to owner mode" */
+  isModeSwitch?: boolean
+  /** 'owner' | 'farmer' | 'toggle' – which mode the user wants to switch to */
+  switchTarget?: 'owner' | 'farmer' | 'toggle'
 }
 
 // Mapping of crop keywords across Kannada, Hindi, and English
@@ -126,6 +130,65 @@ export function getVoiceLocale(lang: Language): string {
 export function parseSpokenQuery(transcript: string): VoiceQueryResult {
   const cleaned = transcript.trim().toLowerCase()
   const words = cleaned.split(/\s+/)
+
+  // -----------------------------------------------------------------------
+  // Mode-switch detection (checked before crop/village parsing)
+  // Phrases supported across en / kn / hi / ta:
+  //   EN: "switch to owner mode", "owner mode", "machine owner", "go to owner"
+  //       "switch to farmer mode", "farmer mode", "go to farmer"
+  //   KN: "owner mode ge badlisi", "malika mode", "raita mode"
+  //   HI: "owner mode mein badlo", "malik mode", "kisan mode"
+  //   TA: "owner mode maaru", "vivasayi mode"
+  // -----------------------------------------------------------------------
+  const ownerKeywords = [
+    'owner', 'machine owner', 'malika', 'ಮಾಲೀಕ', 'malik', 'मालिक',
+    'உரிமையாளர்', 'yajamanaru', 'yajamana',
+  ]
+  const farmerKeywords = [
+    'farmer', 'kisan', 'raita', 'ರೈತ', 'किसान', 'விவசாயி',
+    'ryot', 'ryta',
+  ]
+  const switchTriggers = [
+    'switch', 'change', 'go to', 'move to', 'open', 'mode',
+    'badlisi', 'badlo', 'maaru', 'திற', 'badaliye', 'toggle',
+    'ಮೋಡ್', 'ಮೋಡ್‌', 'ಬದಲಿಸಿ', 'ಬದಲು', 'ಬದಲಾವಣೆ', 'ಬದಲಾಯಿಸು',
+    'मोड', 'बदलो', 'बदलें', 'बदल',
+    'பயன்முறை', 'மாற்று', 'மாறு',
+  ]
+
+  const hasSwitch = switchTriggers.some((kw) => cleaned.includes(kw))
+  const hasOwner = ownerKeywords.some((kw) => cleaned.includes(kw))
+  const hasFarmer = farmerKeywords.some((kw) => cleaned.includes(kw))
+
+  const isExactOwner =
+    cleaned === 'owner' ||
+    cleaned === 'machine owner' ||
+    cleaned === 'malik' ||
+    cleaned === 'malika' ||
+    cleaned === 'ಮಾಲೀಕ' ||
+    cleaned === 'मालिक'
+  const isExactFarmer =
+    cleaned === 'farmer' ||
+    cleaned === 'kisan' ||
+    cleaned === 'raita' ||
+    cleaned === 'ರೈತ' ||
+    cleaned === 'किसान'
+
+  if (hasOwner && (hasSwitch || isExactOwner)) {
+    return { rawTranscript: transcript, isModeSwitch: true, switchTarget: 'owner' }
+  }
+  if (hasFarmer && (hasSwitch || isExactFarmer)) {
+    return { rawTranscript: transcript, isModeSwitch: true, switchTarget: 'farmer' }
+  }
+  if (
+    hasSwitch &&
+    (cleaned.includes('mode') ||
+      cleaned.includes('ಮೋಡ್') ||
+      cleaned.includes('मोड') ||
+      cleaned.includes('பயன்முறை'))
+  ) {
+    return { rawTranscript: transcript, isModeSwitch: true, switchTarget: 'toggle' }
+  }
 
   let detectedCrop: CropKey | undefined
   let detectedAcreage: string | undefined

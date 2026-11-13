@@ -14,10 +14,18 @@ import {
 import { unlockMobileAudio } from '../../lib/speech'
 import type { VoiceQueryResult } from '../../lib/voice'
 
+import type { UserRole } from '../../types'
+
 export function KisanVoiceAssistant({
   onVoiceSearch,
+  onModeSwitch,
+  currentRole = 'farmer',
 }: {
-  onVoiceSearch: (result: VoiceQueryResult) => void
+  onVoiceSearch?: (result: VoiceQueryResult) => void
+  /** Called when the user says a mode-switch phrase. Receives target role or 'toggle'. */
+  onModeSwitch?: (target: 'owner' | 'farmer' | 'toggle') => void
+  /** Current role so voice assistant can tailor greetings and hints */
+  currentRole?: UserRole
 }) {
   const { t, language } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
@@ -30,14 +38,28 @@ export function KisanVoiceAssistant({
     setIsOpen(true)
     setTranscript('')
 
-    // Play greeting prompt aloud
+    // Play greeting prompt aloud tailored to user's role
     let greeting = ''
-    if (language === 'kn') {
-      greeting = 'ನಮಸ್ಕಾರ, ನಿಮ್ಮ ಊರು ಅಥವಾ ಬೆಳೆಯ ಹೆಸರು ಹೇಳಿ.'
-    } else if (language === 'hi') {
-      greeting = 'नमस्ते, अपने गांव या फसल का नाम बताएं।'
+    if (currentRole === 'owner') {
+      if (language === 'kn') {
+        greeting = 'ನಮಸ್ಕಾರ! ರೈತ ಮೋಡ್‌ಗೆ ಬದಲಿಸಲು "ರೈತ ಮೋಡ್" ಎಂದು ಹೇಳಿ.'
+      } else if (language === 'hi') {
+        greeting = 'नमस्ते! किसान मोड में जाने के लिए "किसान मोड" बोलें।'
+      } else if (language === 'ta') {
+        greeting = 'வணக்கம்! விவசாயி பயன்முறைக்கு மாற "விவசாயி பயன்முறை" என்று சொல்லுங்கள்.'
+      } else {
+        greeting = 'Namaste, speak "switch to farmer mode" or your command.'
+      }
     } else {
-      greeting = 'Namaste, speak your village or crop name to find harvesters.'
+      if (language === 'kn') {
+        greeting = 'ನಮಸ್ಕಾರ, ನಿಮ್ಮ ಊರು ಅಥವಾ ಬೆಳೆಯ ಹೆಸರು ಹೇಳಿ, ಅಥವಾ ಮೋಡ್ ಬದಲಿಸಲು "ಮಾಲೀಕ ಮೋಡ್" ಎಂದು ಹೇಳಿ.'
+      } else if (language === 'hi') {
+        greeting = 'नमस्ते, अपने गांव या फसल का नाम बताएं, या "मालिक मोड" बोलें।'
+      } else if (language === 'ta') {
+        greeting = 'வணக்கம், உங்கள் கிராமம் அல்லது பயிரின் பெயர் சொல்லுங்கள், அல்லது "உரிமையாளர் பயன்முறை" என்று சொல்லுங்கள்.'
+      } else {
+        greeting = 'Namaste, speak your village or crop name, or say "switch to owner mode".'
+      }
     }
     void speakAloud(greeting, language)
   }
@@ -76,7 +98,15 @@ export function KisanVoiceAssistant({
 
       if (event.results?.[0]?.isFinal) {
         const parsed = parseSpokenQuery(current)
-        onVoiceSearch(parsed)
+
+        // Handle mode-switch voice command first
+        if (parsed.isModeSwitch && (parsed.switchTarget || onModeSwitch)) {
+          handleClose()
+          onModeSwitch?.(parsed.switchTarget || 'toggle')
+          return
+        }
+
+        onVoiceSearch?.(parsed)
         setTimeout(() => {
           handleClose()
         }, 1200)
@@ -177,6 +207,27 @@ export function KisanVoiceAssistant({
               </p>
 
               <p className="mt-3 text-xs text-ink-muted">{t('voice.speechPrompt')}</p>
+
+              {/* Mode switch hint — shown only when onModeSwitch is wired */}
+              {onModeSwitch ? (
+                <p className="mt-2 text-xs font-semibold text-emerald-800 bg-emerald-50 rounded-xl px-3 py-1.5 border border-emerald-200">
+                  {currentRole === 'owner'
+                    ? language === 'kn'
+                      ? '🎤 "Farmer mode" ಎಂದು ಹೇಳಿ ರೈತ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ.'
+                      : language === 'hi'
+                        ? '🎤 "Farmer mode" बोलकर किसान मोड में बदलें।'
+                        : language === 'ta'
+                          ? '🎤 "விவசாயி பயன்முறை" என்று சொல்லுங்கள்.'
+                          : '🎤 Say "farmer mode" to switch to farmer view.'
+                    : language === 'kn'
+                      ? '🎤 "Owner mode" ಎಂದು ಹೇಳಿ ಮಾಲೀಕ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ.'
+                      : language === 'hi'
+                        ? '🎤 "Owner mode" बोलकर मालिक मोड में बदलें।'
+                        : language === 'ta'
+                          ? '🎤 "உரிமையாளர் பயன்முறை" என்று சொல்லுங்கள்.'
+                          : '🎤 Say "owner mode" to switch to owner view.'}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
