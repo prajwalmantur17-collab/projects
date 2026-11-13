@@ -1120,7 +1120,7 @@ export function FarmerHomePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Real Available Machines Count from Database - Photographically Art Directed */}
         <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-0 flex flex-col justify-between p-5 min-h-[160px]">
-          {/* Background photograph with responsive positioning & zoom */}
+          {/* Background photograph with 100% opacity, rich contrast, and no watermark */}
           <div
             className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
             style={{
@@ -1129,31 +1129,27 @@ export function FarmerHomePage() {
             }}
             aria-hidden="true"
           />
-          {/* Subtle white-to-transparent & light forest green gradient overlay for perfect readability */}
+          {/* Subtle minimal gradient overlay (15-20%) specifically under text for readability while preserving rich photo details */}
           <div
-            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/80 to-white/40 group-hover:via-white/75 transition-colors duration-300 pointer-events-none"
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-0 z-0 bg-leaf-900/10 mix-blend-multiply pointer-events-none"
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/80 via-white/45 to-transparent pointer-events-none"
             aria-hidden="true"
           />
 
           {/* Card Content */}
-          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
+          <div className="relative z-10 size-10 rounded-2xl bg-white/95 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
             <Tractor className="size-5" />
           </div>
           <div className="relative z-10">
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
               {platformStats !== null ? platformStats.available_machines : '—'}
             </div>
-            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.machinesAvailable')}</div>
+            <div className="text-xs font-bold text-ink mt-0.5 drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">{t('ui.machinesAvailable')}</div>
           </div>
         </div>
 
         {/* 2. Real Registered Farmers / Users Count from Database - Photographically Art Directed */}
         <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-1 flex flex-col justify-between p-5 min-h-[160px]">
-          {/* Background photograph with responsive positioning preserving both farmers' faces */}
+          {/* Background photograph preserving farmers' faces, rich natural skin tones, and green fields */}
           <div
             className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
             style={{
@@ -1162,31 +1158,27 @@ export function FarmerHomePage() {
             }}
             aria-hidden="true"
           />
-          {/* Soft white-green gradient overlay preserving natural skin tones */}
+          {/* Subtle minimal gradient overlay (15-20%) under text for readability */}
           <div
-            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/78 to-white/35 group-hover:via-white/72 transition-colors duration-300 pointer-events-none"
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-0 z-0 bg-leaf-800/8 mix-blend-multiply pointer-events-none"
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/80 via-white/45 to-transparent pointer-events-none"
             aria-hidden="true"
           />
 
           {/* Card Content */}
-          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-2xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
+          <div className="relative z-10 size-10 rounded-2xl bg-white/95 backdrop-blur-xs border border-leaf-200/80 flex items-center justify-center text-leaf-700 mb-3 shadow-xs group-hover:bg-leaf-50 group-hover:border-leaf-300 transition-colors duration-200">
             <Users className="size-5" />
           </div>
           <div className="relative z-10">
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
               {platformStats !== null ? (platformStats.total_farmers || platformStats.total_users) : '—'}
             </div>
-            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.happyFarmers')}</div>
+            <div className="text-xs font-bold text-ink mt-0.5 drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">{t('ui.happyFarmers')}</div>
           </div>
         </div>
 
         {/* 3. Confirmed Bookings / Trusted Platform - Photographically Art Directed */}
         <div className="group relative rounded-3xl bg-white border border-cream-200 overflow-hidden shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all duration-300 hover:-translate-y-1 animate-stat-card-2 flex flex-col justify-between p-5 min-h-[160px]">
-          {/* Background photograph with authentic farmer & machine owner shaking hands beside modern harvester */}
+          {/* Background photograph with authentic farmer & machine owner shaking hands beside harvester */}
           <div
             className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.04] pointer-events-none"
             style={{
@@ -1195,25 +1187,21 @@ export function FarmerHomePage() {
             }}
             aria-hidden="true"
           />
-          {/* Subtle white-to-transparent gradient and very light forest-green tint preserving natural tones & handshake */}
+          {/* Subtle minimal gradient overlay preserving vibrant golden hour and crisp handshake */}
           <div
-            className="absolute inset-0 z-0 bg-gradient-to-r from-white/92 via-white/78 to-white/35 group-hover:via-white/72 transition-colors duration-300 pointer-events-none"
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-0 z-0 bg-leaf-900/8 mix-blend-multiply pointer-events-none"
+            className="absolute inset-0 z-0 bg-gradient-to-r from-white/80 via-white/45 to-transparent pointer-events-none"
             aria-hidden="true"
           />
 
           {/* Card Content */}
-          <div className="relative z-10 size-10 rounded-2xl bg-white/90 backdrop-blur-xs border border-harvest-200/80 flex items-center justify-center text-harvest-700 mb-3 shadow-2xs group-hover:bg-harvest-50 group-hover:border-harvest-300 transition-colors duration-200">
+          <div className="relative z-10 size-10 rounded-2xl bg-white/95 backdrop-blur-xs border border-harvest-200/80 flex items-center justify-center text-harvest-700 mb-3 shadow-xs group-hover:bg-harvest-50 group-hover:border-harvest-300 transition-colors duration-200">
             <ShieldCheck className="size-5" />
           </div>
           <div className="relative z-10">
-            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+            <div className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
               {platformStats !== null ? platformStats.confirmed_bookings : '—'}
             </div>
-            <div className="text-xs font-semibold text-ink-soft mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">{t('ui.confirmedBookings')}</div>
+            <div className="text-xs font-bold text-ink mt-0.5 drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">{t('ui.confirmedBookings')}</div>
           </div>
         </div>
 
