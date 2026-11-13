@@ -152,14 +152,14 @@ export function useGeolocation() {
         navigator.geolocation.getCurrentPosition(
           handleSuccess,
           handleError,
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
         )
 
         // Also start watchPosition to refine fix if accuracy improves
         watchId = navigator.geolocation.watchPosition(
           handleSuccess,
           handleError,
-          { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+          { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
         )
         activeWatchId.current = watchId
       } catch {
@@ -192,7 +192,7 @@ export function useGeolocation() {
               () => {
                 finish(null, 'farmer.locationDenied')
               },
-              { enableHighAccuracy: false, timeout: 4000, maximumAge: 120_000 },
+              { enableHighAccuracy: false, timeout: 4000, maximumAge: 0 },
             )
           } catch {
             finish(null, 'farmer.locationDenied')

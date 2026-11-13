@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { USABLE_ACCURACY_M } from '../../hooks/useGeolocation'
-import { reverseGeocode } from '../../services/geocode'
+import { clearReverseGeocodeCache, reverseGeocode } from '../../services/geocode'
 import type { Coordinates } from '../../types'
 import { Button } from '../ui/Button'
 
@@ -127,6 +127,11 @@ export function LocationDetectionModal({
     setDetectedState('')
     setCustomVillage('')
 
+    // Clear any stale reverse-geocode cache entries so a retry always fetches
+    // fresh place names. This is important when the user moves or the first
+    // GPS fix was inaccurate.
+    clearReverseGeocodeCache()
+
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setModalState('unavailable')
       return
@@ -229,13 +234,13 @@ export function LocationDetectionModal({
       navigator.geolocation.getCurrentPosition(
         handlePosition,
         handleError,
-        { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 30_000 },
+        { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
       )
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         handlePosition,
         handleError,
-        { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 30_000 },
+        { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
       )
     } catch {
       settled = true

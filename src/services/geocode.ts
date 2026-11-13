@@ -219,7 +219,9 @@ export function clearReverseGeocodeCache(): void {
 }
 
 function getGeocodeCacheKey(coords: Coordinates, lang: Language): string {
-  return `${coords.latitude.toFixed(3)},${coords.longitude.toFixed(3)},${lang}`
+  // toFixed(4) ≈ 11 m resolution — fine enough to avoid serving a stale wrong-village result
+  // when the GPS fix improves slightly after the first call.
+  return `${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)},${lang}`
 }
 
 /**
@@ -270,7 +272,7 @@ export async function reverseGeocode(
     const nomTimer = setTimeout(() => nomController.abort(), 2500)
 
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=17&addressdetails=1&accept-language=${acceptLang}`
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=${acceptLang}`
       const res = await fetch(url, {
         headers: {
           Accept: 'application/json',
@@ -285,10 +287,10 @@ export async function reverseGeocode(
         const addr = data.address || {}
         const rawVillage =
           addr.village ||
+          addr.hamlet ||
           addr.suburb ||
           addr.quarter ||
           addr.neighbourhood ||
-          addr.hamlet ||
           addr.locality ||
           addr.town ||
           addr.city_district ||
@@ -347,7 +349,7 @@ export async function reverseGeocode(
         if (Array.isArray(data.localityInfo?.administrative)) {
           const dObj = data.localityInfo.administrative.find(
             (a: { adminLevel?: number; name?: string }) =>
-              a.adminLevel === 5 || (a.name && /district/i.test(a.name)),
+              a.adminLevel === 6 || (a.name && /district/i.test(a.name)),
           )
           if (dObj?.name) {
             rawDistrict = cleanDistrict(dObj.name)
