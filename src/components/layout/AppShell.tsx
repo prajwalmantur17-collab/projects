@@ -10,6 +10,7 @@ import { ToastContainer } from '../ui/Toast'
 import { BottomNav } from './BottomNav'
 import { LoadingScreen } from '../ui/Feedback'
 import { PatternLockGate } from '../security/PatternLockGate'
+import { AppTour } from '../tour/AppTour'
 
 function AppShellContent() {
   const { t } = useI18n()
@@ -38,6 +39,7 @@ function AppShellContent() {
       <LiveShareManager />
       <ToastContainer />
       <PatternLockGate />
+      <AppTour />
 
       {/* Main Content Area (adjusts automatically to sidebar width) */}
       <div

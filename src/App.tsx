@@ -16,6 +16,10 @@ const OwnerMachinesPage = lazy(() => import('./pages/owner/OwnerMachinesPage').t
 const MachineFormPage = lazy(() => import('./pages/owner/MachineFormPage').then((m) => ({ default: m.MachineFormPage })))
 const AvailabilityPage = lazy(() => import('./pages/owner/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })))
 const OwnerBookingsPage = lazy(() => import('./pages/owner/OwnerBookingsPage').then((m) => ({ default: m.OwnerBookingsPage })))
+const FindDriversPage = lazy(() => import('./pages/drivers/FindDriversPage').then((m) => ({ default: m.FindDriversPage })))
+const DriverDetailPage = lazy(() => import('./pages/drivers/DriverDetailPage').then((m) => ({ default: m.DriverDetailPage })))
+const DriverRequestsPage = lazy(() => import('./pages/drivers/DriverRequestsPage').then((m) => ({ default: m.DriverRequestsPage })))
+const DriverProfilePage = lazy(() => import('./pages/drivers/DriverProfilePage').then((m) => ({ default: m.DriverProfilePage })))
 const RecordPage = lazy(() => import('./pages/RecordPage').then((m) => ({ default: m.RecordPage })))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
@@ -56,6 +60,12 @@ export function App() {
               <Route path="/settings" element={<SettingsGate />} />
               <Route path="/record" element={<RecordGate />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+
+              {/* Drivers: open to both farmers and owners */}
+              <Route path="/drivers" element={<FindDriversPage />} />
+              <Route path="/drivers/requests" element={<DriverRequestsPage />} />
+              <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
+              <Route path="/driver" element={<DriverProfilePage />} />
 
               <Route element={<RequireRole role="farmer" />}>
                 <Route path="/farmer/bookings" element={<FarmerBookingsPage />} />

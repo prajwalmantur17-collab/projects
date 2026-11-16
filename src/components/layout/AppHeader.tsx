@@ -276,7 +276,9 @@ export function AppHeader() {
 
         {/* Right: Actions (Language, Notifications, User) */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <LanguageSelector compact />
+          <div data-tour="language">
+            <LanguageSelector compact />
+          </div>
 
           {session ? <NotificationBell /> : null}
 

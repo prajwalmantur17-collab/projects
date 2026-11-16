@@ -13,6 +13,8 @@ import {
   Sprout,
   Tractor,
   User,
+  UserCog,
+  Users,
 } from 'lucide-react'
 import type { TranslationKey } from '../../i18n'
 
@@ -47,6 +49,9 @@ export const FARMER_SIDEBAR_SECTIONS: NavSectionDef[] = [
       { id: 'farmer-bookings', to: '/farmer/bookings', labelKey: 'nav.bookings', icon: CalendarDays },
       { id: 'farmer-records', to: '/record', labelKey: 'ui.myRecords', icon: History },
       { id: 'farmer-crops', to: '/farmer?section=crops', labelKey: 'ui.myCrops', icon: Sprout, isCropAction: true },
+      { id: 'farmer-drivers', to: '/drivers', labelKey: 'drivers.nav.find', icon: Users, end: true },
+      { id: 'farmer-driver-requests', to: '/drivers/requests', labelKey: 'drivers.nav.requests', icon: Inbox, end: true },
+      { id: 'farmer-driver-profile', to: '/driver', labelKey: 'drivers.nav.mine', icon: UserCog, end: true },
     ],
   },
   {
@@ -81,6 +86,9 @@ export const OWNER_SIDEBAR_SECTIONS: NavSectionDef[] = [
       { id: 'owner-requests', to: '/owner/bookings', labelKey: 'nav.requests', icon: Inbox, badgeType: 'pending_requests' },
       { id: 'owner-rentals', to: '/owner/bookings?tab=confirmed', labelKey: 'nav.myRentals', icon: CalendarCheck },
       { id: 'owner-history', to: '/record', labelKey: 'nav.rentalHistory', icon: History },
+      { id: 'owner-drivers', to: '/drivers', labelKey: 'drivers.nav.find', icon: Users, end: true },
+      { id: 'owner-driver-requests', to: '/drivers/requests', labelKey: 'drivers.nav.requests', icon: Inbox, end: true },
+      { id: 'owner-driver-profile', to: '/driver', labelKey: 'drivers.nav.mine', icon: UserCog, end: true },
     ],
   },
   {

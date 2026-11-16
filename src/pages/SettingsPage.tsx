@@ -21,6 +21,7 @@ import { LanguageSelector } from '../components/ui/LanguageSelector'
 import { PageHeader } from '../components/ui/PageHeader'
 import { ProfilePhotoCard } from '../components/profile/ProfilePhotoCard'
 import { ModeSwitchButton } from '../components/account/ModeSwitchButton'
+import { TourReplayCard } from '../components/tour/TourReplayCard'
 import { PatternSetupCard } from '../components/security/PatternSetupCard'
 
 export function SettingsPage() {
@@ -245,6 +246,9 @@ export function SettingsPage() {
       </Card>
 
       <PatternSetupCard />
+      <div className="mt-4">
+        <TourReplayCard />
+      </div>
 
       <Card className="mt-4 p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

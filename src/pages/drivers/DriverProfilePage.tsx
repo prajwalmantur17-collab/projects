@@ -323,12 +323,6 @@ export function DriverProfilePage() {
     reload: reloadRequests,
   } = useAsync(requestsLoader, { fallback: 'drivers.req.loadError' })
 
-  const [formVersion, setFormVersion] = useState(0)
-  const handleSaved = () => {
-    reload()
-    setFormVersion((value) => value + 1)
-  }
-
   if (loading && !myProfile) return <LoadingScreen message={t('app.loading')} />
 
   const requests = incoming ?? []
@@ -372,7 +366,7 @@ export function DriverProfilePage() {
               ) : null
             }
           />
-          <DriverProfileForm key={formVersion} initial={myProfile ?? null} onSaved={handleSaved} />
+          <DriverProfileForm initial={myProfile ?? null} onSaved={reload} />
         </Card>
       )}
 
