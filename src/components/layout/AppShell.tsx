@@ -11,6 +11,7 @@ import { BottomNav } from './BottomNav'
 import { LoadingScreen } from '../ui/Feedback'
 import { PatternLockGate } from '../security/PatternLockGate'
 import { AppTour } from '../tour/AppTour'
+import { AppUpdateModal } from '../update/AppUpdateModal'
 
 function AppShellContent() {
   const { t } = useI18n()
@@ -40,6 +41,7 @@ function AppShellContent() {
       <ToastContainer />
       <PatternLockGate />
       <AppTour />
+      <AppUpdateModal />
 
       {/* Main Content Area (adjusts automatically to sidebar width) */}
       <div
