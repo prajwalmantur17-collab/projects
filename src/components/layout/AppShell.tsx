@@ -12,6 +12,7 @@ import { LoadingScreen } from '../ui/Feedback'
 import { PatternLockGate } from '../security/PatternLockGate'
 import { AppTour } from '../tour/AppTour'
 import { AppUpdateModal } from '../update/AppUpdateModal'
+import { InstallAppBanner } from '../pwa/InstallAppBanner'
 
 function AppShellContent() {
   const { t } = useI18n()
@@ -42,6 +43,7 @@ function AppShellContent() {
       <PatternLockGate />
       <AppTour />
       <AppUpdateModal />
+      <InstallAppBanner />
 
       {/* Main Content Area (adjusts automatically to sidebar width) */}
       <div

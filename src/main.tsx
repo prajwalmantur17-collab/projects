@@ -22,3 +22,12 @@ createRoot(container).render(
     </I18nProvider>
   </StrictMode>,
 )
+
+// Register service worker for instant installation on mobile & PWA support
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Ignore registration errors
+    })
+  })
+}
