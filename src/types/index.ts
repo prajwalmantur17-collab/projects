@@ -23,7 +23,16 @@ export type MachineType =
   | 'reaper'
   | 'thresher'
   | 'baler'
+  | 'tractor'
+  | 'trailer'
+  | 'tractor_trailer'
   | 'other'
+
+/** Whether the owner offers a driver with the equipment. */
+export type DriverMode = 'with' | 'without' | 'both'
+
+/** Who the booking is for. Sugar factories book as renters too. */
+export type RenterType = 'farmer' | 'factory'
 
 export type CropKey =
   | 'wheat'
@@ -72,7 +81,7 @@ export interface MachineStatus {
   on_waitlist: boolean
 }
 
-export type PricingUnit = 'per_acre' | 'per_hour' | 'per_day'
+export type PricingUnit = 'per_acre' | 'per_hour' | 'per_day' | 'per_trip'
 
 /** A machine row joined with its owner name and service villages (DB view). */
 export interface MachineCard {
@@ -82,6 +91,10 @@ export interface MachineCard {
   model: string | null
   price_per_acre: number
   pricing_unit?: PricingUnit
+  /** Tractors/trailers: with driver, without driver or both. Null for harvesters. */
+  driver_mode?: DriverMode | null
+  /** Extra rupees per unit when the renter picks a driver (only for mode 'both'). */
+  driver_extra?: number | null
   crops: CropKey[]
   phone: string
   latitude: number | null
@@ -126,6 +139,9 @@ export interface Booking {
   price_per_acre: number
   /** Unit the price applies to (copied from the machine when the booking was made). */
   pricing_unit?: PricingUnit
+  with_driver?: boolean | null
+  destination_factory?: string | null
+  renter_type?: RenterType
   status: BookingStatus
   owner_note: string | null
   created_at: string
@@ -173,6 +189,8 @@ export interface NotificationPayload {
   machine_id?: string
   amount?: number | null
   payment_method?: PaymentMethod | null
+  with_driver?: boolean | null
+  renter_type?: RenterType
   /** Driver hire notifications: who the notification is meant for. */
   audience?: 'driver' | 'requester'
   request_id?: string
@@ -202,6 +220,8 @@ export interface MachineInput {
   model: string | null
   price_per_acre: number
   pricing_unit?: PricingUnit
+  driver_mode?: DriverMode | null
+  driver_extra?: number | null
   crops: CropKey[]
   phone: string
   latitude: number | null
@@ -226,6 +246,9 @@ export interface CreateBookingInput {
   crop: CropKey
   contactPhone: string
   notes?: string
+  withDriver?: boolean
+  destinationFactory?: string
+  renterType?: RenterType
 }
 
 export type DriverRateUnit = 'per_acre' | 'per_hour' | 'per_day'

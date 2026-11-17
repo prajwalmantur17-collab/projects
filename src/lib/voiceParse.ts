@@ -410,8 +410,17 @@ export const MACHINE_SYNONYMS: Record<string, string[]> = {
     'हार्वेस्टर', 'ಕಂಬೈನ್ ಹಾರ್ವೆಸ್ಟರ್', 'ಕಂಬೈನ್', 'ಹಾರ್ವೆಸ್ಟರ್',
   ],
   tractor_harvester: [
-    'tractor harvester', 'tractor', 'ट्रैक्टर हार्वेस्टर', 'ट्रैक्टर', 'ट्रेक्टर',
-    'ಟ್ರ್ಯಾಕ್ಟರ್ ಹಾರ್ವೆಸ್ಟರ್', 'ಟ್ರ್ಯಾಕ್ಟರ್', 'ಟ್ರಾಕ್ಟರ್',
+    'tractor harvester', 'ट्रैक्टर हार्वेस्टर', 'ಟ್ರ್ಯಾಕ್ಟರ್ ಹಾರ್ವೆಸ್ಟರ್',
+  ],
+  tractor_trailer: [
+    'tractor trailer', 'tractor with trailer', 'tractor and trailer', 'ट्रैक्टर ट्रॉली',
+    'ट्रैक्टर ट्रेलर', 'ಟ್ರ್ಯಾಕ್ಟರ್ ಟ್ರೇಲರ್', 'ಟ್ರ್ಯಾಕ್ಟರ್ ಟ್ರಾಲಿ',
+  ],
+  tractor: [
+    'tractor', 'ट्रैक्टर', 'ट्रेक्टर', 'ಟ್ರ್ಯಾಕ್ಟರ್', 'ಟ್ರಾಕ್ಟರ್',
+  ],
+  trailer: [
+    'trailer', 'trolley', 'trali', 'ट्रेलर', 'ट्रॉली', 'ಟ್ರೇಲರ್', 'ಟ್ರಾಲಿ',
   ],
   reaper: ['reaper', 'रीपर', 'ರೀಪರ್'],
   thresher: ['thresher', 'threshing', 'थ्रेशर', 'थ्रेशिंग', 'ಥ್ರೆಶರ್', 'ಥ್ರೆಷರ್'],
@@ -423,6 +432,7 @@ export const PRICING_UNIT_SYNONYMS: Record<string, string[]> = {
   per_acre: ['per acre', 'acre', 'ekad', 'ekar', 'एकड़', 'एकड', 'प्रति एकड़', 'ಎಕರೆ', 'ಪ್ರತಿ ಎಕರೆ'],
   per_hour: ['per hour', 'hour', 'ghanta', 'ghante', 'घंटा', 'घंटे', 'प्रति घंटा', 'ಗಂಟೆ', 'ಪ್ರತಿ ಗಂಟೆ'],
   per_day: ['per day', 'day', 'din', 'dina', 'दिन', 'प्रति दिन', 'ದಿನ', 'ಪ್ರತಿ ದಿನ'],
+  per_trip: ['per trip', 'trip', 'phera', 'fera', 'khep', 'प्रति फेरा', 'फेरा', 'ट्रिप', 'ಟ್ರಿಪ್', 'ಪ್ರತಿ ಟ್ರಿಪ್', 'ಒಂದು ಟ್ರಿಪ್'],
 }
 
 // ------------------------------------------------------------ free text

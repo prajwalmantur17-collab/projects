@@ -13,9 +13,31 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
   const methodLabel = booking.payment_method === 'upi' ? t('work.upi') : t('work.cash')
   const unit = booking.pricing_unit ?? 'per_acre'
   const priceLabel =
-    unit === 'per_hour' ? t('price.perHour') : unit === 'per_day' ? t('price.perDay') : t('price.perAcre')
+    unit === 'per_hour'
+      ? t('price.perHour')
+      : unit === 'per_day'
+        ? t('price.perDay')
+        : unit === 'per_trip'
+          ? t('equip.priceTrip')
+          : t('price.perAcre')
   const unitSuffix =
-    unit === 'per_hour' ? t('price.unitHour') : unit === 'per_day' ? t('price.unitDay') : t('price.unitAcre')
+    unit === 'per_hour'
+      ? t('price.unitHour')
+      : unit === 'per_day'
+        ? t('price.unitDay')
+        : unit === 'per_trip'
+          ? t('equip.unitTrip')
+          : t('price.unitAcre')
+  // The saved quantity means acres, hours, days or trips, depending on the price unit.
+  const quantityLabel =
+    unit === 'per_hour'
+      ? t('equip.qtyHours')
+      : unit === 'per_day'
+        ? t('equip.qtyDays')
+        : unit === 'per_trip'
+          ? t('equip.qtyTrips')
+          : t('booking.acreage')
+  const quantityValue = unit === 'per_acre' ? `${booking.acreage} ${t('common.acres')}` : String(booking.acreage)
   // Only an acre-based price can be turned into a total up front; hourly/daily totals depend on the work done.
   const estimatedTotal =
     unit === 'per_acre'
@@ -36,10 +58,8 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
           <dd className="mt-0.5 font-semibold text-ink">{booking.village}</dd>
         </div>
         <div>
-          <dt className="text-ink-muted">{t('booking.acreage')}</dt>
-          <dd className="mt-0.5 font-semibold text-ink">
-            {booking.acreage} {t('common.acres')}
-          </dd>
+          <dt className="text-ink-muted">{quantityLabel}</dt>
+          <dd className="mt-0.5 font-semibold text-ink">{quantityValue}</dd>
         </div>
         <div>
           <dt className="text-ink-muted">{t('booking.crop')}</dt>
@@ -61,6 +81,25 @@ export function BookingDetails({ booking }: { booking: BookingWithRelations }) {
             {estimatedTotal}
           </dd>
         </div>
+        {booking.with_driver != null ? (
+          <div>
+            <dt className="text-ink-muted">{t('equip.chooseDriver')}</dt>
+            <dd className="mt-0.5 font-semibold text-ink">
+              {booking.with_driver ? t('equip.optionWithDriver') : t('equip.optionWithoutDriver')}
+            </dd>
+          </div>
+        ) : null}
+        {booking.destination_factory ? (
+          <div>
+            <dt className="text-ink-muted">{t('equip.destination')}</dt>
+            <dd className="mt-0.5 font-semibold text-ink">{booking.destination_factory}</dd>
+          </div>
+        ) : null}
+        {booking.renter_type === 'factory' ? (
+          <div className="col-span-2">
+            <dd className="font-semibold text-leaf-800">{t('equip.bookedAsFactory')}</dd>
+          </div>
+        ) : null}
       </dl>
 
       {phase === 'working' ? (

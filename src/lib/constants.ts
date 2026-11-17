@@ -6,8 +6,18 @@ export const MACHINE_TYPES: MachineType[] = [
   'reaper',
   'thresher',
   'baler',
+  'tractor',
+  'trailer',
+  'tractor_trailer',
   'other',
 ]
+
+/** Transport equipment: rented with or without a driver, often by the trip or day. */
+export const TRANSPORT_TYPES: MachineType[] = ['tractor', 'trailer', 'tractor_trailer']
+
+export function isTransportType(value: unknown): boolean {
+  return typeof value === 'string' && (TRANSPORT_TYPES as string[]).includes(value)
+}
 
 export const CROP_KEYS: CropKey[] = [
   'wheat',

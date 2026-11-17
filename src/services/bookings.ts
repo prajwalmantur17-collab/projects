@@ -111,7 +111,8 @@ export function calculateEstimatedTotal(
     return { total: null, unitLabelKey: 'common.perAcre', isPerAcre: true }
   }
 
-  const unitLabelKey = unit === 'per_hour' ? 'common.perHour' : 'common.perDay'
+  const unitLabelKey =
+    unit === 'per_hour' ? 'common.perHour' : unit === 'per_trip' ? 'equip.perTrip' : 'common.perDay'
   return { total: null, unitLabelKey, isPerAcre: false }
 }
 
@@ -124,6 +125,9 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     p_crop: input.crop,
     p_contact_phone: input.contactPhone,
     p_notes: input.notes ?? null,
+    p_with_driver: input.withDriver ?? null,
+    p_destination_factory: input.destinationFactory?.trim() || null,
+    p_renter_type: input.renterType ?? 'farmer',
   })
   if (error) throw error
   if (!data) throw new Error('HR_NOT_FOUND: booking was not created')

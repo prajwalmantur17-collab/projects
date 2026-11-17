@@ -47,6 +47,8 @@ export function SpeakButton({
         ? 'ಪ್ರತಿ ಗಂಟೆಗೆ'
         : machine.pricing_unit === 'per_day'
         ? 'ಪ್ರತಿ ದಿನಕ್ಕೆ'
+        : machine.pricing_unit === 'per_trip'
+        ? 'ಪ್ರತಿ ಟ್ರಿಪ್‌ಗೆ'
         : 'ಒಂದು ಎಕರೆಗೆ'
 
     const hiUnit =
@@ -54,6 +56,8 @@ export function SpeakButton({
         ? 'प्रति घंटा'
         : machine.pricing_unit === 'per_day'
         ? 'प्रति दिन'
+        : machine.pricing_unit === 'per_trip'
+        ? 'प्रति फेरा'
         : 'प्रति एकड़'
 
     const taUnit =
@@ -61,6 +65,8 @@ export function SpeakButton({
         ? 'ஒரு மணி நேரத்திற்கு'
         : machine.pricing_unit === 'per_day'
         ? 'ஒரு நாளைக்கு'
+        : machine.pricing_unit === 'per_trip'
+        ? 'ஒரு நடைக்கு'
         : 'ஒரு ஏக்கருக்கு'
 
     const enUnit =
@@ -68,7 +74,20 @@ export function SpeakButton({
         ? 'per hour'
         : machine.pricing_unit === 'per_day'
         ? 'per day'
+        : machine.pricing_unit === 'per_trip'
+        ? 'per trip'
         : 'per acre'
+
+    // Tractors and trailers say whether a driver comes with them; harvesters keep the old wording.
+    const dm = machine.driver_mode ?? null
+    const knDriver =
+      dm === 'with' ? 'ಚಾಲಕ ಸೇರಿದೆ.' : dm === 'without' ? 'ಚಾಲಕ ಸೇರಿಲ್ಲ.' : dm === 'both' ? 'ಚಾಲಕನೊಂದಿಗೆ ಅಥವಾ ಇಲ್ಲದೆ ಲಭ್ಯ.' : 'ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ.'
+    const hiDriver =
+      dm === 'with' ? 'ड्राइवर शामिल है।' : dm === 'without' ? 'ड्राइवर शामिल नहीं है।' : dm === 'both' ? 'ड्राइवर के साथ या बिना उपलब्ध है।' : 'ऑपरेटर और डीजल शामिल है।'
+    const taDriver =
+      dm === 'with' ? 'ஓட்டுநர் சேர்க்கப்பட்டுள்ளார்.' : dm === 'without' ? 'ஓட்டுநர் சேர்க்கப்படவில்லை.' : dm === 'both' ? 'ஓட்டுநருடன் அல்லது இல்லாமல் கிடைக்கும்.' : 'ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது.'
+    const enDriver =
+      dm === 'with' ? 'Driver included.' : dm === 'without' ? 'Driver not included.' : dm === 'both' ? 'Available with or without a driver.' : 'Operator and diesel included.'
 
     // Formulate natural language speech based on user's active language
     const safeModel = machine.model || typeLabel
@@ -83,22 +102,22 @@ export function SpeakButton({
       const locText = safeDistrict && safeVillage ? `${safeDistrict} ಜಿಲ್ಲೆಯ ${safeVillage} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ.` : safeVillage ? `${safeVillage} ಗ್ರಾಮದಲ್ಲಿ ಲಭ್ಯವಿದೆ.` : 'ಲಭ್ಯವಿದೆ.'
       const ownerText = safeOwner ? ` ಮಾಲೀಕರು: ${safeOwner}.` : ''
       const phoneText = phoneSpoken ? ` ಫೋನ್ ಸಂಖ್ಯೆ: ${phoneSpoken}.` : ''
-      speechText = `${typeLabel}: ${safeModel}. ${locText} ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ಆಪರೇಟರ್ ಮತ್ತು ಡೀಸೆಲ್ ಒಳಗೊಂಡಿದೆ.${cropNames ? ` ಬೆಳೆಗಳು: ${cropNames}.` : ''}${ownerText}${phoneText}`
+      speechText = `${typeLabel}: ${safeModel}. ${locText} ಬಾಡಿಗೆ ${knUnit} ${machine.price_per_acre} ರೂಪಾಯಿ. ${knDriver}${cropNames ? ` ಬೆಳೆಗಳು: ${cropNames}.` : ''}${ownerText}${phoneText}`
     } else if (language === 'hi') {
       const locText = safeDistrict && safeVillage ? `${safeDistrict} ज़िले के ${safeVillage} में उपलब्ध है।` : safeVillage ? `${safeVillage} में उपलब्ध है।` : 'उपलब्ध है।'
       const ownerText = safeOwner ? ` मालिक: ${safeOwner}।` : ''
       const phoneText = phoneSpoken ? ` फोन नंबर: ${phoneSpoken}।` : ''
-      speechText = `${typeLabel}: ${safeModel}। ${locText} किराया ${machine.price_per_acre} रुपये ${hiUnit}। ऑपरेटर और डीजल शामिल है।${cropNames ? ` फसलें: ${cropNames}।` : ''}${ownerText}${phoneText}`
+      speechText = `${typeLabel}: ${safeModel}। ${locText} किराया ${machine.price_per_acre} रुपये ${hiUnit}। ${hiDriver}${cropNames ? ` फसलें: ${cropNames}।` : ''}${ownerText}${phoneText}`
     } else if (language === 'ta') {
       const locText = safeDistrict && safeVillage ? `${safeDistrict} மாவட்டத்தின் ${safeVillage} கிராமத்தில் கிடைக்கிறது.` : safeVillage ? `${safeVillage} கிராமத்தில் கிடைக்கிறது.` : 'கிடைக்கிறது.'
       const ownerText = safeOwner ? ` உரிமையாளர்: ${safeOwner}.` : ''
       const phoneText = phoneSpoken ? ` தொலைபேசி எண்: ${phoneSpoken}.` : ''
-      speechText = `${typeLabel}: ${safeModel}. ${locText} வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ஆப்பரேட்டர் மற்றும் டீசல் சேர்க்கப்பட்டுள்ளது.${cropNames ? ` பயிர்கள்: ${cropNames}.` : ''}${ownerText}${phoneText}`
+      speechText = `${typeLabel}: ${safeModel}. ${locText} வாடகை ${taUnit} ${machine.price_per_acre} ரூபாய். ${taDriver}${cropNames ? ` பயிர்கள்: ${cropNames}.` : ''}${ownerText}${phoneText}`
     } else {
       const locText = safeVillage ? `available in ${safeVillage}${safeDistrict ? `, ${safeDistrict} district` : ''}.` : 'available for rent.'
       const ownerText = safeOwner ? ` Owner: ${safeOwner}.` : ''
       const phoneText = phoneSpoken ? ` Contact number: ${phoneSpoken}.` : ''
-      speechText = `${safeModel} ${locText} Rental price: ${machine.price_per_acre} rupees ${enUnit}. Operator and diesel included.${cropNames ? ` Suitable for ${cropNames}.` : ''}${ownerText}${phoneText}`
+      speechText = `${safeModel} ${locText} Rental price: ${machine.price_per_acre} rupees ${enUnit}. ${enDriver}${cropNames ? ` Suitable for ${cropNames}.` : ''}${ownerText}${phoneText}`
     }
 
     try {

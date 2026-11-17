@@ -10,6 +10,7 @@ import { fixEn } from './fixes'
 import { modeEn } from './mode'
 import { driversEn } from './drivers'
 import { tourEn } from './tour'
+import { equipmentEn } from './equipment'
 
 export const en = {
   ...authEn,
@@ -24,6 +25,7 @@ export const en = {
   ...modeEn,
   ...driversEn,
   ...tourEn,
+  ...equipmentEn,
   'app.name': 'Harvest Rentals',
   'app.tagline': 'Find harvesting machines near your village.',
   'app.description':

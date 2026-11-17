@@ -10,6 +10,7 @@ import { fixKn } from './fixes'
 import { modeKn } from './mode'
 import { driversKn } from './drivers'
 import { tourKn } from './tour'
+import { equipmentKn } from './equipment'
 import type { TranslationKey } from './en'
 
 export const kn: Record<TranslationKey, string> = {
@@ -25,6 +26,7 @@ export const kn: Record<TranslationKey, string> = {
   ...modeKn,
   ...driversKn,
   ...tourKn,
+  ...equipmentKn,
   'app.name': 'ಹಾರ್ವೆಸ್ಟ್ ರೆಂಟಲ್ಸ್',
   'app.tagline': 'ನಿಮ್ಮ ಹಳ್ಳಿಯ ಸಮೀಪದಲ್ಲಿ ಕೊಯ್ಲು ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
   'app.description':

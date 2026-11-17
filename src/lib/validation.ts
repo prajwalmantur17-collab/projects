@@ -1,5 +1,13 @@
 import type { TranslationKey } from '../i18n/en'
-import { CROP_KEYS, MAX_IMAGE_BYTES, MAX_VILLAGES, ACCEPTED_IMAGE_TYPES, isCropKey, isMachineType } from './constants'
+import {
+  CROP_KEYS,
+  MAX_IMAGE_BYTES,
+  MAX_VILLAGES,
+  ACCEPTED_IMAGE_TYPES,
+  isCropKey,
+  isMachineType,
+  isTransportType,
+} from './constants'
 
 export type FieldErrors = Record<string, TranslationKey>
 
@@ -75,7 +83,11 @@ export interface MachineFormValues {
   machineType: string
   model: string
   pricePerAcre: string
-  pricingUnit?: 'per_acre' | 'per_hour' | 'per_day'
+  pricingUnit?: 'per_acre' | 'per_hour' | 'per_day' | 'per_trip'
+  /** Tractors/trailers only: '', 'with', 'without' or 'both'. */
+  driverMode?: string
+  /** Extra rupees per unit for a driver (only used when driverMode is 'both'). */
+  driverExtra?: string
   crops: string[]
   primaryVillage: string
   district: string
@@ -88,7 +100,9 @@ export interface MachineFormParsed {
   machineType: string
   model: string | null
   pricePerAcre: number
-  pricingUnit: 'per_acre' | 'per_hour' | 'per_day'
+  pricingUnit: 'per_acre' | 'per_hour' | 'per_day' | 'per_trip'
+  driverMode: 'with' | 'without' | 'both' | null
+  driverExtra: number | null
   crops: string[]
   locations: { village: string; district: string; state: string; is_primary: boolean }[]
   phone: string
@@ -124,9 +138,31 @@ export function validateMachineForm(
     errors.pricePerAcre = 'validation.price'
   }
 
+  const transport = isTransportType(values.machineType)
   const crops = values.crops.filter(isCropKey)
-  if (crops.length === 0) errors.crops = 'validation.crops'
+  // Tractors and trailers can carry any crop, so choosing crops is optional for them.
+  if (crops.length === 0 && !transport) errors.crops = 'validation.crops'
   if (crops.length > CROP_KEYS.length) errors.crops = 'validation.crops'
+
+  let driverMode: 'with' | 'without' | 'both' | null = null
+  let driverExtra: number | null = null
+  if (transport) {
+    if (values.driverMode === 'with' || values.driverMode === 'without' || values.driverMode === 'both') {
+      driverMode = values.driverMode
+    } else {
+      errors.driverMode = 'validation.driverMode'
+    }
+    if (driverMode === 'both') {
+      const rawExtra = (values.driverExtra ?? '').trim()
+      if (rawExtra) {
+        const extra = parsePositiveNumber(rawExtra)
+        if (extra === null || extra > 1_000_000) errors.driverExtra = 'validation.driverExtra'
+        else driverExtra = extra
+      } else {
+        driverExtra = 0
+      }
+    }
+  }
 
   if (primaryVillage.length < 2 || primaryVillage.length > 80) {
     errors.primaryVillage = 'validation.village'
@@ -172,7 +208,9 @@ export function validateMachineForm(
   ]
 
   const pricingUnit =
-    values.pricingUnit === 'per_hour' || values.pricingUnit === 'per_day'
+    values.pricingUnit === 'per_hour' ||
+    values.pricingUnit === 'per_day' ||
+    values.pricingUnit === 'per_trip'
       ? values.pricingUnit
       : 'per_acre'
 
@@ -183,6 +221,8 @@ export function validateMachineForm(
       model: model || null,
       pricePerAcre: price as number,
       pricingUnit,
+      driverMode,
+      driverExtra,
       crops,
       locations,
       phone,
@@ -197,6 +237,8 @@ export interface BookingFormValues {
   crop: string
   phone: string
   notes: string
+  /** Optional: sugar factory (or other place) the load goes to. */
+  destinationFactory?: string
 }
 
 export interface BookingFormParsed {
@@ -206,6 +248,7 @@ export interface BookingFormParsed {
   crop: string
   phone: string
   notes: string | null
+  destinationFactory: string | null
 }
 
 export function validateBookingForm(
@@ -226,6 +269,8 @@ export function validateBookingForm(
   if (acreage === null || acreage < 0.1 || acreage > 500) errors.acreage = 'validation.acreage'
   if (!isValidPhone(phone)) errors.phone = 'validation.phone'
   if (notes.length > 500) errors.notes = 'validation.notes'
+  const destinationFactory = normalizeWhitespace(values.destinationFactory ?? '')
+  if (destinationFactory.length > 80) errors.destinationFactory = 'validation.factory'
   if (!crop) {
     errors.crop = 'validation.cropRequired'
   } else if (options.allowedCrops && !options.allowedCrops.includes(crop)) {
@@ -245,6 +290,7 @@ export function validateBookingForm(
       crop,
       phone,
       notes: notes || null,
+      destinationFactory: destinationFactory || null,
     },
   }
 }

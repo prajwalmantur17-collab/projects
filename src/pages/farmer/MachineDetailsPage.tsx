@@ -15,7 +15,7 @@ import type { TranslationKey } from '../../i18n'
 import { logError, mapErrorToKey } from '../../lib/errors'
 import { toast } from '../../lib/toast'
 import { formatDate, formatDateTime, formatPrice } from '../../lib/format'
-import { CROP_KEYS, PHONE_DISPLAY_PREFIX, isCropKey } from '../../lib/constants'
+import { CROP_KEYS, PHONE_DISPLAY_PREFIX, isCropKey, isTransportType } from '../../lib/constants'
 import {
   addYearsIso,
   parsePositiveNumber,
@@ -41,7 +41,7 @@ import { reverseGeocode } from '../../services/geocode'
 import { calculateEstimatedTotal, createBooking } from '../../services/bookings'
 import { getMachineCard, getMachineImageUrl, listBlackoutDates } from '../../services/machines'
 import { getMachineStatus, joinWaitlist, leaveWaitlist } from '../../services/workStatus'
-import type { Booking, CropKey, MachineCard, MachineStatus } from '../../types'
+import type { Booking, CropKey, MachineCard, MachineStatus, RenterType } from '../../types'
 import { MachinePlaceholder } from '../../components/brand/MachinePlaceholder'
 import { CropIcon } from '../../components/crop/CropIcon'
 import { ContactButtons } from '../../components/contact/ContactButtons'
@@ -159,7 +159,17 @@ export function MachineDetailsPage() {
       ? t('common.perHour')
       : machine.pricing_unit === 'per_day'
       ? t('common.perDay')
+      : machine.pricing_unit === 'per_trip'
+      ? t('equip.perTrip')
       : t('common.perAcre')
+  const driverInfo =
+    machine.driver_mode === 'with'
+      ? t('equip.badgeWith')
+      : machine.driver_mode === 'without'
+      ? t('equip.badgeWithout')
+      : machine.driver_mode === 'both'
+      ? t('equip.badgeBoth')
+      : null
 
   return (
     <div>
@@ -270,6 +280,22 @@ export function MachineDetailsPage() {
                   )}
                 </dd>
               </div>
+              {driverInfo ? (
+                <div>
+                  <dt className="text-sm font-semibold text-ink-muted">{t('equip.driverModeLabel')}</dt>
+                  <dd className="mt-0.5 text-base font-semibold">
+                    {driverInfo}
+                    {machine.driver_mode === 'both' && machine.driver_extra ? (
+                      <span className="block text-sm font-normal text-ink-muted">
+                        {t('equip.extraForDriver', {
+                          amount: String(machine.driver_extra),
+                          unit: unitLabel,
+                        })}
+                      </span>
+                    ) : null}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-sm font-semibold text-ink-muted">{t('common.village')}</dt>
                 <dd className="mt-0.5 text-base">
@@ -360,6 +386,9 @@ function BookingForm({
   const [crop, setCrop] = useState<string>(machine.crops[0] ?? '')
   const [phone, setPhone] = useState(() => readLastPhone() ?? '')
   const [notes, setNotes] = useState('')
+  const [withDriver, setWithDriver] = useState(false)
+  const [renterType, setRenterType] = useState<RenterType>('farmer')
+  const [destinationFactory, setDestinationFactory] = useState('')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<TranslationKey | null>(null)
@@ -449,9 +478,23 @@ function BookingForm({
     serviceDate && machineStatus?.booked_dates.includes(serviceDate),
   )
   const cropOptions = machine.crops.length > 0 ? machine.crops : CROP_KEYS
+  const driverMode = machine.driver_mode ?? null
+  const isTransport = isTransportType(machine.machine_type)
+  // When the owner offers both, the renter picks; the driver extra is added to the unit price.
+  const driverExtra = driverMode === 'both' && withDriver ? (machine.driver_extra ?? 0) : 0
+  const effectivePrice = machine.price_per_acre + driverExtra
+  const isAcreUnit = !machine.pricing_unit || machine.pricing_unit === 'per_acre'
+  const qtyLabel =
+    machine.pricing_unit === 'per_hour'
+      ? t('equip.qtyHours')
+      : machine.pricing_unit === 'per_day'
+        ? t('equip.qtyDays')
+        : machine.pricing_unit === 'per_trip'
+          ? t('equip.qtyTrips')
+          : t('farmer.acreage')
   const estimateValue = parsePositiveNumber(acreage)
   const estimateResult = calculateEstimatedTotal(
-    machine.price_per_acre,
+    effectivePrice,
     machine.pricing_unit,
     estimateValue,
   )
@@ -461,6 +504,8 @@ function BookingForm({
       ? t('common.perHour')
       : machine.pricing_unit === 'per_day'
       ? t('common.perDay')
+      : machine.pricing_unit === 'per_trip'
+      ? t('equip.perTrip')
       : t('common.perAcre')
 
   const submitBooking = async (values: BookingFormValues): Promise<SubmitResult> => {
@@ -487,6 +532,9 @@ function BookingForm({
         crop: validation.parsed.crop as CropKey,
         contactPhone: validation.parsed.phone,
         notes: validation.parsed.notes ?? undefined,
+        withDriver: driverMode === 'both' ? withDriver : undefined,
+        destinationFactory: validation.parsed.destinationFactory ?? undefined,
+        renterType: isTransport ? renterType : 'farmer',
       })
       writeLastPhone(validation.parsed.phone)
       setCreated(booking)
@@ -509,7 +557,15 @@ function BookingForm({
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (submitting) return
-    const result = await submitBooking({ serviceDate, village, acreage, crop, phone, notes })
+    const result = await submitBooking({
+      serviceDate,
+      village,
+      acreage,
+      crop,
+      phone,
+      notes,
+      destinationFactory,
+    })
     if (!result.ok && result.invalid) {
       formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
       toast.error(t(result.key))
@@ -600,7 +656,7 @@ function BookingForm({
         }
         return { ok: true, value: String(Math.round(number * 100) / 100) }
       },
-      describe: (value) => `${value} ${t('common.acres')}`,
+      describe: (value) => (isAcreUnit ? `${value} ${t('common.acres')}` : `${value} ${qtyLabel}`),
       apply: (value) => {
         values.acreage = value
         setAcreage(value)
@@ -645,7 +701,7 @@ function BookingForm({
       },
       apply: async (answer) => {
         if (answer === 'no') return t('vf.book.notSent')
-        const result = await submitBooking({ ...values, notes })
+        const result = await submitBooking({ ...values, notes, destinationFactory })
         return result.ok ? t('vf.book.sent') : t(result.key)
       },
     }),
@@ -735,9 +791,9 @@ function BookingForm({
               <span className="font-semibold">{created.village}</span>
             </p>
             <p className="mt-2 flex items-center justify-between gap-3">
-              <span className="text-ink-muted">{t('booking.acreage')}</span>
+              <span className="text-ink-muted">{isAcreUnit ? t('booking.acreage') : qtyLabel}</span>
               <span className="font-semibold">
-                {created.acreage} {t('common.acres')}
+                {isAcreUnit ? `${created.acreage} ${t('common.acres')}` : created.acreage}
               </span>
             </p>
           </div>
@@ -775,7 +831,7 @@ function BookingForm({
           <div>
             <h2 className="text-xl font-extrabold">{t('farmer.bookTitle')}</h2>
             <p className="text-sm font-semibold text-leaf-800">
-              {formatPrice(machine.price_per_acre)} <span className="font-normal text-ink-muted">{formUnitLabel}</span>
+              {formatPrice(effectivePrice)} <span className="font-normal text-ink-muted">{formUnitLabel}</span>
             </p>
           </div>
         </div>
@@ -938,8 +994,8 @@ function BookingForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label={t('farmer.acreage')}
-              hint={t('farmer.acreageHint')}
+              label={qtyLabel}
+              hint={isAcreUnit ? t('farmer.acreageHint') : undefined}
               inputMode="decimal"
               value={acreage}
               onChange={(event) => {
@@ -991,6 +1047,68 @@ function BookingForm({
             required
             autoComplete="tel"
           />
+
+          {driverMode === 'both' ? (
+            <div>
+              <p className="text-sm font-bold text-ink">{t('equip.chooseDriver')}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {([false, true] as const).map((option) => (
+                  <button
+                    key={String(option)}
+                    type="button"
+                    aria-pressed={withDriver === option}
+                    onClick={() => setWithDriver(option)}
+                    className={`flex min-h-11 items-center justify-center rounded-xl border px-2 text-center text-sm font-bold transition-all ${
+                      withDriver === option
+                        ? 'border-leaf-700 bg-leaf-100 text-leaf-900 shadow-soft'
+                        : 'border-cream-300 bg-white text-ink-soft hover:bg-cream-50'
+                    }`}
+                  >
+                    {option ? t('equip.optionWithDriver') : t('equip.optionWithoutDriver')}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-sm font-semibold text-leaf-800">
+                {t('equip.rateNow', { amount: String(effectivePrice), unit: formUnitLabel })}
+              </p>
+            </div>
+          ) : null}
+
+          {isTransport ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-bold text-ink">{t('equip.renterLabel')}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {(['farmer', 'factory'] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={renterType === option}
+                      onClick={() => setRenterType(option)}
+                      className={`flex min-h-11 items-center justify-center rounded-xl border px-2 text-center text-sm font-bold transition-all ${
+                        renterType === option
+                          ? 'border-leaf-700 bg-leaf-100 text-leaf-900 shadow-soft'
+                          : 'border-cream-300 bg-white text-ink-soft hover:bg-cream-50'
+                      }`}
+                    >
+                      {option === 'farmer' ? t('equip.renterFarmer') : t('equip.renterFactory')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Input
+                label={t('equip.factoryLabel')}
+                hint={t('equip.factoryHint')}
+                value={destinationFactory}
+                onChange={(event) => {
+                  setDestinationFactory(event.target.value)
+                  clearFieldError('destinationFactory')
+                }}
+                error={errors.destinationFactory ? t(errors.destinationFactory) : null}
+                maxLength={80}
+              />
+            </div>
+          ) : null}
 
           <Textarea
             label={t('farmer.notes')}

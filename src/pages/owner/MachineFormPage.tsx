@@ -5,7 +5,7 @@ import { CheckCircle2, LocateFixed, MapPin, Mic, Plus, Trash2 } from 'lucide-rea
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
-import { CROP_KEYS, MACHINE_TYPES, MAX_VILLAGES } from '../../lib/constants'
+import { CROP_KEYS, MACHINE_TYPES, MAX_VILLAGES, isTransportType } from '../../lib/constants'
 import { CROP_DISPLAY_ORDER } from '../../lib/cropConfig'
 import { CropCard } from '../../components/crop/CropCard'
 import { logError, mapErrorToKey } from '../../lib/errors'
@@ -63,7 +63,10 @@ interface FormState {
   machineType: string
   model: string
   pricePerAcre: string
-  pricingUnit: 'per_acre' | 'per_hour' | 'per_day'
+  pricingUnit: 'per_acre' | 'per_hour' | 'per_day' | 'per_trip'
+  /** Tractors/trailers: '', 'with', 'without' or 'both'. */
+  driverMode: string
+  driverExtra: string
   crops: string[]
   primaryVillage: string
   district: string
@@ -125,6 +128,8 @@ export function MachineFormPage() {
     model: '',
     pricePerAcre: '',
     pricingUnit: 'per_acre',
+    driverMode: '',
+    driverExtra: '',
     crops: [],
     primaryVillage: profile?.village ?? '',
     district: profile?.district ?? '',
@@ -162,6 +167,8 @@ export function MachineFormPage() {
       model: machine.model ?? '',
       pricePerAcre: String(machine.price_per_acre),
       pricingUnit: machine.pricing_unit ?? 'per_acre',
+      driverMode: machine.driver_mode ?? '',
+      driverExtra: machine.driver_extra ? String(machine.driver_extra) : '',
       crops: machine.crops,
       primaryVillage: primary?.village ?? machine.village,
       district: primary?.district ?? machine.district,
@@ -342,15 +349,38 @@ export function MachineFormPage() {
       ? t('common.perHour')
       : unit === 'per_day'
         ? t('common.perDay')
-        : t('common.perAcre')
+        : unit === 'per_trip'
+          ? t('equip.perTrip')
+          : t('common.perAcre')
+  const isTransport = isTransportType(form.machineType)
 
   const machineChoices: SpokenOption<MachineType>[] = MACHINE_TYPES.map((type) => ({
     value: type,
     names: [...(MACHINE_SYNONYMS[type] ?? []), t(machineTypeLabelKey(type))],
   }))
   const unitChoices: SpokenOption<FormState['pricingUnit']>[] = (
-    ['per_acre', 'per_hour', 'per_day'] as const
+    ['per_acre', 'per_hour', 'per_day', 'per_trip'] as const
   ).map((unit) => ({ value: unit, names: PRICING_UNIT_SYNONYMS[unit] ?? [] }))
+  const driverChoices: SpokenOption<'with' | 'without' | 'both'>[] = [
+    {
+      value: 'without',
+      names: [
+        'without driver', 'no driver', 'without', t('equip.driverWithout'),
+        'ड्राइवर के बिना', 'बिना ड्राइवर', 'ಚಾಲಕ ಇಲ್ಲದೆ', 'ಇಲ್ಲದೆ', 'ஓட்டுநர் இல்லாமல்',
+      ],
+    },
+    {
+      value: 'with',
+      names: [
+        'with driver', 'driver included', t('equip.driverWith'),
+        'ड्राइवर के साथ', 'ಚಾಲಕನೊಂದಿಗೆ', 'ஓட்டுநருடன்',
+      ],
+    },
+    {
+      value: 'both',
+      names: ['both', 'dono', t('equip.driverBoth'), 'दोनों', 'ಎರಡೂ', 'இரண்டும்'],
+    },
+  ]
   const cropChoices: SpokenOption<CropKey>[] = CROP_KEYS.map((key) => ({
     value: key,
     names: [...(CROP_SYNONYMS[key] ?? []), t(`crop.${key}`)],
@@ -363,10 +393,12 @@ export function MachineFormPage() {
 
   const createVoiceSteps = (values: FormState): VoiceStep[] => {
   const voiceMissing = () => {
+    const transportType = isTransportType(values.machineType)
     return (
       !values.machineType ||
       !values.pricePerAcre ||
-      values.crops.length === 0 ||
+      (values.crops.length === 0 && !transportType) ||
+      (transportType && !values.driverMode) ||
       !values.primaryVillage.trim() ||
       !values.district.trim() ||
       !values.state.trim() ||
@@ -440,6 +472,27 @@ export function MachineFormPage() {
       apply: (value) => {
         values.pricePerAcre = value
         setField('pricePerAcre', value)
+      },
+    }),
+    askStep<'with' | 'without' | 'both'>({
+      id: 'driver',
+      when: () => isTransportType(values.machineType),
+      prompt: t('equip.voiceDriver'),
+      parse: (heard) => {
+        const match = matchOption(heard, driverChoices)
+        return match
+          ? { ok: true, value: match }
+          : { ok: false, message: t('equip.voiceDriverBad') }
+      },
+      describe: (mode) =>
+        mode === 'with'
+          ? t('equip.driverWith')
+          : mode === 'without'
+            ? t('equip.driverWithout')
+            : t('equip.driverBoth'),
+      apply: (mode) => {
+        values.driverMode = mode
+        setField('driverMode', mode)
       },
     }),
     askStep<CropKey[]>({
@@ -642,6 +695,8 @@ export function MachineFormPage() {
                     ? 'In rupees, for one hour of work.'
                     : form.pricingUnit === 'per_day'
                     ? 'In rupees, for one full day.'
+                    : form.pricingUnit === 'per_trip'
+                    ? t('equip.priceHintTrip')
                     : 'In rupees, for one acre.'
                 }
                 inputMode="decimal"
@@ -658,7 +713,9 @@ export function MachineFormPage() {
               <p className="mt-0.5 text-sm text-ink-muted">
                 {t('machine.pricingUnitHint')}
               </p>
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div
+                className={`mt-2 grid gap-2 ${isTransport ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}
+              >
                 <button
                   type="button"
                   onClick={() => setField('pricingUnit', 'per_acre')}
@@ -692,20 +749,87 @@ export function MachineFormPage() {
                 >
                   {t('machine.pricingPerDay')}
                 </button>
+                {isTransport ? (
+                  <button
+                    type="button"
+                    onClick={() => setField('pricingUnit', 'per_trip')}
+                    className={`flex min-h-11 items-center justify-center rounded-xl border text-xs font-bold transition-all ${
+                      form.pricingUnit === 'per_trip'
+                        ? 'border-leaf-700 bg-leaf-100 text-leaf-900 shadow-soft'
+                        : 'border-cream-300 bg-white text-ink-soft hover:bg-cream-50'
+                    }`}
+                  >
+                    {t('machine.pricingPerTrip')}
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
+
+          {isTransport ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-base font-semibold text-ink">
+                  {t('equip.driverModeLabel')}
+                  <span className="ml-1 text-clay-600" aria-hidden="true">
+                    *
+                  </span>
+                </p>
+                <p className="mt-0.5 text-sm text-ink-muted">{t('equip.driverModeHint')}</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(['with', 'without', 'both'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={form.driverMode === mode}
+                      onClick={() => setField('driverMode', mode)}
+                      className={`flex min-h-11 items-center justify-center rounded-xl border px-1 text-center text-xs font-bold transition-all ${
+                        form.driverMode === mode
+                          ? 'border-leaf-700 bg-leaf-100 text-leaf-900 shadow-soft'
+                          : 'border-cream-300 bg-white text-ink-soft hover:bg-cream-50'
+                      }`}
+                    >
+                      {mode === 'with'
+                        ? t('equip.driverWith')
+                        : mode === 'without'
+                          ? t('equip.driverWithout')
+                          : t('equip.driverBoth')}
+                    </button>
+                  ))}
+                </div>
+                {errors.driverMode ? (
+                  <p className="mt-2 text-sm font-medium text-clay-700" role="alert">
+                    {t(errors.driverMode)}
+                  </p>
+                ) : null}
+              </div>
+              {form.driverMode === 'both' ? (
+                <Input
+                  label={t('equip.driverExtraLabel')}
+                  hint={t('equip.driverExtraHint')}
+                  inputMode="decimal"
+                  value={form.driverExtra}
+                  onChange={(event) => setField('driverExtra', event.target.value)}
+                  error={errors.driverExtra ? t(errors.driverExtra) : null}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           <fieldset>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <legend className="text-base font-semibold text-ink">
                   {t('machine.cropsLabel')}
-                  <span className="ml-1 text-clay-600" aria-hidden="true">
-                    *
-                  </span>
+                  {isTransport ? null : (
+                    <span className="ml-1 text-clay-600" aria-hidden="true">
+                      *
+                    </span>
+                  )}
                 </legend>
-                <p className="mt-0.5 text-sm text-ink-muted">{t('machine.cropsHint')}</p>
+                <p className="mt-0.5 text-sm text-ink-muted">
+                  {isTransport ? t('equip.cropsOptionalHint') : t('machine.cropsHint')}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -982,6 +1106,8 @@ function toMachineInput(parsed: MachineFormParsed, coordinates: Coordinates | nu
     model: parsed.model,
     price_per_acre: parsed.pricePerAcre,
     pricing_unit: parsed.pricingUnit,
+    driver_mode: parsed.driverMode,
+    driver_extra: parsed.driverExtra,
     crops: parsed.crops as CropKey[],
     phone: parsed.phone,
     latitude: coordinates?.latitude ?? null,

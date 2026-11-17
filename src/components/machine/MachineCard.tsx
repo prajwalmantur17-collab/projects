@@ -52,14 +52,28 @@ export function MachineCard({
       ? t('common.perHour')
       : machine.pricing_unit === 'per_day'
       ? t('common.perDay')
+      : machine.pricing_unit === 'per_trip'
+      ? t('equip.perTrip')
       : t('common.perAcre')
+
+  const driverMode = machine.driver_mode ?? null
+  const driverText =
+    driverMode === 'with'
+      ? t('equip.badgeWith')
+      : driverMode === 'without'
+      ? t('equip.badgeWithout')
+      : driverMode === 'both'
+      ? t('equip.badgeBoth')
+      : t('ui.operatorIncluded')
 
   // WhatsApp pre-filled inquiry text
   const cropName = selectedCrop ? t(`crop.${selectedCrop}` as TranslationKey) : 'crops'
   const pricingDetail = `${formatPrice(machine.price_per_acre)} ${unitLabel}`
-  const waMessage = `Namaste ${machine.owner_name}, I saw your ${machine.model || typeLabel} (${pricingDetail}) on Harvest Rentals. I need harvesting for ${
-    hasAcreage ? `${acreage} acres of ` : ''
-  }${cropName} in ${machine.village}. Is your machine available?`
+  const waMessage = `Namaste ${machine.owner_name}, I saw your ${machine.model || typeLabel} (${pricingDetail}) on Harvest Rentals. I need ${
+    driverMode ? 'this equipment' : 'harvesting'
+  } for ${hasAcreage && !driverMode ? `${acreage} acres of ` : ''}${
+    selectedCrop ? cropName : driverMode ? 'my work' : cropName
+  } in ${machine.village}. Is it available?`
 
   const normalizedUserLoc = (userLocation || '').trim().toLowerCase()
   const targetVillage = (userVillage || normalizedUserLoc || '').trim().toLowerCase()
@@ -201,8 +215,16 @@ export function MachineCard({
         {/* Diesel & Driver status */}
         <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted">
           <CheckCircle2 className="size-3.5 text-leaf-600" />
-          <span>{t('ui.operatorIncluded')}</span>
+          <span>{driverText}</span>
         </div>
+        {driverMode === 'both' && machine.driver_extra ? (
+          <p className="-mt-1.5 pl-5 text-xs font-medium text-ink-muted">
+            {t('equip.extraForDriver', {
+              amount: String(machine.driver_extra),
+              unit: unitLabel,
+            })}
+          </p>
+        ) : null}
 
         {/* Crops */}
         {machine.crops.length > 0 ? (
