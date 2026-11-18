@@ -27,9 +27,9 @@ export const en = {
   ...tourEn,
   ...equipmentEn,
   'app.name': 'Harvest Rentals',
-  'app.tagline': 'Find harvesting machines near your village.',
+  'app.tagline': 'Find farm machines near your village.',
   'app.description':
-    'Harvest Rentals connects farmers with nearby harvesting-machine owners. Search, compare, and book in a few simple steps.',
+    'Harvest Rentals connects farmers with nearby farm-machine owners. Search, compare, and book in a few simple steps.',
   'app.footer': 'Made for farmers across India.',
   'app.loading': 'Loading…',
 

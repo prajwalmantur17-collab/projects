@@ -49,9 +49,20 @@ const equipmentEn = {
   'equip.voiceDriver': 'Do you give it with a driver, without a driver, or both?',
   'equip.voiceDriverBad': 'Please say with driver, without driver, or both.',
 
+  'equip.voiceQtyHours': 'For how many hours do you need it? Say a number, for example 4.',
+  'equip.voiceQtyDays': 'For how many days do you need it? Say a number, for example 2.',
+  'equip.voiceQtyTrips': 'How many trips do you need? Say a number, for example 10.',
+  'equip.voiceQtyBad': 'Please say it as a number, for example 5.',
+  'equip.voiceSummary':
+    'Booking {machine} on {date} in {village}. {quantity}, for {crop}. Your phone number is {phone}. Shall I send the request? Say yes or no.',
+  'equip.tripsShort': 'Trips',
+
   'validation.driverMode': 'Choose with driver, without driver or both.',
   'validation.driverExtra': 'Enter a valid extra amount in rupees.',
   'validation.factory': 'Factory name must be 80 characters or fewer.',
+  'validation.factoryName': 'Enter the full factory name (2 to 80 characters).',
+  'settings.factoryLabel': 'Sugar factory name (optional)',
+  'settings.factoryHint': 'Fill this only if this account books equipment for a sugar factory.',
 } as const
 
 const equipmentKn: Record<keyof typeof equipmentEn, string> = {
@@ -103,9 +114,20 @@ const equipmentKn: Record<keyof typeof equipmentEn, string> = {
   'equip.voiceDriver': 'ನೀವು ಚಾಲಕನೊಂದಿಗೆ ಕೊಡುತ್ತೀರಾ, ಚಾಲಕ ಇಲ್ಲದೆ ಕೊಡುತ್ತೀರಾ, ಅಥವಾ ಎರಡೂ?',
   'equip.voiceDriverBad': 'ದಯವಿಟ್ಟು ಚಾಲಕನೊಂದಿಗೆ, ಚಾಲಕ ಇಲ್ಲದೆ ಅಥವಾ ಎರಡೂ ಎಂದು ಹೇಳಿ.',
 
+  'equip.voiceQtyHours': 'ಎಷ್ಟು ಗಂಟೆಗಳು ಬೇಕು? ಒಂದು ಸಂಖ್ಯೆ ಹೇಳಿ, ಉದಾಹರಣೆಗೆ 4.',
+  'equip.voiceQtyDays': 'ಎಷ್ಟು ದಿನಗಳು ಬೇಕು? ಒಂದು ಸಂಖ್ಯೆ ಹೇಳಿ, ಉದಾಹರಣೆಗೆ 2.',
+  'equip.voiceQtyTrips': 'ಎಷ್ಟು ಟ್ರಿಪ್‌ಗಳು ಬೇಕು? ಒಂದು ಸಂಖ್ಯೆ ಹೇಳಿ, ಉದಾಹರಣೆಗೆ 10.',
+  'equip.voiceQtyBad': 'ದಯವಿಟ್ಟು ಸಂಖ್ಯೆಯಾಗಿ ಹೇಳಿ, ಉದಾಹರಣೆಗೆ 5.',
+  'equip.voiceSummary':
+    '{date} ರಂದು {village} ನಲ್ಲಿ {machine} ಬುಕ್ ಮಾಡುತ್ತಿದ್ದೇನೆ. {quantity}, ಬೆಳೆ {crop}. ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆ {phone}. ವಿನಂತಿ ಕಳುಹಿಸಲೇ? ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.',
+  'equip.tripsShort': 'ಟ್ರಿಪ್‌ಗಳು',
+
   'validation.driverMode': 'ಚಾಲಕನೊಂದಿಗೆ, ಚಾಲಕ ಇಲ್ಲದೆ ಅಥವಾ ಎರಡೂ ಆಯ್ಕೆಮಾಡಿ.',
   'validation.driverExtra': 'ರೂಪಾಯಿಯಲ್ಲಿ ಸರಿಯಾದ ಹೆಚ್ಚುವರಿ ಮೊತ್ತ ನಮೂದಿಸಿ.',
   'validation.factory': 'ಕಾರ್ಖಾನೆಯ ಹೆಸರು 80 ಅಕ್ಷರಗಳಿಗಿಂತ ಕಡಿಮೆ ಇರಬೇಕು.',
+  'validation.factoryName': 'ಕಾರ್ಖಾನೆಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (2 ರಿಂದ 80 ಅಕ್ಷರಗಳು).',
+  'settings.factoryLabel': 'ಸಕ್ಕರೆ ಕಾರ್ಖಾನೆಯ ಹೆಸರು (ಐಚ್ಛಿಕ)',
+  'settings.factoryHint': 'ಈ ಖಾತೆಯು ಸಕ್ಕರೆ ಕಾರ್ಖಾನೆಗಾಗಿ ಉಪಕರಣ ಬುಕ್ ಮಾಡಿದರೆ ಮಾತ್ರ ಬರೆಯಿರಿ.',
 }
 
 const equipmentHi: Record<keyof typeof equipmentEn, string> = {
@@ -157,9 +179,20 @@ const equipmentHi: Record<keyof typeof equipmentEn, string> = {
   'equip.voiceDriver': 'क्या आप ड्राइवर के साथ देते हैं, ड्राइवर के बिना, या दोनों?',
   'equip.voiceDriverBad': 'कृपया बोलें: ड्राइवर के साथ, ड्राइवर के बिना, या दोनों।',
 
+  'equip.voiceQtyHours': 'आपको कितने घंटे चाहिए? एक संख्या बोलें, जैसे 4।',
+  'equip.voiceQtyDays': 'कितने दिन चाहिए? एक संख्या बोलें, जैसे 2।',
+  'equip.voiceQtyTrips': 'कितने फेरे चाहिए? एक संख्या बोलें, जैसे 10।',
+  'equip.voiceQtyBad': 'कृपया संख्या में बोलें, जैसे 5।',
+  'equip.voiceSummary':
+    '{date} को {village} में {machine} बुक कर रहा हूँ। {quantity}, फसल {crop}। आपका फोन नंबर {phone} है। क्या अनुरोध भेज दूँ? हाँ या नहीं बोलें।',
+  'equip.tripsShort': 'फेरे',
+
   'validation.driverMode': 'ड्राइवर के साथ, ड्राइवर के बिना या दोनों चुनें।',
   'validation.driverExtra': 'रुपयों में सही अतिरिक्त राशि डालें।',
   'validation.factory': 'मिल का नाम 80 अक्षरों या उससे कम का होना चाहिए।',
+  'validation.factoryName': 'मिल का पूरा नाम लिखें (2 से 80 अक्षर)।',
+  'settings.factoryLabel': 'चीनी मिल का नाम (वैकल्पिक)',
+  'settings.factoryHint': 'यह तभी भरें जब यह खाता चीनी मिल के लिए उपकरण बुक करता हो।',
 }
 
 const equipmentTa: Record<keyof typeof equipmentEn, string> = {
@@ -211,9 +244,20 @@ const equipmentTa: Record<keyof typeof equipmentEn, string> = {
   'equip.voiceDriver': 'ஓட்டுநருடன் கொடுக்கிறீர்களா, ஓட்டுநர் இல்லாமலா, அல்லது இரண்டுமா?',
   'equip.voiceDriverBad': 'தயவுசெய்து ஓட்டுநருடன், ஓட்டுநர் இல்லாமல் அல்லது இரண்டும் என்று சொல்லுங்கள்.',
 
+  'equip.voiceQtyHours': 'எத்தனை மணிநேரம் வேண்டும்? ஒரு எண்ணைச் சொல்லுங்கள், உதாரணமாக 4.',
+  'equip.voiceQtyDays': 'எத்தனை நாட்கள் வேண்டும்? ஒரு எண்ணைச் சொல்லுங்கள், உதாரணமாக 2.',
+  'equip.voiceQtyTrips': 'எத்தனை நடைகள் வேண்டும்? ஒரு எண்ணைச் சொல்லுங்கள், உதாரணமாக 10.',
+  'equip.voiceQtyBad': 'தயவுசெய்து எண்ணாகச் சொல்லுங்கள், உதாரணமாக 5.',
+  'equip.voiceSummary':
+    '{date} அன்று {village} இல் {machine} முன்பதிவு செய்கிறேன். {quantity}, பயிர் {crop}. உங்கள் தொலைபேசி எண் {phone}. கோரிக்கையை அனுப்பட்டுமா? ஆம் அல்லது இல்லை என்று சொல்லுங்கள்.',
+  'equip.tripsShort': 'நடைகள்',
+
   'validation.driverMode': 'ஓட்டுநருடன், ஓட்டுநர் இல்லாமல் அல்லது இரண்டையும் தேர்ந்தெடுக்கவும்.',
   'validation.driverExtra': 'ரூபாயில் சரியான கூடுதல் தொகையை உள்ளிடுங்கள்.',
   'validation.factory': 'ஆலையின் பெயர் 80 எழுத்துகளுக்குள் இருக்க வேண்டும்.',
+  'validation.factoryName': 'ஆலையின் முழு பெயரை உள்ளிடுங்கள் (2 முதல் 80 எழுத்துகள்).',
+  'settings.factoryLabel': 'சர்க்கரை ஆலையின் பெயர் (விருப்பம்)',
+  'settings.factoryHint': 'இந்தக் கணக்கு சர்க்கரை ஆலைக்காக உபகரணம் முன்பதிவு செய்தால் மட்டும் நிரப்புங்கள்.',
 }
 
 export { equipmentEn, equipmentKn, equipmentHi, equipmentTa }

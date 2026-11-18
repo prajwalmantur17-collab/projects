@@ -65,6 +65,8 @@ export interface Profile {
   district: string | null
   state: string | null
   avatar_path?: string | null
+  /** Set on farmer-mode accounts that book equipment for a sugar factory. */
+  factory_name?: string | null
   created_at: string
   updated_at: string
 }
@@ -380,7 +382,9 @@ export interface RecordItem {
   id: string
   service_date: string
   village: string
+  /** Quantity worked: acres, hours, days or trips, depending on pricing_unit. */
   acreage: number
+  pricing_unit?: PricingUnit
   crop: string
   amount_paid: number | null
   payment_method: PaymentMethod | null

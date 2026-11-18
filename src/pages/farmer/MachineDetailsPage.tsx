@@ -398,6 +398,12 @@ function BookingForm({
   const [geocoding, setGeocoding] = useState(false)
   const [detectedLoc, setDetectedLoc] = useState<string | null>(null)
   const { session, profile } = useAuth()
+  // A farmer-mode account with a factory name books as a sugar factory.
+  const factoryName = profile?.factory_name?.trim() || ''
+  const isFactoryAccount = factoryName.length > 0
+  useEffect(() => {
+    if (factoryName) setDestinationFactory((current) => current || factoryName)
+  }, [factoryName])
   const [waitlistLoading, setWaitlistLoading] = useState(false)
   const [waitlistError, setWaitlistError] = useState<TranslationKey | null>(null)
   const [waitlistSuccess, setWaitlistSuccess] = useState<TranslationKey | null>(null)
@@ -492,6 +498,13 @@ function BookingForm({
         : machine.pricing_unit === 'per_trip'
           ? t('equip.qtyTrips')
           : t('farmer.acreage')
+  // Short word used when the quantity is spoken or shown in a sentence.
+  const qtyWord =
+    machine.pricing_unit === 'per_hour'
+      ? t('equip.qtyHours')
+      : machine.pricing_unit === 'per_day'
+        ? t('equip.qtyDays')
+        : t('equip.tripsShort')
   const estimateValue = parsePositiveNumber(acreage)
   const estimateResult = calculateEstimatedTotal(
     effectivePrice,
@@ -534,7 +547,7 @@ function BookingForm({
         notes: validation.parsed.notes ?? undefined,
         withDriver: driverMode === 'both' ? withDriver : undefined,
         destinationFactory: validation.parsed.destinationFactory ?? undefined,
-        renterType: isTransport ? renterType : 'farmer',
+        renterType: isFactoryAccount ? 'factory' : isTransport ? renterType : 'farmer',
       })
       writeLastPhone(validation.parsed.phone)
       setCreated(booking)
@@ -648,15 +661,26 @@ function BookingForm({
     }),
     askStep<string>({
       id: 'acreage',
-      prompt: t('vf.book.acreage'),
+      prompt: isAcreUnit
+        ? t('vf.book.acreage')
+        : t(
+            machine.pricing_unit === 'per_hour'
+              ? 'equip.voiceQtyHours'
+              : machine.pricing_unit === 'per_day'
+                ? 'equip.voiceQtyDays'
+                : 'equip.voiceQtyTrips',
+          ),
       parse: (heard) => {
         const number = parseNumber(heard)
         if (number === null || number < 0.1 || number > 500) {
-          return { ok: false, message: t('vf.book.acreageBad') }
+          return {
+            ok: false,
+            message: isAcreUnit ? t('vf.book.acreageBad') : t('equip.voiceQtyBad'),
+          }
         }
         return { ok: true, value: String(Math.round(number * 100) / 100) }
       },
-      describe: (value) => (isAcreUnit ? `${value} ${t('common.acres')}` : `${value} ${qtyLabel}`),
+      describe: (value) => (isAcreUnit ? `${value} ${t('common.acres')}` : `${value} ${qtyWord}`),
       apply: (value) => {
         values.acreage = value
         setAcreage(value)
@@ -686,6 +710,16 @@ function BookingForm({
       allowSkip: false,
       when: () => !voiceMissing(),
       prompt: () => {
+        if (!isAcreUnit) {
+          return t('equip.voiceSummary', {
+            machine: typeLabel,
+            date: formatDate(values.serviceDate, language),
+            village: values.village,
+            quantity: `${values.acreage} ${qtyWord}`,
+            crop: t(`crop.${values.crop as CropKey}`),
+            phone: spokenDigits(values.phone),
+          })
+        }
         return t('vf.book.summary', {
           machine: typeLabel,
           date: formatDate(values.serviceDate, language),
@@ -1076,7 +1110,12 @@ function BookingForm({
 
           {isTransport ? (
             <div className="space-y-3">
-              <div>
+              {isFactoryAccount ? (
+                <p className="rounded-xl bg-leaf-50 px-3 py-2 text-sm font-semibold text-leaf-900">
+                  {t('equip.bookedAsFactory')}: {factoryName}
+                </p>
+              ) : null}
+              <div className={isFactoryAccount ? 'hidden' : undefined}>
                 <p className="text-sm font-bold text-ink">{t('equip.renterLabel')}</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {(['farmer', 'factory'] as const).map((option) => (

@@ -165,8 +165,10 @@ export function RecordPage() {
   // Calculate dynamic totals from visible items so removing an item updates the numbers
   const hasHiddenItems = hiddenIds.size > 0
   const jobsCount = hasHiddenItems ? visibleItems.length : (record?.jobs ?? 0)
+  // Acres only come from jobs priced per acre; hour, day and trip jobs use other quantities.
+  const isAcreJob = (job: RecordItem) => !job.pricing_unit || job.pricing_unit === 'per_acre'
   const totalAcres = hasHiddenItems
-    ? visibleItems.reduce((acc, job) => acc + (Number(job.acreage) || 0), 0)
+    ? visibleItems.reduce((acc, job) => acc + (isAcreJob(job) ? Number(job.acreage) || 0 : 0), 0)
     : (record?.acres ?? 0)
   const totalAmount = hasHiddenItems
     ? visibleItems.reduce((acc, job) => {
@@ -190,7 +192,7 @@ export function RecordPage() {
     ? Array.from(
         visibleItems.reduce((map, item) => {
           const prev = map.get(item.crop) || { crop: item.crop, acres: 0, amount: 0 }
-          prev.acres += Number(item.acreage) || 0
+          if (isAcreJob(item)) prev.acres += Number(item.acreage) || 0
           if (item.payment_method && item.amount_paid != null) {
             prev.amount += Number(item.amount_paid) || 0
           }
@@ -496,7 +498,16 @@ export function RecordPage() {
                     <div className="flex items-center gap-2 text-ink-soft">
                       <Sprout className="size-4 shrink-0 text-leaf-600" aria-hidden="true" />
                       <span>
-                        {t('record.acresUnit', { acres: formatAcreage(job.acreage) })} • {cropName}
+                        {isAcreJob(job)
+                          ? t('record.acresUnit', { acres: formatAcreage(job.acreage) })
+                          : `${job.acreage} ${
+                              job.pricing_unit === 'per_hour'
+                                ? t('equip.qtyHours')
+                                : job.pricing_unit === 'per_day'
+                                  ? t('equip.qtyDays')
+                                  : t('equip.tripsShort')
+                            }`}{' '}
+                        • {cropName}
                       </span>
                     </div>
 

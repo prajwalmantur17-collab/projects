@@ -34,6 +34,7 @@ export function SettingsPage() {
     village: profile?.village ?? '',
     district: profile?.district ?? '',
     state: profile?.state ?? '',
+    factoryName: profile?.factory_name ?? '',
   }))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
@@ -81,9 +82,14 @@ export function SettingsPage() {
     setFormError(null)
 
     const validation = validateProfileForm(form)
-    if (!validation.parsed) {
-      setErrors(validation.errors)
-      const firstErr = Object.values(validation.errors)[0]
+    const factoryName = form.factoryName.trim().replace(/\s+/g, ' ')
+    const factoryInvalid =
+      profile.role === 'farmer' && factoryName.length > 0 && (factoryName.length < 2 || factoryName.length > 80)
+    if (!validation.parsed || factoryInvalid) {
+      const nextErrors: FieldErrors = { ...validation.errors }
+      if (factoryInvalid) nextErrors.factoryName = 'validation.factoryName'
+      setErrors(nextErrors)
+      const firstErr = Object.values(nextErrors)[0]
       if (firstErr) toast.error(t(firstErr as TranslationKey))
       return
     }
@@ -95,6 +101,7 @@ export function SettingsPage() {
         village: validation.parsed.village,
         district: validation.parsed.district,
         state: validation.parsed.state,
+        ...(profile.role === 'farmer' ? { factory_name: factoryName || null } : {}),
       })
       await refreshProfile()
       setSuccess('settings.saved')
@@ -210,6 +217,16 @@ export function SettingsPage() {
               autoComplete="address-level1"
             />
           </div>
+          {isFarmer ? (
+            <Input
+              label={t('settings.factoryLabel')}
+              hint={t('settings.factoryHint')}
+              value={form.factoryName}
+              onChange={(event) => setField('factoryName', event.target.value)}
+              error={errors.factoryName ? t(errors.factoryName) : null}
+              maxLength={80}
+            />
+          ) : null}
           <Button type="submit" loading={saving} fullWidth size="lg">
             {saving ? t('common.saving') : t('settings.save')}
           </Button>

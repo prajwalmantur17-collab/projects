@@ -134,6 +134,7 @@ export interface ProfileUpdate {
   village?: string | null
   district?: string | null
   state?: string | null
+  factory_name?: string | null
   preferred_language?: Language
 }
 
