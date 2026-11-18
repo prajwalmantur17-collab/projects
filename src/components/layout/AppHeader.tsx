@@ -158,7 +158,7 @@ export function AppHeader() {
 
             {/* Smart Interactive Search Dropdown */}
             {dropdownOpen ? (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-3 shadow-lift space-y-3 motion-safe:animate-[apple-dropdown-in_220ms_cubic-bezier(0.22,1,0.36,1)]">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-3 shadow-lift space-y-3">
                 {/* 1. When search bar is empty: Show Suggested Queries */}
                 {!searchQuery.trim() ? (
                   <div className="space-y-2">
@@ -273,49 +273,6 @@ export function AppHeader() {
             ) : null}
           </div>
         </div>
-
-        {/* Middle Navigation Links (Apple/Linear Style) on desktop */}
-        <nav className="hidden xl:flex items-center gap-1 text-xs font-semibold text-ink-muted">
-          <a
-            href="#search-heading"
-            onClick={(e) => {
-              const el = document.getElementById('search-heading')
-              if (el) {
-                e.preventDefault()
-                el.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
-          >
-            {t('landing.ctaFind')}
-          </a>
-          <a
-            href="#how-it-works"
-            onClick={(e) => {
-              const el = document.getElementById('how-it-works')
-              if (el) {
-                e.preventDefault()
-                el.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
-          >
-            {t('landing.ctaDemo')}
-          </a>
-          <a
-            href="#updates-section"
-            onClick={(e) => {
-              const el = document.getElementById('updates-section')
-              if (el) {
-                e.preventDefault()
-                el.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
-          >
-            {t('landing.agriUpdatesTitle')}
-          </a>
-        </nav>
 
         {/* Right: Actions (Language, Notifications, User) */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">

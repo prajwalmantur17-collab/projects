@@ -11,7 +11,6 @@ import { modeTa } from './mode'
 import { driversTa } from './drivers'
 import { tourTa } from './tour'
 import { equipmentTa } from './equipment'
-import { landingTa } from './landing'
 import type { TranslationKey } from './en'
 
 export const ta: Record<TranslationKey, string> = {
@@ -28,7 +27,6 @@ export const ta: Record<TranslationKey, string> = {
   ...driversTa,
   ...tourTa,
   ...equipmentTa,
-  ...landingTa,
   'app.name': 'ஹார்வெஸ்ட் ரென்டல்ஸ்',
   'app.tagline': 'உங்கள் கிராமத்திற்கு அருகிலுள்ள விவசாய இயந்திரங்களைக் கண்டுபிடியுங்கள்.',
   'app.description':

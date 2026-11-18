@@ -111,8 +111,8 @@ export function MachineCard({
 
   return (
     <article
-      className="card-surface hr-card-in group flex flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-lift hover:-translate-y-1 hover:border-leaf-300 active:scale-[0.985]"
-      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+      className="card-surface hr-card-in flex flex-col overflow-hidden transition-shadow transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lift hover:-translate-y-0.5"
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-cream-200">
         {imageUrl ? (
@@ -120,11 +120,11 @@ export function MachineCard({
             src={imageUrl}
             alt={t('machine.imageAlt', { type: typeLabel })}
             loading="lazy"
-            className="size-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+            className="size-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105"
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <MachinePlaceholder className="size-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]" label={t('machine.placeholderAlt')} />
+          <MachinePlaceholder className="size-full" label={t('machine.placeholderAlt')} />
         )}
 
         {typeof distanceKm === 'number' ? (

@@ -4,14 +4,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
   ArrowRight,
-  Award,
-  BookOpen,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
   LocateFixed,
   MapPin,
-  Phone,
   PhoneCall,
   Radio,
   Search,
@@ -21,9 +18,7 @@ import {
   Sprout,
   Tractor,
   Users,
-  Zap,
 } from 'lucide-react'
-import { LogoLockup } from '../../components/brand/Logo'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import type { TranslationKey } from '../../i18n'
@@ -111,39 +106,6 @@ function formatRelativeTime(
   }
 }
 
-const KARNATAKA_DISTRICTS = [
-  'Bagalkot',
-  'Ballari',
-  'Belagavi',
-  'Bengaluru Rural',
-  'Bengaluru Urban',
-  'Bidar',
-  'Chamarajanagar',
-  'Chikkaballapur',
-  'Chikkamagaluru',
-  'Chitradurga',
-  'Dakshina Kannada',
-  'Davanagere',
-  'Dharwad',
-  'Gadag',
-  'Hassan',
-  'Haveri',
-  'Kalaburagi',
-  'Kodagu',
-  'Kolar',
-  'Koppal',
-  'Mandya',
-  'Mysuru',
-  'Raichur',
-  'Ramanagara',
-  'Shivamogga',
-  'Tumakuru',
-  'Udupi',
-  'Uttara Kannada',
-  'Vijayapura',
-  'Yadgir',
-]
-
 export function FarmerHomePage() {
   const { profile, refreshProfile } = useAuth()
   const { t, language } = useI18n()
@@ -152,20 +114,6 @@ export function FarmerHomePage() {
 
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null)
   const [latestActivity, setLatestActivity] = useState<LatestActivity | null>(null)
-  const [popularMachines, setPopularMachines] = useState<MachineCardType[]>([])
-
-  // Load initial popular machines from database on mount for landing showcase
-  useEffect(() => {
-    let active = true
-    void searchMachines({ limit: 6 }).then((res) => {
-      if (active && res && res.length > 0) {
-        setPopularMachines(deduplicateMachines(res))
-      }
-    })
-    return () => {
-      active = false
-    }
-  }, [])
 
   // Defer non-critical statistics and latest activity until after main UI mounts and idle time
   useEffect(() => {
@@ -807,69 +755,33 @@ export function FarmerHomePage() {
         </div>
 
         {/* Left-Side Content */}
-        <div className="relative z-10 max-w-full sm:max-w-[65%] motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.22,1,0.36,1)]">
+        <div className="relative z-10 max-w-full sm:max-w-[65%]">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-md">
             <Tractor className="size-3.5 text-harvest-400" aria-hidden="true" />
-            <span>{profile?.full_name ? `${t('ui.namaste')}, ${name}` : t('landing.heroTag')}</span>
+            <span>{t('ui.heroBadge')}</span>
           </div>
 
-          <div className="mt-3">
-            <span className="text-xs sm:text-sm font-bold tracking-wider text-harvest-400 uppercase">
-              {t('landing.brand')}
-            </span>
-            <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.15] mt-1">
-              {t('landing.heroTitle')}
-            </h1>
-          </div>
+          <h1 className="mt-3 font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            {t('ui.namaste')} <span className="text-harvest-400">{name}</span>
+          </h1>
 
-          <p className="mt-2 text-sm sm:text-base text-leaf-100 font-normal leading-relaxed max-w-xl">
-            {t('landing.heroSubtitle')}
+          <p className="mt-1 text-sm sm:text-base text-leaf-100 font-normal leading-relaxed">
+            {t('farmer.subtitle')}
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => searchCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 rounded-full bg-harvest-400 hover:bg-harvest-300 text-ink font-bold px-6 py-2.5 text-xs sm:text-sm shadow-lift transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
-            >
-              <Tractor className="size-4 text-ink" />
-              <span>{t('landing.ctaFind')}</span>
-            </button>
-            <a
-              href="#how-it-works"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-2.5 text-xs sm:text-sm backdrop-blur-md transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
-            >
-              <span>{t('landing.ctaDemo')}</span>
-              <ChevronRight className="size-4" />
-            </a>
-          </div>
-
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md shadow-xs">
-              <CheckCircle2 className="size-3 text-harvest-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <CheckCircle2 className="size-3.5 text-harvest-400" />
               <span>{t('ui.verified')}</span>
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md shadow-xs">
-              <PhoneCall className="size-3 text-harvest-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <PhoneCall className="size-3.5 text-harvest-400" />
               <span>{t('ui.directCall')}</span>
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md shadow-xs">
-              <Sprout className="size-3 text-harvest-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#0E3D27]/80 border border-leaf-400/30 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-xs">
+              <Sprout className="size-3.5 text-harvest-400" />
               <span>{t('ui.zeroCommission')}</span>
             </div>
-          </div>
-
-          <div className="mt-3.5 flex items-center gap-2 text-xs font-semibold text-emerald-200">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>
-              {platformStats?.available_machines !== undefined
-                ? `${platformStats.available_machines} Machines Available across Karnataka`
-                : t('landing.liveNetwork')}
-            </span>
           </div>
         </div>
       </div>
@@ -1014,85 +926,56 @@ export function FarmerHomePage() {
           </div>
         </div>
 
-        {/* Bottom Section: District Selector & Enter Your Village Input */}
-        <div className="pt-2 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div className="sm:col-span-4">
-              <label htmlFor="landing-district-select" className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1.5">
-                {t('landing.districtSelect')}
-              </label>
-              <select
-                id="landing-district-select"
-                value={district}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setDistrict(val)
-                  if (val && (village.trim() || crop.trim() || geo.coordinates)) {
-                    void runSearch(crop, village, val)
-                  }
-                }}
-                className="w-full h-11 rounded-2xl border border-cream-300 bg-cream-50 px-3.5 text-xs sm:text-sm font-semibold text-ink focus:bg-white focus:border-leaf-700 focus:outline-none shadow-2xs transition-colors cursor-pointer"
-              >
-                <option value="">{t('landing.allDistricts')}</option>
-                {KARNATAKA_DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="sm:col-span-8">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider mb-1.5">
-                <MapPin className="size-3.5 text-gray-500" />
-                <span>{t('ui.enterYourVillage')}</span>
-              </div>
-
-              <form onSubmit={onSearch} className="relative">
-                <PlaceAutocomplete
-                  inputRef={villageInputRef}
-                  value={village}
-                  placeholder={t('ui.typeVillagePlaceholder')}
-                  locating={isLocationModalOpen}
-                  nearTo={originCoords}
-                  onVoiceResult={(guesses) => void handleVoicePlace(guesses)}
-                  onUseCurrentLocation={() => setIsLocationModalOpen(true)}
-                  onSelect={handlePlaceSelect}
-                  onChange={(val) => {
-                    setVillage(val)
-                    // Typing away from a picked place drops its district and map position.
-                    if (picked && val.trim().toLowerCase() !== picked.name.toLowerCase()) {
-                      setPicked(null)
-                      setDistrict('')
-                      setState('')
-                    }
-                    // If user modifies village away from detected place, clear detected place and stale district
-                    if (detectedPlace && val.trim().toLowerCase() !== detectedPlace.place.toLowerCase()) {
-                      setDetectedPlace(null)
-                      setDistrict('')
-                      setState('')
-                      geo.clear()
-                    }
-                    if (errors.village) {
-                      setErrors((prev) => {
-                        const next = { ...prev }
-                        delete next.village
-                        return next
-                      })
-                    }
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={searching}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white flex items-center justify-center transition-all duration-200 shadow-soft hover:shadow-lift active:scale-95 cursor-pointer"
-                  aria-label={t('farmer.searchButton')}
-                >
-                  <ArrowRight className="size-4.5" />
-                </button>
-              </form>
-            </div>
+        {/* Bottom Section: Enter Your Village Input */}
+        <div className="pt-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider mb-1.5">
+            <MapPin className="size-3.5 text-gray-500" />
+            <span>{t('ui.enterYourVillage')}</span>
           </div>
+
+          <form onSubmit={onSearch} className="relative">
+            <PlaceAutocomplete
+              inputRef={villageInputRef}
+              value={village}
+              placeholder={t('ui.typeVillagePlaceholder')}
+              locating={isLocationModalOpen}
+              nearTo={originCoords}
+              onVoiceResult={(guesses) => void handleVoicePlace(guesses)}
+              onUseCurrentLocation={() => setIsLocationModalOpen(true)}
+              onSelect={handlePlaceSelect}
+              onChange={(val) => {
+                setVillage(val)
+                // Typing away from a picked place drops its district and map position.
+                if (picked && val.trim().toLowerCase() !== picked.name.toLowerCase()) {
+                  setPicked(null)
+                  setDistrict('')
+                  setState('')
+                }
+                // If user modifies village away from detected place, clear detected place and stale district
+                if (detectedPlace && val.trim().toLowerCase() !== detectedPlace.place.toLowerCase()) {
+                  setDetectedPlace(null)
+                  setDistrict('')
+                  setState('')
+                  geo.clear()
+                }
+                if (errors.village) {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.village
+                    return next
+                  })
+                }
+              }}
+            />
+            <button
+              type="submit"
+              disabled={searching}
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-leaf-700 hover:bg-leaf-800 text-white flex items-center justify-center transition-all duration-200 shadow-soft hover:shadow-lift active:scale-95 cursor-pointer"
+              aria-label={t('farmer.searchButton')}
+            >
+              <ArrowRight className="size-4.5" />
+            </button>
+          </form>
 
           <p className="mt-2 pl-3 text-xs text-ink-muted">
             {t('ui.villageExample')}
@@ -1579,291 +1462,81 @@ export function FarmerHomePage() {
 
           </div>
         ) : (
-          /* Initial Landing & Farmer Discovery State */
-          <div className="space-y-12">
-            {/* Trust & Platform Benefits Section (Stripe-grade) */}
-            <section className="space-y-4">
-              <div className="text-center max-w-2xl mx-auto space-y-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-leaf-700 bg-leaf-50 px-3 py-1 rounded-full border border-leaf-200">
-                  {t('landing.heroTag')}
-                </span>
-                <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-                  {t('landing.liveNetwork')}
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-leaf-300 animate-stat-card-0">
-                  <div className="size-11 rounded-2xl bg-leaf-50 border border-leaf-200/80 flex items-center justify-center text-leaf-800 mb-3 shadow-2xs">
-                    <Award className="size-5.5 text-leaf-700" />
-                  </div>
-                  <h4 className="font-display text-base font-bold text-ink">{t('landing.trustVerifiedTitle')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustVerifiedDesc')}</p>
-                </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-harvest-300 animate-stat-card-1">
-                  <div className="size-11 rounded-2xl bg-harvest-50 border border-harvest-200/80 flex items-center justify-center text-harvest-800 mb-3 shadow-2xs">
-                    <MapPin className="size-5.5 text-harvest-700" />
-                  </div>
-                  <h4 className="font-display text-base font-bold text-ink">{t('landing.trustNearbyTitle')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustNearbyDesc')}</p>
-                </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-leaf-300 animate-stat-card-2">
-                  <div className="size-11 rounded-2xl bg-leaf-50 border border-leaf-200/80 flex items-center justify-center text-leaf-800 mb-3 shadow-2xs">
-                    <Zap className="size-5.5 text-leaf-700" />
-                  </div>
-                  <h4 className="font-display text-base font-bold text-ink">{t('landing.trustBookingTitle')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustBookingDesc')}</p>
-                </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-sky-300 animate-stat-card-3">
-                  <div className="size-11 rounded-2xl bg-sky-50 border border-sky-200/80 flex items-center justify-center text-sky-800 mb-3 shadow-2xs">
-                    <Phone className="size-5.5 text-sky-700" />
-                  </div>
-                  <h4 className="font-display text-base font-bold text-ink">{t('landing.trustSupportTitle')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustSupportDesc')}</p>
-                </div>
-              </div>
-            </section>
+          /* Initial Display: Ready to Scan (NO machines shown before entering details) - Photographically Art Directed */
+          <div className="relative overflow-hidden rounded-3xl border border-leaf-800/40 p-6 text-center shadow-lift sm:p-12 transition-all duration-300">
+            {/* Background combine harvester photograph in golden paddy field */}
+            <div
+              className="absolute inset-0 z-0 bg-cover bg-no-repeat transition-transform duration-1000 ease-out hover:scale-[1.02] pointer-events-none"
+              style={{
+                backgroundImage: 'url(/images/dashboard/harvester-hero.webp), url(/images/dashboard/harvester-hero.jpg)',
+                backgroundPosition: 'center 55%',
+              }}
+              aria-hidden="true"
+            />
 
-            {/* How It Works (Linear-grade 3 Steps) */}
-            <section id="how-it-works" className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E3D27] to-[#14532D] p-6 sm:p-10 text-white shadow-lift border border-leaf-800">
-              <div className="relative z-10 text-center max-w-xl mx-auto mb-8">
-                <span className="text-xs font-bold uppercase tracking-wider text-harvest-400 bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                  {t('ui.heroBadge')}
-                </span>
-                <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2">
-                  {t('landing.howTitle')}
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm text-leaf-100 font-medium leading-relaxed">
-                  {t('landing.howSubtitle')}
-                </p>
+            {/* Sophisticated Multi-stop Forest Green Gradient Overlay */}
+            {/* Left: Deep forest green, Middle: Semi-transparent emerald green, Right: Lighter luminous tint */}
+            <div
+              className="absolute inset-0 z-0 bg-gradient-to-r from-[#0B2B1E]/95 via-[#0E3D27]/85 to-[#176B45]/70 pointer-events-none"
+              aria-hidden="true"
+            />
+            {/* Vertical vignette gradient to focus content and soften top/bottom borders */}
+            <div
+              className="absolute inset-0 z-0 bg-gradient-to-b from-[#0B2B1E]/50 via-transparent to-[#072417]/80 pointer-events-none"
+              aria-hidden="true"
+            />
+
+            {/* Content Container */}
+            <div className="relative z-10 mx-auto max-w-3xl">
+              {/* Badge Icon */}
+              <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-soft transition-transform duration-300 hover:scale-105">
+                <Tractor className="size-8" aria-hidden="true" />
               </div>
 
-              <div className="relative z-10 grid gap-5 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
-                  <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
+              {/* Headings */}
+              <h3 className="mt-5 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-sm">
+                {t('farmer.readyToScanTitle')}
+              </h3>
+              <p className="mx-auto mt-2.5 max-w-xl text-sm sm:text-base leading-relaxed text-leaf-100/90 font-medium drop-shadow-xs">
+                {t('farmer.enterDetailsToScan')}
+              </p>
+
+              {/* Three Translucent Glassmorphic Step Cards */}
+              <div className="mx-auto mt-8 sm:mt-10 grid gap-4 text-left sm:grid-cols-3">
+                {/* Step 1: Enter Location */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
                     1
                   </div>
-                  <h4 className="mt-3.5 text-base font-bold text-white tracking-tight">{t('landing.howStep1Title')}</h4>
-                  <p className="mt-1.5 text-xs text-leaf-100 leading-relaxed font-normal">
-                    {t('landing.howStep1Desc')}
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step1Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step1Body')}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
-                  <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
+
+                {/* Step 2: Find Machines */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
                     2
                   </div>
-                  <h4 className="mt-3.5 text-base font-bold text-white tracking-tight">{t('landing.howStep2Title')}</h4>
-                  <p className="mt-1.5 text-xs text-leaf-100 leading-relaxed font-normal">
-                    {t('landing.howStep2Desc')}
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step2Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step2Body')}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
-                  <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
+
+                {/* Step 3: Contact Directly */}
+                <div className="glass-instruction-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-leaf-100/90 text-sm font-extrabold text-leaf-800 shadow-2xs">
                     3
                   </div>
-                  <h4 className="mt-3.5 text-base font-bold text-white tracking-tight">{t('landing.howStep3Title')}</h4>
-                  <p className="mt-1.5 text-xs text-leaf-100 leading-relaxed font-normal">
-                    {t('landing.howStep3Desc')}
+                  <h4 className="mt-3 text-sm font-bold text-ink tracking-tight">{t('ui.step3Title')}</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-ink-muted leading-relaxed">
+                    {t('ui.step3Body')}
                   </p>
                 </div>
               </div>
-            </section>
-
-            {/* Featured Popular Machines dynamically loaded from database */}
-            {popularMachines.length > 0 ? (
-              <section id="popular-machines" className="space-y-4">
-                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-cream-200 pb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="size-2.5 rounded-full bg-leaf-600 animate-pulse" />
-                      <h3 className="font-display text-2xl font-bold tracking-tight text-ink">
-                        {t('landing.popularTitle')}
-                      </h3>
-                    </div>
-                    <p className="mt-1 text-sm text-ink-muted font-medium">
-                      {t('landing.popularSubtitle')}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => searchCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-leaf-800 hover:text-leaf-900 bg-leaf-50 px-3.5 py-1.5 rounded-full border border-leaf-200 hover:bg-leaf-100 transition-colors"
-                  >
-                    <span>{t('farmer.searchButton')}</span>
-                    <ArrowRight className="size-3.5" />
-                  </button>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {popularMachines.map((m, idx) => (
-                    <MachineCard
-                      key={m.id}
-                      machine={m}
-                      index={idx}
-                      isBusy={busyMachines.get(m.id) === 'busy'}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            {/* Agriculture Updates, Government Schemes & Guidance */}
-            <section id="updates-section" className="space-y-5 rounded-3xl bg-white p-6 sm:p-8 border border-cream-200 shadow-soft">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-cream-200 pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="size-5 text-leaf-700" />
-                    <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-ink">
-                      {t('landing.agriUpdatesTitle')}
-                    </h3>
-                  </div>
-                  <p className="mt-1 text-xs sm:text-sm text-ink-muted font-medium">
-                    {t('landing.agriUpdatesSubtitle')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-leaf-700 bg-leaf-50 px-3 py-1 rounded-full border border-leaf-200">
-                  <span className="size-2 rounded-full bg-leaf-600 animate-ping" />
-                  <span>Karnataka 2026 Schemes</span>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
-                  <span className="inline-block text-[11px] font-bold text-leaf-800 bg-leaf-100 px-2.5 py-0.5 rounded-full mb-2">
-                    Custom Hiring Subsidy
-                  </span>
-                  <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme1Title')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme1Desc')}</p>
-                </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-harvest-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
-                  <span className="inline-block text-[11px] font-bold text-harvest-800 bg-harvest-100 px-2.5 py-0.5 rounded-full mb-2">
-                    ₹10,000 / Hectare
-                  </span>
-                  <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme2Title')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme2Desc')}</p>
-                </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-sky-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
-                  <span className="inline-block text-[11px] font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full mb-2">
-                    80% Solar Subsidy
-                  </span>
-                  <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme3Title')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme3Desc')}</p>
-                </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-emerald-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
-                  <span className="inline-block text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-2">
-                    Crop Insurance
-                  </span>
-                  <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme4Title')}</h4>
-                  <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme4Desc')}</p>
-                </div>
-              </div>
-
-              {/* Seasonal Harvesting Guidance Banner */}
-              <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl bg-leaf-900 p-4 text-white">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                    <Sprout className="size-5 text-harvest-400" />
-                  </div>
-                  <div>
-                    <h5 className="font-display text-sm font-bold text-white">{t('landing.seasonalTipsTitle')}</h5>
-                    <p className="text-xs text-leaf-100 mt-0.5 leading-relaxed">{t('landing.seasonalTipsDesc')}</p>
-                  </div>
-                </div>
-                <span className="shrink-0 text-xs font-bold text-harvest-400 bg-white/10 px-3 py-1 rounded-full border border-white/15">
-                  Karnataka Rabi Season
-                </span>
-              </div>
-            </section>
-
-            {/* Landing Page Professional Footer */}
-            <footer className="rounded-3xl border border-cream-200 bg-white p-6 sm:p-10 shadow-soft space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                <div className="md:col-span-5 space-y-3">
-                  <LogoLockup variant="light" markClassName="h-9 w-auto" />
-                  <p className="text-xs text-ink-muted leading-relaxed max-w-sm">
-                    {t('landing.footerAbout')}
-                  </p>
-                  <p className="text-xs font-bold text-leaf-800 flex items-center gap-1.5 pt-1">
-                    <Phone className="size-3.5 text-leaf-700" />
-                    <span>{t('landing.helpline')}</span>
-                  </p>
-                </div>
-
-                <div className="md:col-span-3 space-y-2">
-                  <h5 className="font-display text-xs font-bold uppercase tracking-wider text-ink">
-                    {t('landing.quickLinks')}
-                  </h5>
-                  <ul className="space-y-1.5 text-xs text-ink-muted font-medium">
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => searchCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                        className="hover:text-leaf-800 transition-colors"
-                      >
-                        {t('landing.ctaFind')}
-                      </button>
-                    </li>
-                    <li>
-                      <Link to="/farmer/bookings" className="hover:text-leaf-800 transition-colors">
-                        {t('nav.bookingsShort')}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/drivers" className="hover:text-leaf-800 transition-colors">
-                        {t('drivers.nav.find')}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/owner" className="hover:text-leaf-800 transition-colors">
-                        {t('nav.ownerDashboard')}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/record" className="hover:text-leaf-800 transition-colors">
-                        {t('record.link')}
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="md:col-span-4 space-y-2">
-                  <h5 className="font-display text-xs font-bold uppercase tracking-wider text-ink">
-                    {t('landing.supportLegal')}
-                  </h5>
-                  <ul className="space-y-1.5 text-xs text-ink-muted font-medium">
-                    <li>
-                      <Link to="/setup" className="hover:text-leaf-800 transition-colors">
-                        {t('ui.helpSupport')}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/settings" className="hover:text-leaf-800 transition-colors">
-                        {t('nav.settings')}
-                      </Link>
-                    </li>
-                    <li>
-                      <span className="text-ink-muted">Belagavi · Vijayapura · Dharwad · Mysuru · Mandya</span>
-                    </li>
-                  </ul>
-                  <div className="pt-2">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="size-3 text-emerald-600" />
-                      <span>{t('landing.footerTagline')}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-cream-200 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-muted">
-                <p>{t('landing.rightsReserved')}</p>
-                <div className="flex items-center gap-4 text-xs font-medium">
-                  <span className="hover:text-ink cursor-pointer">Privacy Policy</span>
-                  <span>·</span>
-                  <span className="hover:text-ink cursor-pointer">Terms of Service</span>
-                  <span>·</span>
-                  <span className="hover:text-ink cursor-pointer">Farmer Safety Guarantee</span>
-                </div>
-              </div>
-            </footer>
+            </div>
           </div>
         )}
       </section>
