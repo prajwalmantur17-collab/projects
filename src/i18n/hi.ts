@@ -11,6 +11,7 @@ import { modeHi } from './mode'
 import { driversHi } from './drivers'
 import { tourHi } from './tour'
 import { equipmentHi } from './equipment'
+import { landingHi } from './landing'
 import type { TranslationKey } from './en'
 
 export const hi: Record<TranslationKey, string> = {
@@ -27,6 +28,7 @@ export const hi: Record<TranslationKey, string> = {
   ...driversHi,
   ...tourHi,
   ...equipmentHi,
+  ...landingHi,
   'app.name': 'हार्वेस्ट रेंटल्स',
   'app.tagline': 'अपने गाँव के पास खेती की मशीनें खोजें।',
   'app.description':

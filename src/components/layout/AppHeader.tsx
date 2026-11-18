@@ -274,6 +274,49 @@ export function AppHeader() {
           </div>
         </div>
 
+        {/* Middle Navigation Links (Apple/Linear Style) on desktop */}
+        <nav className="hidden xl:flex items-center gap-1 text-xs font-semibold text-ink-muted">
+          <a
+            href="#search-heading"
+            onClick={(e) => {
+              const el = document.getElementById('search-heading')
+              if (el) {
+                e.preventDefault()
+                el.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
+          >
+            {t('landing.ctaFind')}
+          </a>
+          <a
+            href="#how-it-works"
+            onClick={(e) => {
+              const el = document.getElementById('how-it-works')
+              if (el) {
+                e.preventDefault()
+                el.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
+          >
+            {t('landing.ctaDemo')}
+          </a>
+          <a
+            href="#updates-section"
+            onClick={(e) => {
+              const el = document.getElementById('updates-section')
+              if (el) {
+                e.preventDefault()
+                el.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+            className="px-3 py-1.5 rounded-full hover:text-ink hover:bg-cream-100 transition-colors"
+          >
+            {t('landing.agriUpdatesTitle')}
+          </a>
+        </nav>
+
         {/* Right: Actions (Language, Notifications, User) */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <div data-tour="language">

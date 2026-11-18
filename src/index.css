@@ -9,18 +9,18 @@
     'Manrope', 'Noto Sans Kannada', 'Noto Sans Devanagari', 'Noto Sans Tamil', ui-sans-serif,
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Primary Deep Agricultural Green (#176B45) */
-  --color-leaf-50: #f2f8f4;
-  --color-leaf-100: #e4f1e9;
-  --color-leaf-200: #c7e2d2;
-  --color-leaf-300: #9ecfb2;
-  --color-leaf-400: #6db68e;
-  --color-leaf-500: #3d9969;
-  --color-leaf-600: #228053;
-  --color-leaf-700: #176b45; /* Brand Primary Deep Green */
-  --color-leaf-800: #125637; /* Brand Primary Hover */
-  --color-leaf-900: #0e3d27; /* Deep Forest Green */
-  --color-leaf-950: #072417;
+  /* Primary Deep Agricultural Green (#14532D), Fresh Green (#22C55E), Soft Mint (#DCFCE7) */
+  --color-leaf-50: #f0fdf4;
+  --color-leaf-100: #dcfce7; /* Accent Soft Mint #DCFCE7 */
+  --color-leaf-200: #bbf7d0;
+  --color-leaf-300: #86efac;
+  --color-leaf-400: #4ade80;
+  --color-leaf-500: #22c55e; /* Secondary Fresh Green #22C55E */
+  --color-leaf-600: #16a34a;
+  --color-leaf-700: #15803d; /* Brand Primary Leaf Green */
+  --color-leaf-800: #166534; /* Brand Primary Hover */
+  --color-leaf-900: #14532d; /* Primary Forest Green #14532D */
+  --color-leaf-950: #052e16;
 
   /* Fresh Harvest Gold / Yellow Accent (#E8B84A) */
   --color-harvest-50: #fdfbf2;
@@ -34,16 +34,16 @@
   --color-harvest-800: #744c19;
   --color-harvest-900: #613f19;
 
-  /* Warm Off-White Agricultural Background & Neutral Canvas (#F8FAF5) */
-  --color-cream-50: #f8faf5; /* Background Canvas */
-  --color-cream-100: #f1f5ed;
-  --color-cream-200: #e3ebe1; /* Subtle Natural Border */
-  --color-cream-300: #d1ddd0;
+  /* Warm Off-White Background & Canvas (#F8FAF7) */
+  --color-cream-50: #f8faf7; /* Background Canvas #F8FAF7 */
+  --color-cream-100: #f0f4ef;
+  --color-cream-200: #e5ebe3; /* Subtle Hairline Border */
+  --color-cream-300: #d4ded2;
 
-  /* Main Charcoal (#202923) & Muted Secondary (#69776D) Typography */
-  --color-ink: #202923; /* Deep Charcoal Main Text */
-  --color-ink-soft: #3d4c41;
-  --color-ink-muted: #69776d; /* Muted Green-Grey Secondary Text */
+  /* Primary Text (#14231A) & Secondary Text (#647067) */
+  --color-ink: #14231a; /* Primary Text #14231A */
+  --color-ink-soft: #38463e;
+  --color-ink-muted: #647067; /* Secondary Text #647067 */
 
   /* Clay / Red Feedback */
   --color-clay-50: #fef2f2;
@@ -82,7 +82,7 @@
     font-family: var(--font-sans);
     font-feature-settings: 'ss01', 'cv11';
     line-height: 1.6;
-    background-color: #f8faf5;
+    background-color: #f8faf7;
   }
 
   html[lang='kn'] body,

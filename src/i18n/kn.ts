@@ -11,6 +11,7 @@ import { modeKn } from './mode'
 import { driversKn } from './drivers'
 import { tourKn } from './tour'
 import { equipmentKn } from './equipment'
+import { landingKn } from './landing'
 import type { TranslationKey } from './en'
 
 export const kn: Record<TranslationKey, string> = {
@@ -27,6 +28,7 @@ export const kn: Record<TranslationKey, string> = {
   ...driversKn,
   ...tourKn,
   ...equipmentKn,
+  ...landingKn,
   'app.name': 'ಹಾರ್ವೆಸ್ಟ್ ರೆಂಟಲ್ಸ್',
   'app.tagline': 'ನಿಮ್ಮ ಹಳ್ಳಿಯ ಸಮೀಪದಲ್ಲಿ ಕೃಷಿ ಯಂತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
   'app.description':
