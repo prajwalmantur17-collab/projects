@@ -158,7 +158,7 @@ export function AppHeader() {
 
             {/* Smart Interactive Search Dropdown */}
             {dropdownOpen ? (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-3 shadow-lift space-y-3">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[460px] overflow-y-auto rounded-2xl border border-cream-200 bg-white/98 backdrop-blur-xl p-3 shadow-lift space-y-3 motion-safe:animate-[apple-dropdown-in_220ms_cubic-bezier(0.22,1,0.36,1)]">
                 {/* 1. When search bar is empty: Show Suggested Queries */}
                 {!searchQuery.trim() ? (
                   <div className="space-y-2">

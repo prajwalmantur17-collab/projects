@@ -807,7 +807,7 @@ export function FarmerHomePage() {
         </div>
 
         {/* Left-Side Content */}
-        <div className="relative z-10 max-w-full sm:max-w-[65%]">
+        <div className="relative z-10 max-w-full sm:max-w-[65%] motion-safe:animate-[hero-fade-up_500ms_cubic-bezier(0.22,1,0.36,1)]">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-leaf-100 backdrop-blur-md">
             <Tractor className="size-3.5 text-harvest-400" aria-hidden="true" />
             <span>{profile?.full_name ? `${t('ui.namaste')}, ${name}` : t('landing.heroTag')}</span>
@@ -830,7 +830,7 @@ export function FarmerHomePage() {
             <button
               type="button"
               onClick={() => searchCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 rounded-full bg-harvest-400 hover:bg-harvest-300 text-ink font-bold px-6 py-2.5 text-xs sm:text-sm shadow-lift transition-all duration-200 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full bg-harvest-400 hover:bg-harvest-300 text-ink font-bold px-6 py-2.5 text-xs sm:text-sm shadow-lift transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
             >
               <Tractor className="size-4 text-ink" />
               <span>{t('landing.ctaFind')}</span>
@@ -841,7 +841,7 @@ export function FarmerHomePage() {
                 e.preventDefault()
                 document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
               }}
-              className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-2.5 text-xs sm:text-sm backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-2.5 text-xs sm:text-sm backdrop-blur-md transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
             >
               <span>{t('landing.ctaDemo')}</span>
               <ChevronRight className="size-4" />
@@ -1592,28 +1592,28 @@ export function FarmerHomePage() {
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all hover:-translate-y-1">
+                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-leaf-300 animate-stat-card-0">
                   <div className="size-11 rounded-2xl bg-leaf-50 border border-leaf-200/80 flex items-center justify-center text-leaf-800 mb-3 shadow-2xs">
                     <Award className="size-5.5 text-leaf-700" />
                   </div>
                   <h4 className="font-display text-base font-bold text-ink">{t('landing.trustVerifiedTitle')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustVerifiedDesc')}</p>
                 </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all hover:-translate-y-1">
+                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-harvest-300 animate-stat-card-1">
                   <div className="size-11 rounded-2xl bg-harvest-50 border border-harvest-200/80 flex items-center justify-center text-harvest-800 mb-3 shadow-2xs">
                     <MapPin className="size-5.5 text-harvest-700" />
                   </div>
                   <h4 className="font-display text-base font-bold text-ink">{t('landing.trustNearbyTitle')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustNearbyDesc')}</p>
                 </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all hover:-translate-y-1">
+                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-leaf-300 animate-stat-card-2">
                   <div className="size-11 rounded-2xl bg-leaf-50 border border-leaf-200/80 flex items-center justify-center text-leaf-800 mb-3 shadow-2xs">
                     <Zap className="size-5.5 text-leaf-700" />
                   </div>
                   <h4 className="font-display text-base font-bold text-ink">{t('landing.trustBookingTitle')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.trustBookingDesc')}</p>
                 </div>
-                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all hover:-translate-y-1">
+                <div className="card-surface p-5 rounded-3xl border border-cream-200 bg-white shadow-soft hover:shadow-lift transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-sky-300 animate-stat-card-3">
                   <div className="size-11 rounded-2xl bg-sky-50 border border-sky-200/80 flex items-center justify-center text-sky-800 mb-3 shadow-2xs">
                     <Phone className="size-5.5 text-sky-700" />
                   </div>
@@ -1638,7 +1638,7 @@ export function FarmerHomePage() {
               </div>
 
               <div className="relative z-10 grid gap-5 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 transition-all">
+                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
                   <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
                     1
                   </div>
@@ -1647,7 +1647,7 @@ export function FarmerHomePage() {
                     {t('landing.howStep1Desc')}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 transition-all">
+                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
                   <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
                     2
                   </div>
@@ -1656,7 +1656,7 @@ export function FarmerHomePage() {
                     {t('landing.howStep2Desc')}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 transition-all">
+                <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
                   <div className="size-10 rounded-xl bg-harvest-400 text-ink flex items-center justify-center font-display font-black text-base shadow-sm">
                     3
                   </div>
@@ -1727,28 +1727,28 @@ export function FarmerHomePage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all">
+                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
                   <span className="inline-block text-[11px] font-bold text-leaf-800 bg-leaf-100 px-2.5 py-0.5 rounded-full mb-2">
                     Custom Hiring Subsidy
                   </span>
                   <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme1Title')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme1Desc')}</p>
                 </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all">
+                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-harvest-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
                   <span className="inline-block text-[11px] font-bold text-harvest-800 bg-harvest-100 px-2.5 py-0.5 rounded-full mb-2">
                     ₹10,000 / Hectare
                   </span>
                   <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme2Title')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme2Desc')}</p>
                 </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all">
+                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-sky-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
                   <span className="inline-block text-[11px] font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full mb-2">
                     80% Solar Subsidy
                   </span>
                   <h4 className="font-display text-sm font-bold text-ink leading-snug">{t('landing.scheme3Title')}</h4>
                   <p className="mt-1 text-xs text-ink-muted leading-relaxed">{t('landing.scheme3Desc')}</p>
                 </div>
-                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-leaf-300 hover:shadow-soft transition-all">
+                <div className="rounded-2xl border border-cream-200 bg-cream-50/60 p-4 hover:bg-white hover:border-emerald-300 hover:shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1">
                   <span className="inline-block text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-2">
                     Crop Insurance
                   </span>

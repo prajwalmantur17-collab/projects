@@ -241,7 +241,7 @@ export function Sidebar() {
         aria-label={t('a11y.primaryNav')}
         inert={!isDesktop && !mobileOpen ? true : undefined}
         aria-hidden={!isDesktop && !mobileOpen ? 'true' : undefined}
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0B2B1E] border-r border-[#15462D] text-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0B2B1E] border-r border-[#15462D] text-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           /* Mobile Drawer: 280px wide */
           mobileOpen ? 'translate-x-0 w-[280px] shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${
@@ -354,7 +354,7 @@ export function Sidebar() {
                         <Link
                           to={def.to}
                           onClick={getItemClickHandler(def)}
-                          className={`relative flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 ${
+                          className={`relative flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] ${
                             active
                               ? 'bg-[#168052] text-white font-bold shadow-xs'
                               : 'text-[#A9C7B6] hover:bg-[#133A26] hover:text-white'

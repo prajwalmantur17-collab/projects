@@ -65,10 +65,17 @@
   --shadow-soft: 0 1px 3px rgba(32, 41, 35, 0.05), 0 10px 24px -10px rgba(23, 107, 69, 0.08);
   --shadow-lift: 0 4px 6px -1px rgba(32, 41, 35, 0.06), 0 20px 36px -12px rgba(23, 107, 69, 0.16);
 
-  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.18, 0.89, 0.32, 1.15);
+  --duration-instant: 140ms;
   --duration-fast: 180ms;
+  --duration-dropdown: 220ms;
+  --duration-card: 260ms;
   --duration-base: 250ms;
+  --duration-modal: 300ms;
   --duration-slow: 350ms;
+  --duration-section: 500ms;
 }
 
 @layer base {
@@ -132,7 +139,7 @@
   }
 
   .card-surface {
-    @apply rounded-3xl border border-cream-200 bg-white shadow-soft transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lift hover:border-cream-300;
+    @apply rounded-3xl border border-cream-200 bg-white shadow-soft transition-all duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-lift hover:border-leaf-300;
   }
 
   .text-muted {
@@ -141,6 +148,10 @@
 
   .font-display {
     font-family: var(--font-display);
+  }
+
+  .apple-press {
+    @apply transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97];
   }
 }
 
@@ -177,12 +188,102 @@
 @keyframes apple-sheet-in {
   0% {
     opacity: 0;
-    transform: translateY(20px) scale(0.98);
+    transform: translateY(16px) scale(0.97);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@keyframes apple-dropdown-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes apple-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes section-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-section-reveal {
+  animation: section-reveal 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* SVG Checkmark drawing animations for booking confirmation */
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 166;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes checkmark-check {
+  0% {
+    stroke-dashoffset: 48;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes checkmark-scale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: checkmark-circle 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-checkmark-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-check 400ms cubic-bezier(0.22, 1, 0.36, 1) 250ms forwards;
+}
+
+.animate-checkmark-container {
+  animation: checkmark-scale 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Hero Banner Farmer & Content entrance animation */
@@ -352,11 +453,11 @@
 
 /* ---- Skeleton shimmer ---- */
 @keyframes hr-shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
+  0% {
     background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
@@ -364,43 +465,45 @@
   border-radius: 0.75rem;
   background: linear-gradient(
     90deg,
-    var(--color-cream-100) 25%,
+    var(--color-cream-100) 0%,
     var(--color-cream-200) 50%,
-    var(--color-cream-100) 75%
+    var(--color-cream-100) 100%
   );
   background-size: 200% 100%;
-  animation: hr-shimmer 1.4s linear infinite;
+  animation: hr-shimmer 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
 /* ---- Route + list entrance ---- */
 @keyframes hr-route-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
   }
 }
 
 .hr-route {
-  animation: hr-route-in 250ms var(--ease-out-soft) backwards;
+  animation: hr-route-in 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  will-change: opacity, transform;
 }
 
 @keyframes hr-card-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
   }
 }
 
 .hr-card-in {
-  animation: hr-card-in 250ms var(--ease-out-soft) both;
+  animation: hr-card-in 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {

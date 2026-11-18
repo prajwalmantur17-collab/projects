@@ -3,7 +3,6 @@ import type { FormEvent } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   CalendarCheck2,
-  CheckCircle2,
   Clock3,
   LocateFixed,
   MapPin,
@@ -805,17 +804,42 @@ function BookingForm({
       {voiceAssistant}
       <Card className="p-5 sm:p-6" >
         <div className="flex flex-col items-center text-center">
-          <span className="flex size-14 items-center justify-center rounded-full bg-leaf-100 text-leaf-800">
-            <CheckCircle2 className="size-8" aria-hidden="true" />
-          </span>
-          <h2 className="mt-4 text-2xl font-extrabold">{t('farmer.bookingSuccessTitle')}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+          {/* Apple-grade Animated Checkmark */}
+          <div className="animate-checkmark-container flex size-16 items-center justify-center rounded-full bg-leaf-100 text-leaf-700 shadow-soft">
+            <svg
+              className="size-10 text-leaf-700"
+              viewBox="0 0 52 52"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <circle
+                className="animate-checkmark-circle"
+                cx="26"
+                cy="26"
+                r="23"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+              <path
+                className="animate-checkmark-check"
+                d="M15 27L22.5 34.5L37 19"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-2xl font-extrabold motion-safe:animate-[apple-fade-up_300ms_cubic-bezier(0.22,1,0.36,1)_100ms_both]">{t('farmer.bookingSuccessTitle')}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted motion-safe:animate-[apple-fade-up_300ms_cubic-bezier(0.22,1,0.36,1)_150ms_both]">
             {t('farmer.bookingSuccessBody')}
           </p>
-          <div className="mt-4">
+          <div className="mt-4 motion-safe:animate-[apple-fade-up_300ms_cubic-bezier(0.22,1,0.36,1)_180ms_both]">
             <StatusBadge status={created.status} />
           </div>
-          <div className="mt-5 w-full rounded-xl bg-cream-100 p-4 text-left text-sm">
+          <div className="mt-5 w-full rounded-2xl bg-cream-100 border border-cream-200/80 p-4 text-left text-sm motion-safe:animate-[apple-fade-up_300ms_cubic-bezier(0.22,1,0.36,1)_220ms_both]">
             <p className="flex items-center justify-between gap-3">
               <span className="text-ink-muted">{t('booking.serviceDate')}</span>
               <span className="font-bold">{formatDate(created.service_date, language)}</span>
@@ -831,7 +855,7 @@ function BookingForm({
               </span>
             </p>
           </div>
-          <LinkButton to="/farmer/bookings" fullWidth className="mt-5">
+          <LinkButton to="/farmer/bookings" fullWidth className="mt-5 motion-safe:animate-[apple-fade-up_300ms_cubic-bezier(0.22,1,0.36,1)_260ms_both]">
             {t('farmer.viewMyBookings')}
           </LinkButton>
           <Button

@@ -2,10 +2,10 @@ import { useId } from 'react'
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
 const controlBase =
-  'w-full min-h-11 rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-sm sm:text-base text-ink shadow-2xs transition-all duration-200 placeholder:text-ink-muted/70 hover:border-cream-300 focus:border-leaf-700 focus:ring-2 focus:ring-leaf-700/15 focus:outline-none disabled:bg-cream-100 disabled:text-ink-muted'
+  'w-full min-h-11 rounded-xl border border-cream-300 bg-white px-4 py-2.5 text-sm sm:text-base text-ink shadow-2xs transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] placeholder:text-ink-muted/70 hover:border-cream-300 focus:border-leaf-700 focus:ring-4 focus:ring-leaf-700/15 focus:outline-none disabled:bg-cream-100 disabled:text-ink-muted'
 
 function controlClasses(hasError: boolean, extra: string): string {
-  return `${controlBase} ${hasError ? 'border-clay-500' : ''} ${extra}`
+  return `${controlBase} ${hasError ? 'border-clay-500 focus:border-clay-600 focus:ring-clay-500/20' : ''} ${extra}`
 }
 
 function FieldWrapper({
@@ -27,7 +27,7 @@ function FieldWrapper({
   const errorId = error ? `${htmlFor}-error` : undefined
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-base font-semibold text-ink">
+      <label htmlFor={htmlFor} className="block text-base font-semibold text-ink transition-colors duration-150">
         {label}
         {required ? (
           <span className="ml-1 text-clay-600" aria-hidden="true">
@@ -42,7 +42,7 @@ function FieldWrapper({
       ) : null}
       {children}
       {error ? (
-        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-clay-700" role="alert">
+        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-clay-700 motion-safe:animate-[apple-fade-up_200ms_cubic-bezier(0.22,1,0.36,1)]" role="alert">
           <span aria-hidden="true">•</span>
           {error}
         </p>

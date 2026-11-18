@@ -31,7 +31,7 @@ export function BottomNav() {
               to={item.to}
               end={item.end ?? false}
               className={({ isActive }) =>
-                `relative flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-center text-xs font-semibold ${
+                `relative flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-center text-xs font-semibold transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 ${
                   isActive ? 'font-bold text-leaf-800' : 'text-ink-muted'
                 }`
               }
@@ -40,13 +40,13 @@ export function BottomNav() {
                 <>
                   {isActive ? (
                     <span
-                      className="absolute inset-x-6 top-0 h-1 rounded-b-full bg-leaf-600"
+                      className="absolute inset-x-6 top-0 h-1 rounded-b-full bg-leaf-600 transition-all duration-200"
                       aria-hidden="true"
                     />
                   ) : null}
                   <span
-                    className={`relative flex size-9 items-center justify-center rounded-xl ${
-                      isActive ? 'bg-leaf-100' : ''
+                    className={`relative flex size-9 items-center justify-center rounded-xl transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isActive ? 'bg-leaf-100 scale-105 shadow-2xs text-leaf-800' : ''
                     }`}
                   >
                     <item.icon className="size-6" aria-hidden="true" />

@@ -220,7 +220,7 @@ export function OwnerHomePage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Link
           to="/owner/bookings"
-          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all"
+          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] animate-stat-card-0"
         >
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-harvest-100 text-harvest-800 border border-harvest-200/60">
@@ -242,12 +242,12 @@ export function OwnerHomePage() {
               </span>
             </div>
           </div>
-          <ChevronRight className="size-5 text-ink-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
+          <ChevronRight className="size-5 text-ink-muted group-hover:text-ink group-hover:translate-x-1 transition-all duration-200" aria-hidden="true" />
         </Link>
 
         <Link
           to="/owner/machines"
-          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all"
+          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] animate-stat-card-1"
         >
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-leaf-50 text-leaf-800 border border-leaf-200/60">
@@ -265,12 +265,12 @@ export function OwnerHomePage() {
               </span>
             </div>
           </div>
-          <ChevronRight className="size-5 text-ink-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
+          <ChevronRight className="size-5 text-ink-muted group-hover:text-ink group-hover:translate-x-1 transition-all duration-200" aria-hidden="true" />
         </Link>
 
         <Link
           to="/record"
-          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 transition-all"
+          className="group flex items-center justify-between card-surface p-5 shadow-soft hover:shadow-lift hover:border-leaf-300 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] animate-stat-card-2"
         >
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200/60">
